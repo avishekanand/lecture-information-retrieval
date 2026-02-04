@@ -1,0 +1,9 @@
+# LaTeX build artifacts
+build/
+
+# Backup files
+*~
+*.bak
+
+# macOS files
+.DS_Store

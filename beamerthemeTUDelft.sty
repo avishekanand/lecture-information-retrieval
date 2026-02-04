@@ -1,0 +1,177 @@
+% TU Delft Beamer Theme
+% Based on TU Delft Corporate Identity Guidelines
+% Primary color: Cyan #00A6D6
+
+\mode<presentation>
+
+% ============================================================================
+% TU Delft Color Definitions
+% ============================================================================
+
+% Primary colors
+\definecolor{tudelft-cyan}{RGB}{0,166,214}      % #00A6D6 - Primary brand color
+\definecolor{tudelft-black}{RGB}{0,0,0}         % #000000
+\definecolor{tudelft-white}{RGB}{255,255,255}   % #FFFFFF
+
+% Secondary colors (for accents and variety)
+\definecolor{tudelft-darkblue}{RGB}{12,35,64}   % #0C2340
+\definecolor{tudelft-royalblue}{RGB}{0,118,194} % #0076C2
+\definecolor{tudelft-purple}{RGB}{111,29,119}   % #6F1D77
+\definecolor{tudelft-turquoise}{RGB}{0,184,200} % #00B8C8
+\definecolor{tudelft-yellow}{RGB}{255,184,28}   % #FFB81C
+\definecolor{tudelft-green}{RGB}{108,194,74}    % #6CC24A
+\definecolor{tudelft-red}{RGB}{224,60,49}       % #E03C31
+\definecolor{tudelft-orange}{RGB}{239,127,0}    % #EF7F00
+\definecolor{tudelft-grey}{RGB}{92,92,92}       % #5C5C5C
+
+% ============================================================================
+% Color Theme
+% ============================================================================
+
+% Structure (bullets, numbers, etc.)
+\setbeamercolor{structure}{fg=tudelft-cyan}
+
+% Title page
+\setbeamercolor{title}{fg=tudelft-white,bg=tudelft-cyan}
+\setbeamercolor{subtitle}{fg=tudelft-white}
+\setbeamercolor{author}{fg=tudelft-black}
+\setbeamercolor{institute}{fg=tudelft-grey}
+\setbeamercolor{date}{fg=tudelft-grey}
+
+% Frame titles
+\setbeamercolor{frametitle}{fg=tudelft-cyan,bg=tudelft-white}
+\setbeamercolor{framesubtitle}{fg=tudelft-grey}
+
+% Table of contents
+\setbeamercolor{section in toc}{fg=tudelft-cyan}
+\setbeamercolor{subsection in toc}{fg=tudelft-grey}
+
+% Blocks
+\setbeamercolor{block title}{bg=tudelft-cyan,fg=tudelft-white}
+\setbeamercolor{block body}{bg=tudelft-cyan!10,fg=tudelft-black}
+
+\setbeamercolor{block title alerted}{bg=tudelft-red,fg=tudelft-white}
+\setbeamercolor{block body alerted}{bg=tudelft-red!10,fg=tudelft-black}
+
+\setbeamercolor{block title example}{bg=tudelft-green,fg=tudelft-white}
+\setbeamercolor{block body example}{bg=tudelft-green!10,fg=tudelft-black}
+
+% Items
+\setbeamercolor{item}{fg=tudelft-cyan}
+\setbeamercolor{subitem}{fg=tudelft-turquoise}
+\setbeamercolor{subsubitem}{fg=tudelft-grey}
+
+% Navigation
+\setbeamercolor{navigation symbols}{fg=tudelft-grey,bg=tudelft-white}
+\setbeamercolor{navigation symbols dimmed}{fg=tudelft-grey!50}
+
+% Footer
+\setbeamercolor{footline}{fg=tudelft-white,bg=tudelft-cyan}
+\setbeamercolor{page number in head/foot}{fg=tudelft-white}
+
+% Palette (for compatibility)
+\setbeamercolor{palette primary}{bg=tudelft-cyan,fg=tudelft-white}
+\setbeamercolor{palette secondary}{bg=tudelft-darkblue,fg=tudelft-white}
+\setbeamercolor{palette tertiary}{bg=tudelft-black,fg=tudelft-white}
+\setbeamercolor{palette quaternary}{bg=tudelft-grey,fg=tudelft-white}
+
+% ============================================================================
+% Font Theme
+% ============================================================================
+
+\setbeamerfont{title}{size=\LARGE,series=\bfseries}
+\setbeamerfont{subtitle}{size=\large}
+\setbeamerfont{author}{size=\normalsize}
+\setbeamerfont{institute}{size=\small}
+\setbeamerfont{date}{size=\small}
+\setbeamerfont{frametitle}{size=\Large,series=\bfseries}
+\setbeamerfont{framesubtitle}{size=\normalsize}
+\setbeamerfont{block title}{size=\normalsize,series=\bfseries}
+
+% ============================================================================
+% Inner Theme (Title page, blocks, etc.)
+% ============================================================================
+
+% Title page
+\defbeamertemplate*{title page}{tudelft}[1][]
+{
+  \vbox{}
+  \vfill
+  \begingroup
+    \centering
+    \begin{beamercolorbox}[sep=8pt,center,#1]{title}
+      \usebeamerfont{title}\inserttitle\par%
+      \ifx\insertsubtitle\@empty%
+      \else%
+        \vskip0.25em%
+        {\usebeamerfont{subtitle}\usebeamercolor[fg]{subtitle}\insertsubtitle\par}%
+      \fi%     
+    \end{beamercolorbox}%
+    \vskip1em\par
+    \begin{beamercolorbox}[sep=8pt,center,#1]{author}
+      \usebeamerfont{author}\insertauthor
+    \end{beamercolorbox}
+    \begin{beamercolorbox}[sep=8pt,center,#1]{institute}
+      \usebeamerfont{institute}\insertinstitute
+    \end{beamercolorbox}
+    \begin{beamercolorbox}[sep=8pt,center,#1]{date}
+      \usebeamerfont{date}\insertdate
+    \end{beamercolorbox}\vskip0.5em
+  \endgroup
+  \vfill
+}
+
+% ============================================================================
+% Outer Theme (Headers, footers, sidebars)
+% ============================================================================
+
+% Frame title
+\defbeamertemplate*{frametitle}{tudelft}[1][]
+{
+  \vskip0.5em
+  \begin{beamercolorbox}[wd=\paperwidth,ht=1.5ex,dp=1ex,left]{frametitle}
+    \hspace*{1em}\usebeamerfont{frametitle}\insertframetitle
+    \ifx\insertframesubtitle\@empty
+    \else
+      \par\hspace*{1em}{\usebeamerfont{framesubtitle}\usebeamercolor[fg]{framesubtitle}\insertframesubtitle}
+    \fi
+  \end{beamercolorbox}
+  \vskip0.5em
+}
+
+% Footline with slide numbers
+\defbeamertemplate*{footline}{tudelft}
+{
+  \leavevmode%
+  \hbox{%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{footline}%
+    \usebeamerfont{author in head/foot}\insertshortauthor
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{footline}%
+    \usebeamerfont{title in head/foot}\insertshorttitle
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,right]{footline}%
+    \usebeamerfont{page number in head/foot}\insertframenumber{} / \inserttotalframenumber\hspace*{2ex} 
+  \end{beamercolorbox}}%
+  \vskip0pt%
+}
+
+% Remove navigation symbols
+\setbeamertemplate{navigation symbols}{}
+
+% ============================================================================
+% Additional Settings
+% ============================================================================
+
+% Rounded blocks
+\setbeamertemplate{blocks}[rounded][shadow=false]
+
+% Itemize items
+\setbeamertemplate{itemize items}[circle]
+\setbeamertemplate{enumerate items}[default]
+
+% Table of contents
+\setbeamertemplate{section in toc}[circle]
+\setbeamertemplate{subsection in toc}[square]
+
+\mode<all>

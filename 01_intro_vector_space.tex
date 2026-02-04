@@ -1,0 +1,1872 @@
+\documentclass[aspectratio=169]{beamer}
+\usetheme{TUDelft}
+
+% Packages
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{pifont} % For checkmarks and crosses if needed
+\usepackage{amssymb}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+
+% Python code styling
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+    showstringspaces=false,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny\color{gray}
+}
+
+% TikZ libraries
+\usetikzlibrary{shapes,arrows,positioning,calc,patterns}
+
+% Title information
+\title[Introduction to IR]{Introduction to Information Retrieval}
+\subtitle{Lecture 1: The IR Process, Vector Space Model & Boolean Retrieval}
+\author{Avishek Anand}
+\institute{Information Retrieval}
+\date{\today}
+
+\begin{document}
+
+% Title slide
+\begin{frame}
+\titlepage
+\end{frame}
+
+% Course Overview
+\begin{frame}{Course Overview}
+\begin{enumerate}
+    \item \textbf{Introduction to IR: Vector Space Model & Boolean Retrieval} $\leftarrow$ Today
+    \item Indexing: Sparse and Dense
+    \item Ranking: BM25, Query Expansion, Language Models
+    \item Embeddings & Transformer-based Re-rankers
+    \item Dense Retrieval
+    \item Learning to Rank
+\end{enumerate}
+
+\vspace{1em}
+\textbf{Today's Goals:}
+\begin{itemize}
+    \item Understand what IR is and why it matters
+    \item Learn the fundamental IR process
+    \item Master Boolean retrieval and the vector space model
+    \item Build your first search engine
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Outline}
+\tableofcontents
+\end{frame}
+
+% ====================================================================
+% SECTION 1: WHAT IS INFORMATION RETRIEVAL?
+% ====================================================================
+\section{What is Information Retrieval?}
+
+\begin{frame}{What is Information Retrieval?}
+\begin{block}{Definition}
+Information Retrieval (IR) is finding material (usually documents) of an unstructured nature (usually text) that satisfies an information need from within large collections (usually stored on computers).
+\end{block}
+
+\vspace{1em}
+
+\begin{exampleblock}{Key Characteristics}
+\begin{itemize}
+    \item \textbf{Unstructured data:} Text, images, audio (vs. databases with structured records)
+    \item \textbf{Large scale:} Billions of documents (web search, enterprise search)
+    \item \textbf{Information need:} User wants to learn something, not exact matching
+    \item \textbf{Relevance:} Not all results equally useful
+\end{itemize}
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}{IR vs. Database Systems}
+\begin{table}
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Database Systems} & \textbf{IR Systems} \\
+\midrule
+Data & Structured (tables, schemas) & Unstructured (text, documents) \\
+Queries & Precise (SQL) & Vague (natural language) \\
+Matching & Exact & Approximate/Ranked \\
+Result & All matching records & Top-k relevant documents \\
+Failure & No results or all results & Ranked list (best effort) \\
+\midrule
+Example & \texttt{SELECT * WHERE age>30} & ``climate change effects'' \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{1em}
+
+\begin{alertblock}{Key Difference}
+Databases: \textit{``Give me all records matching X''} \\
+IR: \textit{``Give me the most relevant documents about X''}
+\end{alertblock}
+\end{frame}
+
+\begin{frame}{Real-World IR Applications}
+\begin{columns}
+\begin{column}{0.48\textwidth}
+\textbf{Web Search}
+\begin{itemize}
+    \item Google, Bing, DuckDuckGo
+    \item Billions of web pages
+    \item Sub-second response time
+\end{itemize}
+
+\vspace{1em}
+
+\textbf{Enterprise Search}
+\begin{itemize}
+    \item Search company documents
+    \item Email search
+    \item Knowledge management
+\end{itemize}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\textbf{E-commerce}
+\begin{itemize}
+    \item Amazon product search
+    \item eBay, Etsy
+    \item Recommendation systems
+\end{itemize}
+
+\vspace{1em}
+
+\textbf{Specialized Domains}
+\begin{itemize}
+    \item Legal document search (LexisNexis)
+    \item Academic papers (Google Scholar)
+    \item Medical records (PubMed)
+    \item News archives
+\end{itemize}
+\end{column}
+\end{columns}
+
+\vspace{1em}
+
+\begin{center}
+\textbf{IR is everywhere you search for information!}
+\end{center}
+\end{frame}
+
+\begin{frame}{The Scale of Modern IR}
+\begin{block}{Web Search Statistics (2024)}
+\begin{itemize}
+    \item \textbf{Google:} Processes 8.5+ billion searches per day
+    \item \textbf{Index size:} 100+ trillion web pages indexed
+    \item \textbf{Freshness:} New pages indexed within hours
+    \item \textbf{Speed:} Results in < 0.5 seconds on average
+\end{itemize}
+\end{block}
+
+\vspace{1em}
+
+\begin{exampleblock}{Challenges at Scale}
+\begin{itemize}
+    \item \textbf{Storage:} How to store 100 trillion documents?
+    \item \textbf{Speed:} How to search in milliseconds?
+    \item \textbf{Relevance:} How to rank billions of results?
+    \item \textbf{Freshness:} How to keep index up-to-date?
+    \item \textbf{Quality:} How to fight spam and misinformation?
+\end{itemize}
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}{The Information Retrieval Problem}
+\begin{center}
+\begin{tikzpicture}[
+    node distance=2cm,
+    box/.style={rectangle, draw, fill=blue!20, text width=3cm, align=center, minimum height=1cm},
+    arrow/.style={->, thick}
+]
+    \node[box] (user) {User with Information Need};
+    \node[box, right=of user] (query) {Query \\ (e.g., ``climate change'')};
+    \node[box, right=of query] (system) {IR System};
+    \node[box, below=of system] (collection) {Document Collection \\ (millions of docs)};
+    \node[box, left=of collection] (results) {Ranked Results \\ (top-k docs)};
+    
+    \draw[arrow] (user) -- (query) node[midway, above] {\small formulate};
+    \draw[arrow] (query) -- (system) node[midway, above] {\small submit};
+    \draw[arrow] (system) -- (collection) node[midway, right] {\small search};
+    \draw[arrow] (collection) -- (results) node[midway, below] {\small rank};
+    \draw[arrow] (results) -- (user) node[midway, below] {\small satisfy};
+\end{tikzpicture}
+\end{center}
+
+\vspace{1em}
+
+\textbf{Core Questions:}
+\begin{enumerate}
+    \item How to represent documents and queries?
+    \item How to match queries to documents efficiently?
+    \item How to rank documents by relevance?
+\end{enumerate}
+\end{frame}
+
+% ====================================================================
+% SECTION 2: THE IR PROCESS
+% ====================================================================
+\section{The Information Retrieval Process}
+
+\begin{frame}{The Complete IR Pipeline}
+\begin{center}
+\begin{tikzpicture}[
+    node distance=1.3cm,
+    box/.style={rectangle, draw, fill=blue!20, text width=3.5cm, align=center, minimum height=0.8cm, font=\small},
+    arrow/.style={->, thick}
+]
+    \node[box, fill=green!20] (docs) {Raw Documents};
+    \node[box, below=of docs] (preprocess) {Text Preprocessing};
+    \node[box, below=of preprocess] (index) {Index Construction};
+    \node[box, below=of index] (storage) {Index Storage};
+    
+    \node[box, right=3cm of docs, fill=orange!20] (user) {User Query};
+    \node[box, below=of user] (qprocess) {Query Processing};
+    \node[box, below=of qprocess] (search) {Search & Matching};
+    \node[box, below=of search] (rank) {Ranking};
+    \node[box, below=of rank, fill=purple!20] (results) {Ranked Results};
+    
+    \draw[arrow] (docs) -- (preprocess);
+    \draw[arrow] (preprocess) -- (index);
+    \draw[arrow] (index) -- (storage);
+    
+    \draw[arrow] (user) -- (qprocess);
+    \draw[arrow] (qprocess) -- (search);
+    \draw[arrow] (storage) -- (search);
+    \draw[arrow] (search) -- (rank);
+    \draw[arrow] (rank) -- (results);
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}[shrink=10]{Step 1: Text Preprocessing}
+\textbf{Goal:} Convert raw text into a normalized, searchable form
+
+\vspace{1em}
+
+\begin{block}{Tokenization}
+Split text into individual tokens (words)
+\begin{itemize}
+    \item Input: ``The quick brown fox jumps over the lazy dog.''
+    \item Output: [``The'', ``quick'', ``brown'', ``fox'', ``jumps'', ``over'', ``the'', ``lazy'', ``dog'']
+\end{itemize}
+\end{block}
+
+\begin{alertblock}{Challenges}
+\begin{itemize}
+    \item Punctuation: ``don't'' → ``don'' + ``t'' or ``dont''?
+    \item Hyphens: ``state-of-the-art'' → one token or multiple?
+    \item Numbers: ``\$1,000.50'' $\rightarrow$ keep as is or normalize?
+    \item URLs, emails: ``http://example.com'' → one token?
+    \item Different languages: Chinese/Japanese no spaces between words
+\end{itemize}
+\end{alertblock}
+\end{frame}
+
+\begin{frame}[shrink=10]{Step 1: Text Preprocessing (continued)}
+\begin{block}{Normalization}
+Convert tokens to a standard form
+\begin{itemize}
+    \item \textbf{Lowercasing:} ``Apple'' → ``apple''
+    \item \textbf{Accent removal:} ``café'' → ``cafe''
+    \item \textbf{Date/number normalization:} ``5/10/2024'' → ``2024-10-05''
+\end{itemize}
+\end{block}
+
+\begin{exampleblock}{Stop Word Removal}
+Remove common words with little meaning
+\begin{itemize}
+    \item Stop words: ``the'', ``a'', ``an'', ``is'', ``of'', ``in'', ...
+    \item Before: ``the quick brown fox''
+    \item After: ``quick brown fox''
+    \item \textbf{Caution:} Can hurt phrase queries (``to be or not to be'')
+\end{itemize}
+\end{exampleblock}
+
+\begin{alertblock}{Modern Trend}
+Many systems now \textit{keep} stop words (storage is cheap, they can be important for some queries)
+\end{alertblock}
+\end{frame}
+
+\begin{frame}[shrink=10]{Step 1: Stemming vs. Lemmatization}
+\textbf{Goal:} Reduce words to their base form
+
+\vspace{1em}
+
+\begin{columns}
+\begin{column}{0.48\textwidth}
+\begin{block}{Stemming}
+Crude chopping of word endings
+\begin{itemize}
+    \item \textbf{Algorithm:} Porter Stemmer
+    \item running → run
+    \item runs → run
+    \item runner → runner
+    \item \textcolor{red}{university → univers}
+\end{itemize}
+\textbf{Fast but imprecise}
+\end{block}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{block}{Lemmatization}
+Linguistic reduction to dictionary form
+\begin{itemize}
+    \item \textbf{Uses:} Dictionary lookup
+    \item running → run
+    \item runs → run
+    \item better → good
+    \item am/is/are → be
+\end{itemize}
+\textbf{Accurate but slower}
+\end{block}
+\end{column}
+\end{columns}
+
+\vspace{1em}
+
+\begin{exampleblock}{Trade-off}
+\begin{itemize}
+    \item \textbf{Stemming:} Faster, good for most IR tasks
+    \item \textbf{Lemmatization:} Better for precise matching, NLP tasks
+    \item Modern neural methods often skip both (learn representations directly)
+\end{itemize}
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}{Preprocessing Pipeline Example}
+\begin{block}{Original Text}
+\texttt{The Quick Brown Fox Jumps Over The Lazy Dog!}
+\end{block}
+
+\vspace{0.5em}
+
+\begin{tikzpicture}[
+    node distance=0.05cm,
+    box/.style={rectangle, draw, fill=blue!10, text width=11cm, align=left, font=\small},
+    arrow/.style={->, thick}
+]
+    \node[box] (step1) {\textbf{Tokenization:} \\ {}
+    [\texttt{The}, \texttt{Quick}, \texttt{Brown}, \texttt{Fox}, \texttt{Jumps}, \texttt{Over}, \texttt{The}, \texttt{Lazy}, \texttt{Dog}, \texttt{!}]};
+    
+    \node[box, below=of step1] (step2) {\textbf{Lowercasing:} \\ {}
+    [\texttt{the}, \texttt{quick}, \texttt{brown}, \texttt{fox}, \texttt{jumps}, \texttt{over}, \texttt{the}, \texttt{lazy}, \texttt{dog}, \texttt{!}]};
+    
+    \node[box, below=of step2] (step3) {\textbf{Punctuation Removal:} \\ {}
+    [\texttt{the}, \texttt{quick}, \texttt{brown}, \texttt{fox}, \texttt{jumps}, \texttt{over}, \texttt{the}, \texttt{lazy}, \texttt{dog}]};
+    
+    \node[box, below=of step3] (step4) {\textbf{Stop Word Removal:} \\ {}
+    [\texttt{quick}, \texttt{brown}, \texttt{fox}, \texttt{jumps}, \texttt{lazy}, \texttt{dog}]};
+    
+    \node[box, below=of step4] (step5) {\textbf{Stemming:} \\ {}
+    [\texttt{quick}, \texttt{brown}, \texttt{fox}, \texttt{jump}, \texttt{lazi}, \texttt{dog}]};
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}[shrink=10]{Step 2: Building the Inverted Index}
+\textbf{Core Data Structure:} Maps each term to documents containing it
+
+\vspace{1em}
+
+\begin{exampleblock}{Simple Example}
+\textbf{Documents:}
+\begin{itemize}
+    \item Doc1: ``the cat sat on the mat''
+    \item Doc2: ``the dog sat on the log''
+    \item Doc3: ``cats and dogs are friends''
+\end{itemize}
+\end{exampleblock}
+
+\vspace{0.5em}
+
+\begin{table}
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Term} & \textbf{Posting List (doc IDs)} \\
+\midrule
+cat & [1] \\
+sat & [1, 2] \\
+mat & [1] \\
+dog & [2, 3] \\
+log & [2] \\
+cats & [3] \\
+friends & [3] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Query ``dog'':} Look up posting list → return [2, 3]
+\end{frame}
+
+\begin{frame}{Inverted Index with Term Frequencies}
+\textbf{Enhancement:} Store not just document IDs, but also term frequencies
+
+\vspace{1em}
+
+\begin{table}
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Term} & \textbf{Posting List [(docID, freq)]} \\
+\midrule
+cat & [(1, 1)] \\
+sat & [(1, 1), (2, 1)] \\
+mat & [(1, 1)] \\
+dog & [(2, 1), (3, 1)] \\
+the & [(1, 2), (2, 2)] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{1em}
+
+\textbf{Why store frequency?}
+\begin{itemize}
+    \item Enables ranking (documents with term appearing more are often more relevant)
+    \item Foundation for TF-IDF, BM25 (Lecture 3)
+\end{itemize}
+\end{frame}
+
+\begin{frame}[shrink=10]{Step 3: Query Processing}
+\textbf{Apply same preprocessing to queries as documents}
+
+\vspace{1em}
+
+\begin{exampleblock}{Example}
+\textbf{User Query:} ``Running Dogs in the Park''
+
+\vspace{0.5em}
+
+\begin{enumerate}
+    \item \textbf{Tokenization:} [Running, Dogs, in, the, Park]
+    \item \textbf{Lowercasing:} [running, dogs, in, the, park]
+    \item \textbf{Stop word removal:} [running, dogs, park]
+    \item \textbf{Stemming:} [run, dog, park]
+\end{enumerate}
+
+\vspace{0.5em}
+
+\textbf{Processed Query:} [run, dog, park]
+\end{exampleblock}
+
+\vspace{1em}
+
+\begin{alertblock}{Critical Principle}
+\textbf{Same preprocessing for documents and queries!}
+\begin{itemize}
+    \item Otherwise terms won't match
+    \item If docs are stemmed, queries must be stemmed
+\end{itemize}
+\end{alertblock}
+\end{frame}
+
+% ====================================================================
+% SECTION 3: BOOLEAN RETRIEVAL
+% ====================================================================
+\section{Boolean Retrieval}
+
+\begin{frame}{Boolean Retrieval Model}
+\begin{block}{Definition}
+Documents are retrieved if they satisfy a Boolean expression of query terms
+\end{block}
+
+\vspace{1em}
+
+\textbf{Boolean Operators:}
+\begin{itemize}
+    \item \textbf{AND:} Both terms must appear (intersection)
+    \item \textbf{OR:} Either term must appear (union)
+    \item \textbf{NOT:} Term must not appear (negation)
+\end{itemize}
+
+\vspace{1em}
+
+\begin{exampleblock}{Example Queries}
+\begin{itemize}
+    \item \texttt{climate AND change} → docs containing both ``climate'' and ``change''
+    \item \texttt{cat OR dog} → docs containing ``cat'' or ``dog'' or both
+    \item \texttt{java NOT coffee} → docs with ``java'' but not ``coffee''
+    \item \texttt{(climate AND change) OR (global AND warming)}
+\end{itemize}
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}{Boolean Retrieval with Sets}
+\textbf{Documents as Sets of Terms}
+
+\vspace{1em}
+
+\begin{columns}
+\begin{column}{0.48\textwidth}
+\textbf{Document Collection:}
+\begin{itemize}
+    \item D1: \{cat, sat, mat\}
+    \item D2: \{dog, sat, log\}
+    \item D3: \{cat, dog, run\}
+    \item D4: \{bird, fly, sky\}
+\end{itemize}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\textbf{Inverted Index:}
+\begin{itemize}
+    \item cat: \{D1, D3\}
+    \item dog: \{D2, D3\}
+    \item sat: \{D1, D2\}
+    \item run: \{D3\}
+\end{itemize}
+\end{column}
+\end{columns}
+
+\vspace{1em}
+
+\textbf{Query Processing:}
+\begin{itemize}
+    \item \texttt{cat AND dog}: \{D1, D3\} $\cap$ \{D2, D3\} = \{D3\}
+    \item \texttt{cat OR dog}: \{D1, D3\} $\cup$ \{D2, D3\} = \{D1, D2, D3\}
+    \item \texttt{cat NOT dog}: \{D1, D3\} - \{D2, D3\} = \{D1\}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[shrink=5]{Boolean Query Processing Algorithm}
+\begin{algorithmic}[1]
+\STATE \textbf{Input:} Boolean query (e.g., ``A AND B OR C'')
+\STATE \textbf{Output:} Set of matching document IDs
+\STATE
+\STATE Parse query into expression tree
+\FOR{each term in query}
+    \STATE Fetch posting list from inverted index
+\ENDFOR
+\STATE Evaluate expression bottom-up:
+\STATE \quad - For AND: Intersect posting lists
+\STATE \quad - For OR: Union posting lists
+\STATE \quad - For NOT: Remove from universe
+\RETURN Final set of document IDs
+\end{algorithmic}
+
+\vspace{1em}
+
+\textbf{Optimization:} Process smaller posting lists first
+\begin{itemize}
+    \item \texttt{rare AND common}: Process ``rare'' first (smaller list)
+    \item Intersection size $\le$ min(|list1|, |list2|)
+\end{itemize}
+\end{frame}
+
+\begin{frame}[shrink=10]{Boolean Retrieval Example}
+\textbf{Query:} \texttt{(cat AND mat) OR dog}
+
+\vspace{1em}
+
+\begin{center}
+\begin{tikzpicture}[
+    level distance=1.5cm,
+    level 1/.style={sibling distance=4cm},
+    level 2/.style={sibling distance=2cm},
+    every node/.style={circle, draw, minimum size=0.8cm, font=\small}
+]
+    \node {OR}
+        child {node {AND}
+            child {node {cat}}
+            child {node {mat}}
+        }
+        child {node {dog}};
+\end{tikzpicture}
+\end{center}
+
+\vspace{1em}
+
+\textbf{Execution:}
+\begin{enumerate}
+    \item \texttt{cat}: \{D1, D3\}
+    \item \texttt{mat}: \{D1\}
+    \item \texttt{cat AND mat}: \{D1, D3\} $\cap$ \{D1\} = \{D1\}
+    \item \texttt{dog}: \{D2, D3\}
+    \item \texttt{(cat AND mat) OR dog}: \{D1\} $\cup$ \{D2, D3\} = \{D1, D2, D3\}
+\end{enumerate}
+\end{frame}
+
+\begin{frame}[shrink=10]{Advantages of Boolean Retrieval}
+\begin{block}{\checkmark Advantages}
+\begin{itemize}
+    \item[\checkmark] \textbf{Precise control:} Users specify exactly what they want
+    \item[\checkmark] \textbf{Transparent:} Clear why documents matched
+    \item[\checkmark] \textbf{Efficient:} Fast set operations on posting lists
+    \item[\checkmark] \textbf{Predictable:} Same query always returns same results
+    \item[\checkmark] \textbf{Expressive:} Can construct complex queries
+\end{itemize}
+\end{block}
+
+\vspace{1em}
+
+\begin{exampleblock}{Use Cases}
+\begin{itemize}
+    \item Legal document search (very precise requirements)
+    \item Patent search (need exact specifications)
+    \item Database-like queries on text
+    \item Expert users who know what they want
+\end{itemize}
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}{Limitations of Boolean Retrieval}
+\begin{alertblock}{\ding{55} Critical Limitations}
+\begin{enumerate}
+    \item[\ding{55}] \textbf{No ranking}
+    \begin{itemize}
+        \item All matching documents equally relevant
+        \item Can't distinguish ``very relevant'' from ``barely relevant''
+    \end{itemize}
+    
+    \item[\ding{55}] \textbf{All or nothing}
+    \begin{itemize}
+        \item \texttt{climate AND change AND effects}: No results if one term missing
+        \item Too restrictive or too permissive
+    \end{itemize}
+    
+    \item[\ding{55}] \textbf{Hard to formulate queries}
+    \begin{itemize}
+        \item Most users don't know Boolean operators
+        \item Hard to express fuzzy information needs
+    \end{itemize}
+    
+    \item[\ding{55}] \textbf{Result set size unpredictable}
+    \begin{itemize}
+        \item Could return 0 results or 10 million
+        \item Users want ``top 10'', not ``all matching''
+    \end{itemize}
+\end{enumerate}
+\end{alertblock}
+\end{frame}
+
+\begin{frame}{Boolean Retrieval: The Feast or Famine Problem}
+\begin{columns}
+\begin{column}{0.48\textwidth}
+\textbf{Too Restrictive (Famine)}
+\begin{itemize}
+    \item Query: \texttt{machine AND learning AND neural AND networks}
+    \item Result: 0 documents
+    \item Problem: One term missing kills entire result
+\end{itemize}
+
+\vspace{1em}
+
+\textbf{Solution?}
+\begin{itemize}
+    \item User tries: \texttt{machine AND learning}
+\end{itemize}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\textbf{Too Permissive (Feast)}
+\begin{itemize}
+    \item Query: \texttt{machine AND learning}
+    \item Result: 1,000,000 documents
+    \item Problem: Which 10 should I read?
+\end{itemize}
+
+\vspace{1em}
+
+\textbf{Need:}
+\begin{itemize}
+    \item Ranking by relevance
+    \item Graceful degradation
+    \item Better matching
+\end{itemize}
+\end{column}
+\end{columns}
+
+\vspace{1em}
+
+\begin{center}
+\textbf{This motivates the Vector Space Model!}
+\end{center}
+\end{frame}
+
+% ====================================================================
+% SECTION 4: VECTOR SPACE MODEL
+% ====================================================================
+\section{The Vector Space Model}
+
+\begin{frame}{From Boolean to Vector Space}
+\begin{block}{Key Insight}
+Instead of documents being sets of terms (in/out), represent them as \textbf{vectors} with weights for each term
+\end{block}
+
+\vspace{1em}
+
+\begin{columns}
+\begin{column}{0.48\textwidth}
+\textbf{Boolean Model:}
+\begin{itemize}
+    \item D1: \{cat, dog\}
+    \item D2: \{cat, mat\}
+    \item Binary: term present or not
+\end{itemize}
+
+\vspace{1em}
+
+\textbf{Query:} \texttt{cat AND dog}
+\begin{itemize}
+    \item Result: \{D1\}
+    \item D2 excluded (no ``dog'')
+\end{itemize}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\textbf{Vector Space Model:}
+\begin{itemize}
+    \item D1: [cat: 0.5, dog: 0.5, mat: 0]
+    \item D2: [cat: 0.7, dog: 0, mat: 0.3]
+    \item Weighted: importance/frequency
+\end{itemize}
+
+\vspace{1em}
+
+\textbf{Query:} [cat: 0.5, dog: 0.5]
+\begin{itemize}
+    \item Similarity(D1, Q) = 0.5
+    \item Similarity(D2, Q) = 0.35
+    \item \textbf{Ranked:} D1, then D2
+\end{itemize}
+\end{column}
+\end{columns}
+
+\vspace{1em}
+
+\begin{exampleblock}{Advantage}
+D2 still returned (has ``cat''), just ranked lower than D1
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}[shrink=10]{Vector Space Model: Geometric View}
+\textbf{Documents and queries as vectors in term space}
+
+\vspace{1em}
+
+\begin{center}
+\begin{tikzpicture}[scale=1.2]
+    % Axes
+    \draw[->] (0,0) -- (5,0) node[right] {cat};
+    \draw[->] (0,0) -- (0,5) node[above] {dog};
+    
+    % Grid
+    \draw[gray, dotted] (0,0) grid (4.5,4.5);
+    
+    % Documents
+    \node[circle, fill=blue, inner sep=2pt, label=right:D1] (d1) at (2,4) {};
+    \node[circle, fill=blue, inner sep=2pt, label=right:D2] (d2) at (4,1) {};
+    \node[circle, fill=blue, inner sep=2pt, label=right:D3] (d3) at (3,3) {};
+    
+    % Query
+    \node[circle, fill=red, inner sep=3pt, label=above:Query] (q) at (2.5,2.5) {};
+    
+    % Vectors
+    \draw[->, thick, blue] (0,0) -- (d1);
+    \draw[->, thick, blue] (0,0) -- (d2);
+    \draw[->, thick, blue] (0,0) -- (d3);
+    \draw[->, thick, red] (0,0) -- (q);
+    
+    % Similarity illustration
+    \draw[dashed, green, thick] (q) -- (d3) node[midway, right] {\small closest};
+\end{tikzpicture}
+\end{center}
+
+\textbf{Similarity = Angle between vectors} \\
+\small (Smaller angle = more similar)
+\end{frame}
+
+\begin{frame}[shrink=10]{Term Weighting in Vector Space Model}
+\textbf{Question:} How to assign weights to terms?
+
+\vspace{1em}
+
+\begin{block}{Option 1: Binary Weights}
+$$w_{t,d} = \begin{cases} 1 & \text{if term } t \text{ appears in doc } d \\ 0 & \text{otherwise} \end{cases}$$
+\begin{itemize}
+    \item Simple but ignores frequency
+\end{itemize}
+\end{block}
+
+\begin{block}{Option 2: Term Frequency (TF)}
+$$w_{t,d} = \text{count}(t, d)$$
+\begin{itemize}
+    \item Better: reflects importance
+    \item Problem: Common words get high weight
+\end{itemize}
+\end{block}
+
+\begin{alertblock}{Problem with Raw TF}
+Document mentioning ``the'' 100 times doesn't make it about ``the''
+\end{alertblock}
+\end{frame}
+
+\begin{frame}[shrink=10]{TF-IDF Weighting}
+\textbf{Idea:} Balance term frequency with term rarity
+
+\vspace{1em}
+
+\begin{block}{TF-IDF Formula}
+$$w_{t,d} = \text{tf}(t,d) \times \text{idf}(t)$$
+
+where:
+\begin{itemize}
+    \item $\text{tf}(t,d) = \text{count}(t,d)$ (term frequency in document)
+    \item $\text{idf}(t) = \log\frac{N}{\text{df}(t)}$ (inverse document frequency)
+    \item $N$ = total number of documents
+    \item $\text{df}(t)$ = number of documents containing term $t$
+\end{itemize}
+\end{block}
+
+\vspace{1em}
+
+\textbf{Intuition:}
+\begin{itemize}
+    \item \textbf{High TF:} Term appears often in this document → important for this doc
+    \item \textbf{High IDF:} Term is rare across collection → discriminative
+    \item \textbf{High TF-IDF:} Important AND discriminative
+\end{itemize}
+\end{frame}
+
+\begin{frame}[shrink=10]{TF-IDF Example}
+\textbf{Collection:} 10,000 documents
+
+\vspace{1em}
+
+\begin{table}
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Term} & \textbf{tf(t,d)} & \textbf{df(t)} & \textbf{idf(t)} & \textbf{tf-idf} \\
+\midrule
+neural & 5 & 100 & $\log(10000/100) = 2.0$ & 10.0 \\
+network & 3 & 500 & $\log(10000/500) = 1.3$ & 3.9 \\
+the & 50 & 9000 & $\log(10000/9000) = 0.05$ & 2.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{1em}
+
+\textbf{Observations:}
+\begin{itemize}
+    \item ``neural'' appears less than ``the'' (5 vs. 50) but gets higher weight (10.0 vs. 2.5)
+    \item Rare, discriminative terms weighted higher
+    \item Common words automatically downweighted
+\end{itemize}
+
+\vspace{0.5em}
+
+\begin{alertblock}{Note}
+This is a simplified version; we'll cover refined TF-IDF and BM25 in Lecture 3
+\end{alertblock}
+\end{frame}
+
+\begin{frame}[shrink=10]{Document Vectors with TF-IDF}
+\textbf{Example Collection:}
+\begin{itemize}
+    \item D1: ``cat cat dog''
+    \item D2: ``cat mat''
+    \item D3: ``dog bird bird''
+\end{itemize}
+
+\vspace{1em}
+
+\textbf{Vocabulary:} \{cat, dog, mat, bird\}
+
+\vspace{1em}
+
+\begin{table}
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Doc} & \textbf{cat} & \textbf{dog} & \textbf{mat} & \textbf{bird} \\
+\midrule
+D1 & 2 × log(3/2) = 0.35 & 1 × log(3/2) = 0.18 & 0 & 0 \\
+D2 & 1 × log(3/2) = 0.18 & 0 & 1 × log(3/1) = 0.48 & 0 \\
+D3 & 0 & 1 × log(3/2) = 0.18 & 0 & 2 × log(3/1) = 0.95 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{1em}
+
+\textbf{Vector Representation:}
+\begin{itemize}
+    \item D1: [0.35, 0.18, 0, 0]
+    \item D2: [0.18, 0, 0.48, 0]
+    \item D3: [0, 0.18, 0, 0.95]
+\end{itemize}
+\end{frame}
+
+\begin{frame}[shrink=10]{Cosine Similarity}
+\textbf{How to measure similarity between vectors?}
+
+\vspace{1em}
+
+\begin{block}{Cosine Similarity Formula}
+$$\text{sim}(\vec{q}, \vec{d}) = \frac{\vec{q} \cdot \vec{d}}{|\vec{q}| \times |\vec{d}|} = \frac{\sum_{t} q_t \times d_t}{\sqrt{\sum_{t} q_t^2} \times \sqrt{\sum_{t} d_t^2}}$$
+\end{block}
+
+\vspace{1em}
+
+\textbf{Properties:}
+\begin{itemize}
+    \item Range: [-1, 1] (or [0, 1] for positive weights)
+    \item 1 = identical vectors (same direction)
+    \item 0 = orthogonal (no common terms)
+    \item -1 = opposite vectors (not relevant for IR)
+\end{itemize}
+
+\vspace{1em}
+
+\textbf{Why cosine instead of dot product?}
+\begin{itemize}
+    \item Cosine normalizes for document length
+    \item Long documents don't automatically score higher
+\end{itemize}
+\end{frame}
+
+\begin{frame}[shrink=10]{Cosine Similarity: Example Calculation}
+\textbf{Query:} ``cat dog'' → $\vec{q} = [0.5, 0.5, 0, 0]$ \\
+\textbf{Documents:}
+\begin{itemize}
+    \item D1: [0.35, 0.18, 0, 0]
+    \item D2: [0.18, 0, 0.48, 0]
+    \item D3: [0, 0.18, 0, 0.95]
+\end{itemize}
+
+\vspace{1em}
+
+\textbf{Similarity Calculations:}
+
+\begin{align*}
+\text{sim}(q, D1) &= \frac{(0.5 \times 0.35) + (0.5 \times 0.18)}{\sqrt{0.5^2 + 0.5^2} \times \sqrt{0.35^2 + 0.18^2}} \\
+&= \frac{0.265}{0.707 \times 0.394} = 0.95 \\
+\text{sim}(q, D2) &= \frac{0.5 \times 0.18}{0.707 \times 0.511} = 0.25 \\
+\text{sim}(q, D3) &= \frac{0.5 \times 0.18}{0.707 \times 0.967} = 0.13
+\end{align*}
+
+\vspace{1em}
+
+\textbf{Ranking:} D1 (0.95) > D2 (0.25) > D3 (0.13)
+\end{frame}
+
+\begin{frame}[shrink=10]{Vector Space Retrieval Algorithm}
+\begin{algorithmic}[1]
+\STATE \textbf{Input:} Query $q$, Document collection $D$
+\STATE \textbf{Output:} Ranked list of documents
+\STATE
+\STATE \textbf{Offline (Indexing):}
+\FOR{each document $d \in D$}
+    \FOR{each term $t$ in vocabulary}
+        \STATE Compute $w_{t,d} = \text{tf}(t,d) \times \text{idf}(t)$
+    \ENDFOR
+    \STATE Store document vector $\vec{d}$
+\ENDFOR
+\STATE
+\STATE \textbf{Online (Query Processing):}
+\FOR{each term $t$ in query $q$}
+    \STATE Compute $w_{t,q} = \text{tf}(t,q) \times \text{idf}(t)$
+\ENDFOR
+\STATE Create query vector $\vec{q}$
+\FOR{each document $d$}
+    \STATE Compute $\text{sim}(q,d) = \cos(\vec{q}, \vec{d})$
+\ENDFOR
+\STATE Sort documents by similarity (descending)
+\RETURN Top-$k$ documents
+\end{algorithmic}
+\end{frame}
+
+\begin{frame}[shrink=15]{VSM vs. Boolean Retrieval}
+\begin{table}
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Boolean} & \textbf{Vector Space} \\
+\midrule
+Matching & Exact (in/out) & Partial (weighted) \\
+Ranking & No & Yes (by similarity) \\
+Result size & Unpredictable & Top-$k$ \\
+Term weighting & Binary & TF-IDF \\
+Query expression & Boolean operators & Term list \\
+Robustness & Brittle & Graceful degradation \\
+User friendliness & Expert users & General users \\
+Relevance & All equal & Ranked by relevance \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{1em}
+
+\begin{block}{Modern Usage}
+\begin{itemize}
+    \item \textbf{Boolean:} Still used in legal, patent search (precision critical)
+    \item \textbf{Vector Space:} Foundation for web search, most IR systems
+    \item \textbf{Hybrid:} Many systems combine both approaches
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}{Advantages of Vector Space Model}
+\begin{block}{\checkmark Key Advantages}
+\begin{enumerate}
+    \item \textbf{Ranking by relevance}
+    \begin{itemize}
+        \item Documents ordered by similarity to query
+        \item Users get best results first
+    \end{itemize}
+    
+    \item \textbf{Partial matching}
+    \begin{itemize}
+        \item Documents matching some query terms still retrieved
+        \item Graceful degradation (no feast/famine)
+    \end{itemize}
+    
+    \item \textbf{Term weighting}
+    \begin{itemize}
+        \item Important terms weighted higher (TF-IDF)
+        \item Automatic handling of common words
+    \end{itemize}
+    
+    \item \textbf{Simple queries}
+    \begin{itemize}
+        \item Users just type terms (no Boolean operators)
+        \item Natural for web search
+    \end{itemize}
+    
+    \item \textbf{Tunable}
+    \begin{itemize}
+        \item Can adjust weighting schemes
+        \item Foundation for more advanced models (BM25, Lecture 3)
+    \end{itemize}
+\end{enumerate}
+\end{block}
+\end{frame}
+
+\begin{frame}[shrink=10]{Limitations of Vector Space Model}
+\begin{alertblock}{\ding{55} Limitations}
+\begin{enumerate}
+    \item \textbf{Bag of words assumption}
+    \begin{itemize}
+        \item Word order ignored: ``dog bites man'' = ``man bites dog''
+        \item No phrase matching
+    \end{itemize}
+    
+    \item \textbf{Term independence}
+    \begin{itemize}
+        \item Assumes terms are independent
+        \item ``New York'' treated as ``New'' and ``York''
+    \end{itemize}
+    
+    \item \textbf{Synonymy}
+    \begin{itemize}
+        \item ``car'' and ``automobile'' treated as different
+        \item Misses relevant documents with synonyms
+    \end{itemize}
+    
+    \item \textbf{Polysemy}
+    \begin{itemize}
+        \item ``bank'' (financial) vs. ``bank'' (river) undistinguished
+        \item Can retrieve irrelevant documents
+    \end{itemize}
+    
+    \item \textbf{Scalability}
+    \begin{itemize}
+        \item Computing similarity for all documents expensive
+        \item Need optimizations for large collections
+    \end{itemize}
+\end{enumerate}
+\end{alertblock}
+\end{frame}
+
+% ====================================================================
+% SECTION 5: PRACTICAL CONSIDERATIONS
+% ====================================================================
+\section{Practical Considerations}
+
+\begin{frame}[shrink=10]{Optimizing Vector Space Retrieval}
+\textbf{Problem:} Computing similarity for millions of documents is expensive
+
+\vspace{1em}
+
+\begin{block}{Optimization 1: Inverted Index with TF-IDF}
+Don't compute similarity for \textit{all} documents—only those with query terms
+\begin{itemize}
+    \item For each query term, fetch posting list
+    \item Only compute similarity for documents in posting lists
+    \item Most documents have similarity = 0 (no shared terms)
+\end{itemize}
+\end{block}
+
+\begin{block}{Optimization 2: Champion Lists}
+For each term, store only top-$k$ documents by TF-IDF
+\begin{itemize}
+    \item Only search champion lists (not full posting lists)
+    \item Trades recall for speed
+    \item Works well in practice
+\end{itemize}
+\end{block}
+
+\begin{block}{Optimization 3: Early Termination}
+Stop computing after processing top terms
+\begin{itemize}
+    \item Sort query terms by IDF (descending)
+    \item Process high-IDF terms first (most discriminative)
+    \item Can stop early without much quality loss
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}[shrink=15]{Document Length Normalization}
+\textbf{Problem:} Longer documents have higher TF values just by chance
+
+\vspace{1em}
+
+\begin{exampleblock}{Example}
+\begin{itemize}
+    \item Short doc (100 words): ``algorithm'' appears 2 times
+    \item Long doc (10,000 words): ``algorithm'' appears 20 times
+    \item Is the long doc 10× more relevant?
+\end{itemize}
+\end{exampleblock}
+
+\vspace{1em}
+
+\begin{block}{Solutions}
+\begin{enumerate}
+    \item \textbf{Cosine normalization:} Already handles this (built into cosine similarity)
+    \item \textbf{Pivoted length normalization:} Adjust based on doc length vs. average
+    \item \textbf{BM25 (Lecture 3):} Sophisticated length normalization with parameter $b$
+\end{enumerate}
+\end{block}
+
+\vspace{1em}
+
+\begin{alertblock}{Trade-off}
+Too much normalization: penalizes legitimately long, detailed documents \\
+Too little normalization: favors long documents unfairly
+\end{alertblock}
+\end{frame}
+
+\begin{frame}[shrink=10]{Handling Phrases and Proximity}
+\textbf{Problem:} ``New York'' should be treated as a phrase, not ``New'' and ``York''
+
+\vspace{1em}
+
+\begin{block}{Solution 1: Phrase Index}
+Index common phrases directly
+\begin{itemize}
+    \item ``New\_York'' as a single term
+    \item Requires phrase identification
+    \item Storage overhead
+\end{itemize}
+\end{block}
+
+\begin{block}{Solution 2: Positional Index}
+Store term positions in posting lists
+\begin{itemize}
+    \item Term ``New'': [(doc1, [3, 15]), (doc2, [8, 42]), ...]
+    \item Can verify ``New'' and ``York'' are adjacent
+    \item More flexible but more storage
+\end{itemize}
+\end{block}
+
+\begin{block}{Solution 3: Proximity Scoring}
+Boost score if query terms appear close together
+\begin{itemize}
+    \item Even if not exact phrase match
+    \item Weighted by distance
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}[shrink=15]{Query Expansion and Relevance Feedback}
+\textbf{Goal:} Improve recall by expanding query with related terms
+
+\vspace{1em}
+
+\begin{block}{Automatic Query Expansion}
+Add synonyms or related terms automatically
+\begin{itemize}
+    \item Query: ``car''
+    \item Expanded: ``car automobile vehicle''
+    \item Uses thesaurus or word embeddings
+\end{itemize}
+\end{block}
+
+\begin{block}{Pseudo Relevance Feedback (Preview of Lecture 3)}
+\begin{enumerate}
+    \item Retrieve top-$k$ documents with original query
+    \item Extract important terms from these documents
+    \item Add these terms to query
+    \item Re-retrieve with expanded query
+\end{enumerate}
+\textbf{Assumption:} Top results are relevant (often true)
+\end{block}
+
+\vspace{1em}
+
+\begin{alertblock}{Risk}
+If initial results are off-topic, expansion makes it worse (query drift)
+\end{alertblock}
+\end{frame}
+
+% ====================================================================
+% SECTION 6: EVALUATION
+% ====================================================================
+\section{Evaluation of IR Systems}
+
+\begin{frame}[shrink=15]{How to Evaluate IR Systems?}
+\textbf{Question:} Is our retrieval system good?
+
+\vspace{1em}
+
+\begin{block}{What Makes a Good IR System?}
+\begin{enumerate}
+    \item \textbf{Effectiveness:} Returns relevant documents
+    \item \textbf{Efficiency:} Fast response time
+    \item \textbf{User satisfaction:} Meets user needs
+\end{enumerate}
+\end{block}
+
+\vspace{1em}
+
+\textbf{Today:} Focus on effectiveness (relevance)
+
+\vspace{1em}
+
+\begin{exampleblock}{Standard Evaluation Methodology}
+\begin{enumerate}
+    \item Collection of documents
+    \item Set of queries (topics)
+    \item Relevance judgments (which docs are relevant to which queries)
+    \item Evaluation metrics (precision, recall, etc.)
+\end{enumerate}
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}{Precision and Recall}
+\begin{block}{Definitions}
+Given a query and retrieved results:
+\begin{itemize}
+    \item \textbf{Precision:} Fraction of retrieved documents that are relevant
+    $$\text{Precision} = \frac{\text{\# relevant retrieved}}{\text{\# retrieved}}$$
+    
+    \item \textbf{Recall:} Fraction of relevant documents that are retrieved
+    $$\text{Recall} = \frac{\text{\# relevant retrieved}}{\text{\# relevant in collection}}$$
+\end{itemize}
+\end{block}
+
+\vspace{1em}
+
+\begin{exampleblock}{Example}
+\begin{itemize}
+    \item Collection has 100 relevant documents
+    \item System retrieves 50 documents
+    \item 30 of the retrieved are relevant
+\end{itemize}
+
+$$\text{Precision} = \frac{30}{50} = 0.60 \quad \text{Recall} = \frac{30}{100} = 0.30$$
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}[shrink=15]{Precision vs. Recall Trade-off}
+\begin{center}
+\begin{tikzpicture}[scale=1.2]
+    % Axes
+    \draw[->] (0,0) -- (5,0) node[right] {Recall};
+    \draw[->] (0,0) -- (0,5) node[above] {Precision};
+    
+    % Grid
+    \draw[gray, dotted] (0,0) grid (4.5,4.5);
+    
+    % Curve showing trade-off
+    \draw[blue, thick, domain=0.5:4.5, samples=100] 
+        plot (\x, {4.5 - 0.5*\x});
+    
+    % Points
+    \node[circle, fill=red, inner sep=2pt, label=above:High Precision] at (1, 4) {};
+    \node[circle, fill=red, inner sep=2pt, label=right:Balanced] at (2.5, 3) {};
+    \node[circle, fill=red, inner sep=2pt, label=below:High Recall] at (4, 2) {};
+    
+    % Labels
+    \node at (2.5, -0.7) {\small Retrieve more → higher recall, lower precision};
+\end{tikzpicture}
+\end{center}
+
+\begin{alertblock}{Trade-off}
+\begin{itemize}
+    \item Retrieve more documents → Higher recall, lower precision
+    \item Retrieve fewer documents → Higher precision, lower recall
+    \item Need to balance based on application
+\end{itemize}
+\end{alertblock}
+\end{frame}
+
+\begin{frame}[shrink=15]{F-Measure}
+\textbf{Problem:} How to combine precision and recall into single metric?
+
+\vspace{1em}
+
+\begin{block}{F1 Score (Harmonic Mean)}
+$$F_1 = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}} = \frac{2TP}{2TP + FP + FN}$$
+\end{block}
+
+\vspace{1em}
+
+\begin{exampleblock}{Why Harmonic Mean?}
+Arithmetic mean: $\frac{P + R}{2}$ is too lenient
+\begin{itemize}
+    \item P=0.9, R=0.1: Arithmetic mean = 0.5 (misleading!)
+    \item P=0.9, R=0.1: Harmonic mean (F1) = 0.18 (more realistic)
+\end{itemize}
+Harmonic mean heavily penalizes low values
+\end{exampleblock}
+
+\vspace{1em}
+
+\begin{block}{General F-measure}
+$$F_\beta = (1 + \beta^2) \times \frac{\text{Precision} \times \text{Recall}}{\beta^2 \times \text{Precision} + \text{Recall}}$$
+\begin{itemize}
+    \item $\beta > 1$: Favor recall
+    \item $\beta < 1$: Favor precision
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}[shrink=15]{Ranked Retrieval Metrics}
+\textbf{Problem:} Precision/Recall don't account for ranking
+
+\vspace{1em}
+
+\begin{block}{Precision at K (P@K)}
+Precision of top-$k$ results
+$$P@10 = \frac{\text{\# relevant in top 10}}{10}$$
+\begin{itemize}
+    \item Users typically only look at first page
+    \item P@10 more practical than overall precision
+\end{itemize}
+\end{block}
+
+\begin{block}{Average Precision (AP)}
+Average of precision values at each relevant document
+$$AP = \frac{1}{|R|} \sum_{k=1}^{n} P(k) \times \text{rel}(k)$$
+where $\text{rel}(k) = 1$ if document at rank $k$ is relevant, 0 otherwise
+\begin{itemize}
+    \item Rewards putting relevant docs earlier
+    \item Single number summarizing entire ranking
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}[shrink=15]{Mean Average Precision (MAP)}
+\begin{block}{Definition}
+Average of Average Precision across multiple queries
+$$MAP = \frac{1}{|Q|} \sum_{q \in Q} AP(q)$$
+\end{block}
+
+\vspace{1em}
+
+\begin{exampleblock}{Example}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Query} & \textbf{AP} \\
+\midrule
+Q1 & 0.75 \\
+Q2 & 0.60 \\
+Q3 & 0.85 \\
+\midrule
+\textbf{MAP} & \textbf{0.73} \\
+\bottomrule
+\end{tabular}
+\end{exampleblock}
+
+\vspace{1em}
+
+\textbf{Properties:}
+\begin{itemize}
+    \item Standard metric for IR evaluation
+    \item Emphasizes ranking quality
+    \item Single number for system comparison
+\end{itemize}
+\end{frame}
+
+\begin{frame}[shrink=15]{Other Important Metrics}
+\begin{block}{Normalized Discounted Cumulative Gain (NDCG)}
+Accounts for graded relevance (not just binary relevant/not relevant)
+\begin{itemize}
+    \item Documents can be highly relevant, somewhat relevant, not relevant
+    \item More realistic for many applications
+    \item More complex to compute
+\end{itemize}
+\end{block}
+
+\begin{block}{Reciprocal Rank (RR)}
+$$RR = \frac{1}{\text{rank of first relevant document}}$$
+\begin{itemize}
+    \item Simple metric for queries with one right answer
+    \item Used in question answering, entity search
+\end{itemize}
+\end{block}
+
+\begin{block}{Mean Reciprocal Rank (MRR)}
+$$MRR = \frac{1}{|Q|} \sum_{q \in Q} RR(q)$$
+\begin{itemize}
+    \item Average RR across queries
+\end{itemize}
+\end{block}
+\end{frame}
+
+% ====================================================================
+% SECTION 7: CONNECTIONS TO FUTURE LECTURES
+% ====================================================================
+\section{Looking Ahead}
+
+\begin{frame}[shrink=15]{From Boolean/VSM to Modern IR}
+\textbf{Today we learned:}
+\begin{itemize}
+    \item Boolean retrieval: Exact matching, no ranking
+    \item Vector space model: TF-IDF, cosine similarity, ranked results
+\end{itemize}
+
+\vspace{1em}
+
+\textbf{But we still have major limitations:}
+\begin{itemize}
+    \item Bag of words (no semantics)
+    \item Exact term matching only
+    \item Simple weighting (TF-IDF)
+\end{itemize}
+
+\vspace{1em}
+
+\begin{block}{Preview of Course}
+\begin{enumerate}
+    \item \textbf{Lecture 2 (Indexing):} How to build inverted indexes efficiently at scale
+    \item \textbf{Lecture 3 (Ranking):} Better weighting (BM25), query expansion, language models
+    \item \textbf{Lecture 4 (Transformers):} Neural re-ranking with BERT
+    \item \textbf{Lecture 5 (Dense Retrieval):} Semantic matching with embeddings
+    \item \textbf{Lecture 6 (Learning to Rank):} Learning optimal ranking from data
+\end{enumerate}
+\end{block}
+\end{frame}
+
+\begin{frame}{Preview: Lecture 2 — Indexing}
+\begin{block}{Why Indexing Matters}
+\begin{itemize}
+    \item Building inverted indexes for billions of documents
+    \item Sparse vs. dense representations
+    \item Compression techniques
+    \item Distributed indexing
+\end{itemize}
+\end{block}
+
+\vspace{1em}
+
+\begin{exampleblock}{Key Questions}
+\begin{enumerate}
+    \item How does Google index 100 trillion web pages?
+    \item How to keep index up-to-date with new documents?
+    \item How to compress posting lists for efficiency?
+    \item What are dense indexes and how do they differ?
+\end{enumerate}
+\end{exampleblock}
+
+\vspace{1em}
+
+\textbf{Connection:} Today we used inverted indexes conceptually; next lecture we'll build them efficiently
+\end{frame}
+
+\begin{frame}{Preview: Lecture 3 — Ranking Models}
+\begin{block}{Beyond TF-IDF}
+\begin{itemize}
+    \item \textbf{BM25:} Probabilistic ranking with saturation
+    \item \textbf{Language models:} Generative approach to ranking
+    \item \textbf{Query expansion:} Automatic term expansion with RM3
+    \item \textbf{Pseudo relevance feedback:} Learn from top results
+\end{itemize}
+\end{block}
+
+\vspace{1em}
+
+\begin{exampleblock}{What You'll Learn}
+\begin{itemize}
+    \item Why BM25 is better than TF-IDF
+    \item How to handle term saturation and length normalization
+    \item How to expand queries automatically
+    \item How to implement these in PyTerrier
+\end{itemize}
+\end{exampleblock}
+
+\vspace{1em}
+
+\textbf{Connection:} TF-IDF is foundation; BM25 and LMs refine it with better theory and empirics
+\end{frame}
+
+\begin{frame}{Preview: Lectures 4-6}
+\begin{block}{Lecture 4: Transformer Re-rankers}
+\begin{itemize}
+    \item BERT and transformer architectures
+    \item Contextualized word embeddings
+    \item Re-ranking with neural models
+    \item ``bank'' (river) vs. ``bank'' (financial) finally distinguished!
+\end{itemize}
+\end{block}
+
+\begin{block}{Lecture 5: Dense Retrieval}
+\begin{itemize}
+    \item Embed documents and queries in semantic space
+    \item No more vocabulary mismatch!
+    \item ``car'' and ``automobile'' are now similar
+    \item Approximate nearest neighbor search
+\end{itemize}
+\end{block}
+
+\begin{block}{Lecture 6: Learning to Rank}
+\begin{itemize}
+    \item Combine features from all models
+    \item Learn optimal ranking from labeled data
+    \item LambdaMART, RankNet, etc.
+    \item Put it all together
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}{The Modern IR Stack}
+\begin{center}
+\begin{tikzpicture}[
+    node distance=1.2cm,
+    box/.style={rectangle, draw, fill=blue!20, text width=9cm, align=center, minimum height=0.8cm, font=\small},
+    arrow/.style={->, thick}
+]
+    \node[box, fill=green!20] (today) {Today: Boolean + Vector Space (TF-IDF, Cosine)};
+    \node[box, below=of today] (l2) {Lecture 2: Efficient Indexing (Sparse + Dense)};
+    \node[box, below=of l2] (l3) {Lecture 3: Better Ranking (BM25, LM, Query Expansion)};
+    \node[box, below=of l3] (l4) {Lecture 4: Neural Re-ranking (BERT, Transformers)};
+    \node[box, below=of l4] (l5) {Lecture 5: Dense Retrieval (Semantic Embeddings)};
+    \node[box, below=of l5, fill=orange!20] (l6) {Lecture 6: Learning to Rank (Combine Everything)};
+    
+    \draw[arrow] (today) -- (l2);
+    \draw[arrow] (l2) -- (l3);
+    \draw[arrow] (l3) -- (l4);
+    \draw[arrow] (l4) -- (l5);
+    \draw[arrow] (l5) -- (l6);
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+% ====================================================================
+% WRAP-UP
+% ====================================================================
+\section{Summary and Assignment}
+
+\begin{frame}{Key Takeaways}
+\begin{block}{1. Information Retrieval Fundamentals}
+\begin{itemize}
+    \item IR: Finding relevant unstructured documents at scale
+    \item Different from database systems (approximate, ranked)
+    \item Core challenges: representation, matching, ranking
+\end{itemize}
+\end{block}
+
+\begin{block}{2. The IR Process}
+\begin{itemize}
+    \item Text preprocessing: tokenization, normalization, stemming
+    \item Inverted index: maps terms to documents
+    \item Query processing: same preprocessing as documents
+\end{itemize}
+\end{block}
+
+\begin{block}{3. Boolean Retrieval}
+\begin{itemize}
+    \item Exact matching with AND/OR/NOT operators
+    \item Fast, transparent, but no ranking
+    \item Feast or famine problem
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}{Key Takeaways (continued)}
+\begin{block}{4. Vector Space Model}
+\begin{itemize}
+    \item Documents and queries as weighted term vectors
+    \item TF-IDF weighting: term frequency × inverse document frequency
+    \item Cosine similarity for ranking
+    \item Solves Boolean's limitations: ranked results, partial matching
+\end{itemize}
+\end{block}
+
+\begin{block}{5. Evaluation}
+\begin{itemize}
+    \item Precision: fraction of retrieved that are relevant
+    \item Recall: fraction of relevant that are retrieved
+    \item MAP: average precision across queries (main metric)
+    \item Trade-offs based on application
+\end{itemize}
+\end{block}
+
+\begin{alertblock}{Remember}
+VSM is foundation for modern IR, but has limitations (bag of words, no semantics) that we'll address in future lectures
+\end{alertblock}
+\end{frame}
+
+\begin{frame}{Assignment 1: Build Your First Search Engine}
+\textbf{Due:} Before Lecture 2
+
+\vspace{1em}
+
+\begin{block}{Part 1: Text Preprocessing (20 points)}
+\begin{itemize}
+    \item Implement tokenization, lowercasing, stop word removal
+    \item Implement Porter stemmer OR use existing library
+    \item Process provided document collection
+    \item Report: vocabulary size before/after preprocessing
+\end{itemize}
+\end{block}
+
+\begin{block}{Part 2: Boolean Retrieval (30 points)}
+\begin{itemize}
+    \item Build inverted index from preprocessed documents
+    \item Implement AND, OR, NOT query processing
+    \item Test on 10 queries, show results
+    \item Analyze: when does Boolean work well/poorly?
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}{Assignment 1 (continued)}
+\begin{block}{Part 3: Vector Space Model (40 points)}
+\begin{itemize}
+    \item Implement TF-IDF weighting
+    \item Implement cosine similarity
+    \item Build ranked retrieval system
+    \item Compare with Boolean on same 10 queries
+    \item Report precision@10, recall for both systems
+\end{itemize}
+\end{block}
+
+\begin{block}{Part 4: Analysis (10 points)}
+\begin{itemize}
+    \item Show examples where VSM outperforms Boolean
+    \item Show examples where Boolean might be preferred
+    \item Discuss trade-offs: precision vs. recall
+    \item Identify limitations of your implementation
+\end{itemize}
+\end{block}
+
+\vspace{1em}
+
+\textbf{Deliverable:} Code + report (3-5 pages) + demo on sample queries
+\end{frame}
+
+\begin{frame}{Starter Code and Dataset}
+\begin{block}{Provided Materials}
+\begin{itemize}
+    \item \textbf{Dataset:} TREC Disks 1-2 subset (10,000 documents) OR Cranfield collection
+    \item \textbf{Queries:} 50 test queries with relevance judgments
+    \item \textbf{Starter code:} Python skeleton with TODOs
+    \item \textbf{Evaluation script:} Compute precision, recall, MAP automatically
+\end{itemize}
+\end{block}
+
+\vspace{1em}
+
+\begin{alertblock}{Tips}
+\begin{itemize}
+    \item Start with small subset (100 docs) for debugging
+    \item Use Python dictionaries for inverted index
+    \item Test each component independently before integration
+    \item Compare your TF-IDF values with examples in lecture
+    \item Don't reinvent the wheel: use NLTK for tokenization, stemming
+\end{itemize}
+\end{alertblock}
+\end{frame}
+
+\begin{frame}{Next Class: Indexing}
+\begin{block}{Preparation}
+\textbf{Read:}
+\begin{itemize}
+    \item Manning et al., Introduction to Information Retrieval, Chapter 4 (Index Construction)
+    \item Zobel & Moffat (2006): ``Inverted files for text search engines''
+\end{itemize}
+
+\vspace{0.5em}
+
+\textbf{Skim:}
+\begin{itemize}
+    \item Original inverted index paper (historical perspective)
+\end{itemize}
+\end{block}
+
+\vspace{1em}
+
+\begin{exampleblock}{What We'll Cover}
+\begin{itemize}
+    \item How to build indexes for billions of documents
+    \item Block-based indexing algorithms
+    \item Index compression techniques
+    \item Distributed indexing (MapReduce)
+    \item Dense indexes for neural retrieval
+\end{itemize}
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}{Questions?}
+\begin{center}
+\Huge Questions?
+
+\vspace{2em}
+
+\Large
+Office Hours: [Your time]
+
+\vspace{1em}
+
+Email: [Your email]
+
+\vspace{1em}
+
+Course Website: [Your URL]
+
+\vspace{2em}
+
+\normalsize
+\textbf{Start early on the assignment!}
+
+\vspace{0.5em}
+
+Building a working search engine is more challenging (and fun!) than it looks.
+\end{center}
+\end{frame}
+
+% Backup slides
+\appendix
+
+\begin{frame}[shrink=15]{Backup: TF-IDF Variants}
+\begin{block}{Log-Frequency TF}
+$$\text{tf}(t,d) = \begin{cases} 1 + \log(\text{count}(t,d)) & \text{if count} > 0 \\ 0 & \text{otherwise} \end{cases}$$
+\begin{itemize}
+    \item Dampens effect of high term frequencies
+    \item 10 occurrences not 10× more important than 1
+\end{itemize}
+\end{block}
+
+\begin{block}{Augmented TF (Length Normalization)}
+$$\text{tf}(t,d) = 0.5 + 0.5 \times \frac{\text{count}(t,d)}{\max_{t'} \text{count}(t',d)}$$
+\begin{itemize}
+    \item Normalizes by maximum term frequency in document
+    \item Prevents bias toward long documents
+\end{itemize}
+\end{block}
+
+\begin{block}{Probabilistic IDF}
+$$\text{idf}(t) = \log \frac{N - \text{df}(t) + 0.5}{\text{df}(t) + 0.5}$$
+\begin{itemize}
+    \item Used in BM25 (Lecture 3)
+    \item Better theoretical foundation
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}[shrink=15]{Backup: Advanced Preprocessing}
+\begin{block}{Named Entity Recognition (NER)}
+Identify and preserve named entities
+\begin{itemize}
+    \item ``Barack Obama'' → single entity
+    \item ``New York City'' → single entity
+    \item Important for proper nouns
+\end{itemize}
+\end{block}
+
+\begin{block}{Compound Word Splitting}
+Handle compound words (especially in German, Dutch)
+\begin{itemize}
+    \item ``Informationssystem'' → ``Information'' + ``System''
+    \item Language-specific rules
+\end{itemize}
+\end{block}
+
+\begin{block}{Case Folding Exceptions}
+Preserve case for certain terms
+\begin{itemize}
+    \item Acronyms: ``USA'', ``IBM''
+    \item Names: ``Bush'' (president) vs. ``bush'' (plant)
+    \item Context-dependent decision
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}[shrink=15]{Backup: Alternative Similarity Measures}
+\begin{block}{Euclidean Distance}
+$$\text{dist}(\vec{q}, \vec{d}) = \sqrt{\sum_t (q_t - d_t)^2}$$
+\begin{itemize}
+    \item \textcolor{red}{\ding{55}} Sensitive to document length
+    \item \textcolor{red}{\ding{55}} Not normalized
+    \item Rarely used in IR
+\end{itemize}
+\end{block}
+
+\begin{block}{Jaccard Similarity}
+$$\text{Jaccard}(q,d) = \frac{|q \cap d|}{|q \cup d|}$$
+\begin{itemize}
+    \item Set-based similarity
+    \item \textcolor{red}{\ding{55}} Ignores term frequencies
+    \item Used for duplicate detection
+\end{itemize}
+\end{block}
+
+\begin{block}{Dice Coefficient}
+$$\text{Dice}(q,d) = \frac{2|q \cap d|}{|q| + |d|}$$
+\begin{itemize}
+    \item Similar to Jaccard
+    \item Weighs shared terms more heavily
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}[shrink=15]{Backup: Test Collections}
+\begin{block}{Standard IR Test Collections}
+\begin{itemize}
+    \item \textbf{TREC:} Text REtrieval Conference collections (various domains)
+    \item \textbf{Cranfield:} Classic small collection (1400 docs, aerodynamics)
+    \item \textbf{CACM:} Computer science abstracts (3200 docs)
+    \item \textbf{Reuters:} News articles (800,000+ docs)
+    \item \textbf{ClueWeb:} Web crawl (1+ billion pages)
+    \item \textbf{MS MARCO:} Microsoft passage ranking (8.8M passages)
+\end{itemize}
+\end{block}
+
+\begin{block}{Components of Test Collection}
+\begin{enumerate}
+    \item \textbf{Documents:} The corpus to search
+    \item \textbf{Topics/Queries:} Information needs
+    \item \textbf{Relevance judgments (qrels):} Which docs are relevant to which queries
+    \item Usually created by human assessors (expensive!)
+\end{enumerate}
+\end{block}
+\end{frame}
+
+\end{document}

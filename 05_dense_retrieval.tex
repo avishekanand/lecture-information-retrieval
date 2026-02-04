@@ -1,0 +1,223 @@
+\documentclass[aspectratio=169]{beamer}
+\usetheme{TUDelft}
+
+% Packages
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{pifont}
+
+% Python code styling
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+    showstringspaces=false,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny\color{gray}
+}
+
+% TikZ libraries
+\usetikzlibrary{shapes,arrows,positioning,calc}
+
+% Title information
+\title[Dense Retrieval]{Lecture 5: Dense Retrieval}
+\subtitle{Modern Deep Retrieval Architectures}
+\author{Avishek Anand}
+\institute{Information Retrieval}
+\date{\today}
+
+\begin{document}
+
+% Title slide
+\begin{frame}
+\titlepage
+\end{frame}
+
+% Course Context
+\begin{frame}{Course Context}
+\begin{enumerate}
+    \item Introduction to IR: Vector Space Model \& Boolean Retrieval \checkmark
+    \item Indexing: Sparse and Dense \checkmark
+    \item Ranking: BM25, Query Expansion, Language Models \checkmark
+    \item Embeddings \& Transformer-based Re-rankers \checkmark
+    \item \textbf{Dense Retrieval} $\leftarrow$ Today
+    \item Learning to Rank
+\end{enumerate}
+
+\vspace{1em}
+\textbf{Today's Goal:} Learn how to replace BM25 with \textbf{full-corpus neural search}.
+\end{frame}
+
+% Outline
+\begin{frame}{Outline}
+\tableofcontents
+\end{frame}
+
+% ====================================================================
+% SECTION 1: BEYOND RE-RANKING
+% ====================================================================
+\section{Beyond Re-ranking}
+
+\begin{frame}{The Vocabulary Gap Revisited}
+\begin{itemize}
+    \item \textbf{Query:} "how to cure a headache?"
+    \item \textbf{Document:} "Remedies for migraines include..."
+    \item \textbf{Problem:} BM25 might miss this (low term overlap).
+    \item \textbf{Solution (L4):} Use Cross-Encoders... but they are too slow to scan millions of docs.
+\end{itemize}
+
+\vspace{1em}
+
+\begin{block}{Dense Retrieval (DR)}
+Directly retrieve relevant documents from the entire corpus using vector similarity.
+\textbf{Retrieve directly with embeddings!}
+\end{block}
+\end{frame}
+
+% ====================================================================
+% SECTION 2: DPR \& DUAL ENCODERS
+% ====================================================================
+\section{DPR \& Dual Encoders}
+
+\begin{frame}{Dense Passage Retrieval (DPR)}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\textbf{Architecture:}
+\begin{itemize}
+    \item Two BERT-like encoders.
+    \item $E_Q(q)$: Encodes query.
+    \item $E_D(d)$: Encodes document.
+    \item Score = $E_Q(q)^T \cdot E_D(d)$.
+\end{itemize}
+\end{column}
+
+\begin{column}{0.5\textwidth}
+\begin{center}
+\begin{tikzpicture}
+    \node[rectangle, draw, fill=blue!10] (q) {Query Enc};
+    \node[rectangle, draw, fill=green!10, right=1.5cm of q] (d) {Doc Enc};
+    
+    \node[below=0.2cm of q] {$q$};
+    \node[below=0.2cm of d] {$d$};
+    
+    \draw[->] (q) -- +(0,1) node[above] {$v_q$};
+    \draw[->] (d) -- +(0,1) node[above] {$v_d$};
+    
+    \node at (1.2, 1.5) {$\text{Dot Product}$};
+\end{tikzpicture}
+\end{center}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Training: Contrastive Learning}
+\textbf{Goal:} Query vector closer to positive doc vector than to negatives.
+
+\vspace{1em}
+
+\begin{block}{Loss Function (InfoNCE / NLL)}
+$$\mathcal{L}(q, d^+, \{d^-\}) = -\log \frac{\exp(v_q \cdot v_{d^+})}{\exp(v_q \cdot v_{d^+}) + \sum \exp(v_q \cdot v_{d^-})}$$
+\end{block}
+
+\vspace{1em}
+\textbf{Negative Sampling Strategies:}
+\begin{enumerate}
+    \item \textbf{In-batch negatives:} Use other queries' positive docs in the same batch.
+    \item \textbf{Hard negatives:} Docs that look relevant (high BM25) but are actually irrelevant.
+    \item \textbf{Static vs. Dynamic (ANCE):} Update negatives as the model trains.
+\end{enumerate}
+\end{frame}
+
+% ====================================================================
+% SECTION 3: HYBRID RETRIEVAL
+% ====================================================================
+\section{Hybrid Retrieval}
+
+\begin{frame}{Sparse vs. Dense: Complementary Strengths}
+\begin{table}
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Feature} \& \textbf{Sparse (BM25)} \& \textbf{Dense (DPR)} \\
+\midrule
+Matching \& Exact Keywords \& Semantic Meaning \\
+Zero-Shot \& Excellent \& Struggles (needs training) \\
+Out-of-Domain \& Robust \& Sensitive \\
+Unseen terms \& Fails \& Can generalize \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{1em}
+\begin{block}{Hybrid Search}
+$$\text{Score}(q, d) = \lambda \cdot \text{Score}_{\text{BM25}} + (1-\lambda) \cdot \text{Score}_{\text{Dense}}$$
+Can also use \textbf{RRF (Reciprocal Rank Fusion)} to combine rankings without weight tuning.
+\end{block}
+\end{frame}
+
+% ====================================================================
+% SECTION 4: COLLBERT \& LATE INTERACTION
+% ====================================================================
+\section{ColBERT: Late Interaction}
+
+\begin{frame}{ColBERT: Best of Both Worlds?}
+\begin{itemize}
+    \item \textbf{Concept:} Keep multiple vectors per document (one per token).
+    \item \textbf{MaxSim:} For each query token, find the maximum similarity with any document token.
+\end{itemize}
+
+\vspace{1em}
+\begin{center}
+\begin{tikzpicture}[scale=0.9]
+    \node at (0,2) {Query tokens};
+    \foreach \x in {1,2,3} \node[circle, draw, fill=blue!20] (q\x) at (\x*0.8, 1.5) {};
+    
+    \node at (5,2) {Doc tokens};
+    \foreach \y in {1,2,3,4} \node[circle, draw, fill=green!20] (d\y) at (4+\y*0.8, 1.5) {};
+    
+    \draw[->, gray] (q1) -- (d1);
+    \draw[->, gray] (q1) -- (d2);
+    \draw[->, thick, red] (q1) -- (d2);
+    
+    \node at (3, 0.5) {$\sum \max_{d \in D} (q_i \cdot d_j)$};
+\end{tikzpicture}
+\end{center}
+
+\vspace{1em}
+\begin{itemize}
+    \item \textcolor{green}{\checkmark} Much more powerful interaction than single-vector Bi-Encoders.
+    \item \textcolor{red}{\ding{55}} Large index storage requirement.
+\end{itemize}
+\end{frame}
+
+% ====================================================================
+% SUMMARY
+% ====================================================================
+\section{Summary}
+
+\begin{frame}{Key Takeaways}
+\begin{itemize}
+    \item[\checkmark] \textbf{Dense Retrieval:} Uses dual encoders (Bi-Encoders) to map Q and D to a shared space.
+    \item[\checkmark] \textbf{Training:} Requires careful negative sampling (in-batch and hard negatives).
+    \item[\checkmark] \textbf{Hybrid Search:} Often superior, combining keyword precision with semantic recall.
+    \item[\checkmark] \textbf{ColBERT:} Introduces "Late Interaction" for more fine-grained matching at scale.
+\end{itemize}
+
+\vspace{1em}
+\begin{center}
+\textit{Final Lecture: Learning to Rank (The LTR Framework)}
+\end{center}
+\end{frame}
+
+\end{document}
