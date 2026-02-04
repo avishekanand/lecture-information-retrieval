@@ -224,34 +224,9 @@ IR: \textit{``Give me the most relevant documents about X''}
 % ====================================================================
 \section{The Information Retrieval Process}
 
-\begin{frame}{The Complete IR Pipeline}
+\begin{frame}[shrink=5]{The Complete IR Pipeline}
 \begin{center}
-\begin{tikzpicture}[
-    node distance=1.3cm,
-    box/.style={rectangle, draw, fill=blue!20, text width=3.5cm, align=center, minimum height=0.8cm, font=\small},
-    arrow/.style={->, thick}
-]
-    \node[box, fill=green!20] (docs) {Raw Documents};
-    \node[box, below=of docs] (preprocess) {Text Preprocessing};
-    \node[box, below=of preprocess] (index) {Index Construction};
-    \node[box, below=of index] (storage) {Index Storage};
-    
-    \node[box, right=3cm of docs, fill=orange!20] (user) {User Query};
-    \node[box, below=of user] (qprocess) {Query Processing};
-    \node[box, below=of qprocess] (search) {Search & Matching};
-    \node[box, below=of search] (rank) {Ranking};
-    \node[box, below=of rank, fill=purple!20] (results) {Ranked Results};
-    
-    \draw[arrow] (docs) -- (preprocess);
-    \draw[arrow] (preprocess) -- (index);
-    \draw[arrow] (index) -- (storage);
-    
-    \draw[arrow] (user) -- (qprocess);
-    \draw[arrow] (qprocess) -- (search);
-    \draw[arrow] (storage) -- (search);
-    \draw[arrow] (search) -- (rank);
-    \draw[arrow] (rank) -- (results);
-\end{tikzpicture}
+\includegraphics[width=0.7\textwidth]{figures/ir_pipeline.png}
 \end{center}
 \end{frame}
 
@@ -1105,340 +1080,340 @@ Relevance & All equal & Ranked by relevance \\
 % ====================================================================
 % SECTION 5: PRACTICAL CONSIDERATIONS
 % ====================================================================
-\section{Practical Considerations}
-
-\begin{frame}[shrink=10]{Optimizing Vector Space Retrieval}
-\textbf{Problem:} Computing similarity for millions of documents is expensive
-
-\vspace{1em}
-
-\begin{block}{Optimization 1: Inverted Index with TF-IDF}
-Don't compute similarity for \textit{all} documents—only those with query terms
-\begin{itemize}
-    \item For each query term, fetch posting list
-    \item Only compute similarity for documents in posting lists
-    \item Most documents have similarity = 0 (no shared terms)
-\end{itemize}
-\end{block}
-
-\begin{block}{Optimization 2: Champion Lists}
-For each term, store only top-$k$ documents by TF-IDF
-\begin{itemize}
-    \item Only search champion lists (not full posting lists)
-    \item Trades recall for speed
-    \item Works well in practice
-\end{itemize}
-\end{block}
-
-\begin{block}{Optimization 3: Early Termination}
-Stop computing after processing top terms
-\begin{itemize}
-    \item Sort query terms by IDF (descending)
-    \item Process high-IDF terms first (most discriminative)
-    \item Can stop early without much quality loss
-\end{itemize}
-\end{block}
-\end{frame}
-
-\begin{frame}[shrink=15]{Document Length Normalization}
-\textbf{Problem:} Longer documents have higher TF values just by chance
-
-\vspace{1em}
-
-\begin{exampleblock}{Example}
-\begin{itemize}
-    \item Short doc (100 words): ``algorithm'' appears 2 times
-    \item Long doc (10,000 words): ``algorithm'' appears 20 times
-    \item Is the long doc 10× more relevant?
-\end{itemize}
-\end{exampleblock}
-
-\vspace{1em}
-
-\begin{block}{Solutions}
-\begin{enumerate}
-    \item \textbf{Cosine normalization:} Already handles this (built into cosine similarity)
-    \item \textbf{Pivoted length normalization:} Adjust based on doc length vs. average
-    \item \textbf{BM25 (Lecture 3):} Sophisticated length normalization with parameter $b$
-\end{enumerate}
-\end{block}
-
-\vspace{1em}
-
-\begin{alertblock}{Trade-off}
-Too much normalization: penalizes legitimately long, detailed documents \\
-Too little normalization: favors long documents unfairly
-\end{alertblock}
-\end{frame}
-
-\begin{frame}[shrink=10]{Handling Phrases and Proximity}
-\textbf{Problem:} ``New York'' should be treated as a phrase, not ``New'' and ``York''
-
-\vspace{1em}
-
-\begin{block}{Solution 1: Phrase Index}
-Index common phrases directly
-\begin{itemize}
-    \item ``New\_York'' as a single term
-    \item Requires phrase identification
-    \item Storage overhead
-\end{itemize}
-\end{block}
-
-\begin{block}{Solution 2: Positional Index}
-Store term positions in posting lists
-\begin{itemize}
-    \item Term ``New'': [(doc1, [3, 15]), (doc2, [8, 42]), ...]
-    \item Can verify ``New'' and ``York'' are adjacent
-    \item More flexible but more storage
-\end{itemize}
-\end{block}
-
-\begin{block}{Solution 3: Proximity Scoring}
-Boost score if query terms appear close together
-\begin{itemize}
-    \item Even if not exact phrase match
-    \item Weighted by distance
-\end{itemize}
-\end{block}
-\end{frame}
-
-\begin{frame}[shrink=15]{Query Expansion and Relevance Feedback}
-\textbf{Goal:} Improve recall by expanding query with related terms
-
-\vspace{1em}
-
-\begin{block}{Automatic Query Expansion}
-Add synonyms or related terms automatically
-\begin{itemize}
-    \item Query: ``car''
-    \item Expanded: ``car automobile vehicle''
-    \item Uses thesaurus or word embeddings
-\end{itemize}
-\end{block}
-
-\begin{block}{Pseudo Relevance Feedback (Preview of Lecture 3)}
-\begin{enumerate}
-    \item Retrieve top-$k$ documents with original query
-    \item Extract important terms from these documents
-    \item Add these terms to query
-    \item Re-retrieve with expanded query
-\end{enumerate}
-\textbf{Assumption:} Top results are relevant (often true)
-\end{block}
-
-\vspace{1em}
-
-\begin{alertblock}{Risk}
-If initial results are off-topic, expansion makes it worse (query drift)
-\end{alertblock}
-\end{frame}
+% \section{Practical Considerations}
+% 
+% \begin{frame}[shrink=10]{Optimizing Vector Space Retrieval}
+% \textbf{Problem:} Computing similarity for millions of documents is expensive
+% 
+% \vspace{1em}
+% 
+% \begin{block}{Optimization 1: Inverted Index with TF-IDF}
+% Don't compute similarity for \textit{all} documents—only those with query terms
+% \begin{itemize}
+%     \item For each query term, fetch posting list
+%     \item Only compute similarity for documents in posting lists
+%     \item Most documents have similarity = 0 (no shared terms)
+% \end{itemize}
+% \end{block}
+% 
+% \begin{block}{Optimization 2: Champion Lists}
+% For each term, store only top-$k$ documents by TF-IDF
+% \begin{itemize}
+%     \item Only search champion lists (not full posting lists)
+%     \item Trades recall for speed
+%     \item Works well in practice
+% \end{itemize}
+% \end{block}
+% 
+% \begin{block}{Optimization 3: Early Termination}
+% Stop computing after processing top terms
+% \begin{itemize}
+%     \item Sort query terms by IDF (descending)
+%     \item Process high-IDF terms first (most discriminative)
+%     \item Can stop early without much quality loss
+% \end{itemize}
+% \end{block}
+% \end{frame}
+% 
+% \begin{frame}[shrink=15]{Document Length Normalization}
+% \textbf{Problem:} Longer documents have higher TF values just by chance
+% 
+% \vspace{1em}
+% 
+% \begin{exampleblock}{Example}
+% \begin{itemize}
+%     \item Short doc (100 words): ``algorithm'' appears 2 times
+%     \item Long doc (10,000 words): ``algorithm'' appears 20 times
+%     \item Is the long doc 10× more relevant?
+% \end{itemize}
+% \end{exampleblock}
+% 
+% \vspace{1em}
+% 
+% \begin{block}{Solutions}
+% \begin{enumerate}
+%     \item \textbf{Cosine normalization:} Already handles this (built into cosine similarity)
+%     \item \textbf{Pivoted length normalization:} Adjust based on doc length vs. average
+%     \item \textbf{BM25 (Lecture 3):} Sophisticated length normalization with parameter $b$
+% \end{enumerate}
+% \end{block}
+% 
+% \vspace{1em}
+% 
+% \begin{alertblock}{Trade-off}
+% Too much normalization: penalizes legitimately long, detailed documents \\
+% Too little normalization: favors long documents unfairly
+% \end{alertblock}
+% \end{frame}
+% 
+% \begin{frame}[shrink=10]{Handling Phrases and Proximity}
+% \textbf{Problem:} ``New York'' should be treated as a phrase, not ``New'' and ``York''
+% 
+% \vspace{1em}
+% 
+% \begin{block}{Solution 1: Phrase Index}
+% Index common phrases directly
+% \begin{itemize}
+%     \item ``New\_York'' as a single term
+%     \item Requires phrase identification
+%     \item Storage overhead
+% \end{itemize}
+% \end{block}
+% 
+% \begin{block}{Solution 2: Positional Index}
+% Store term positions in posting lists
+% \begin{itemize}
+%     \item Term ``New'': [(doc1, [3, 15]), (doc2, [8, 42]), ...]
+%     \item Can verify ``New'' and ``York'' are adjacent
+%     \item More flexible but more storage
+% \end{itemize}
+% \end{block}
+% 
+% \begin{block}{Solution 3: Proximity Scoring}
+% Boost score if query terms appear close together
+% \begin{itemize}
+%     \item Even if not exact phrase match
+%     \item Weighted by distance
+% \end{itemize}
+% \end{block}
+% \end{frame}
+% 
+% \begin{frame}[shrink=15]{Query Expansion and Relevance Feedback}
+% \textbf{Goal:} Improve recall by expanding query with related terms
+% 
+% \vspace{1em}
+% 
+% \begin{block}{Automatic Query Expansion}
+% Add synonyms or related terms automatically
+% \begin{itemize}
+%     \item Query: ``car''
+%     \item Expanded: ``car automobile vehicle''
+%     \item Uses thesaurus or word embeddings
+% \end{itemize}
+% \end{block}
+% 
+% \begin{block}{Pseudo Relevance Feedback (Preview of Lecture 3)}
+% \begin{enumerate}
+%     \item Retrieve top-$k$ documents with original query
+%     \item Extract important terms from these documents
+%     \item Add these terms to query
+%     \item Re-retrieve with expanded query
+% \end{enumerate}
+% \textbf{Assumption:} Top results are relevant (often true)
+% \end{block}
+% 
+% \vspace{1em}
+% 
+% \begin{alertblock}{Risk}
+% If initial results are off-topic, expansion makes it worse (query drift)
+% \end{alertblock}
+% \end{frame}
 
 % ====================================================================
 % SECTION 6: EVALUATION
 % ====================================================================
-\section{Evaluation of IR Systems}
-
-\begin{frame}[shrink=15]{How to Evaluate IR Systems?}
-\textbf{Question:} Is our retrieval system good?
-
-\vspace{1em}
-
-\begin{block}{What Makes a Good IR System?}
-\begin{enumerate}
-    \item \textbf{Effectiveness:} Returns relevant documents
-    \item \textbf{Efficiency:} Fast response time
-    \item \textbf{User satisfaction:} Meets user needs
-\end{enumerate}
-\end{block}
-
-\vspace{1em}
-
-\textbf{Today:} Focus on effectiveness (relevance)
-
-\vspace{1em}
-
-\begin{exampleblock}{Standard Evaluation Methodology}
-\begin{enumerate}
-    \item Collection of documents
-    \item Set of queries (topics)
-    \item Relevance judgments (which docs are relevant to which queries)
-    \item Evaluation metrics (precision, recall, etc.)
-\end{enumerate}
-\end{exampleblock}
-\end{frame}
-
-\begin{frame}{Precision and Recall}
-\begin{block}{Definitions}
-Given a query and retrieved results:
-\begin{itemize}
-    \item \textbf{Precision:} Fraction of retrieved documents that are relevant
-    $$\text{Precision} = \frac{\text{\# relevant retrieved}}{\text{\# retrieved}}$$
-    
-    \item \textbf{Recall:} Fraction of relevant documents that are retrieved
-    $$\text{Recall} = \frac{\text{\# relevant retrieved}}{\text{\# relevant in collection}}$$
-\end{itemize}
-\end{block}
-
-\vspace{1em}
-
-\begin{exampleblock}{Example}
-\begin{itemize}
-    \item Collection has 100 relevant documents
-    \item System retrieves 50 documents
-    \item 30 of the retrieved are relevant
-\end{itemize}
-
-$$\text{Precision} = \frac{30}{50} = 0.60 \quad \text{Recall} = \frac{30}{100} = 0.30$$
-\end{exampleblock}
-\end{frame}
-
-\begin{frame}[shrink=15]{Precision vs. Recall Trade-off}
-\begin{center}
-\begin{tikzpicture}[scale=1.2]
+% \section{Evaluation of IR Systems}
+% 
+% \begin{frame}[shrink=15]{How to Evaluate IR Systems?}
+% \textbf{Question:} Is our retrieval system good?
+% 
+% \vspace{1em}
+% 
+% \begin{block}{What Makes a Good IR System?}
+% \begin{enumerate}
+%     \item \textbf{Effectiveness:} Returns relevant documents
+%     \item \textbf{Efficiency:} Fast response time
+%     \item \textbf{User satisfaction:} Meets user needs
+% \end{enumerate}
+% \end{block}
+% 
+% \vspace{1em}
+% 
+% \textbf{Today:} Focus on effectiveness (relevance)
+% 
+% \vspace{1em}
+% 
+% \begin{exampleblock}{Standard Evaluation Methodology}
+% \begin{enumerate}
+%     \item Collection of documents
+%     \item Set of queries (topics)
+%     \item Relevance judgments (which docs are relevant to which queries)
+%     \item Evaluation metrics (precision, recall, etc.)
+% \end{enumerate}
+% \end{exampleblock}
+% \end{frame}
+% 
+% \begin{frame}{Precision and Recall}
+% \begin{block}{Definitions}
+% Given a query and retrieved results:
+% \begin{itemize}
+%     \item \textbf{Precision:} Fraction of retrieved documents that are relevant
+%     $$\text{Precision} = \frac{\text{\# relevant retrieved}}{\text{\# retrieved}}$$
+%     
+%     \item \textbf{Recall:} Fraction of relevant documents that are retrieved
+%     $$\text{Recall} = \frac{\text{\# relevant retrieved}}{\text{\# relevant in collection}}$$
+% \end{itemize}
+% \end{block}
+% 
+% \vspace{1em}
+% 
+% \begin{exampleblock}{Example}
+% \begin{itemize}
+%     \item Collection has 100 relevant documents
+%     \item System retrieves 50 documents
+%     \item 30 of the retrieved are relevant
+% \end{itemize}
+% 
+% $$\text{Precision} = \frac{30}{50} = 0.60 \quad \text{Recall} = \frac{30}{100} = 0.30$$
+% \end{exampleblock}
+% \end{frame}
+% 
+% \begin{frame}[shrink=15]{Precision vs. Recall Trade-off}
+% \begin{center}
+% \begin{tikzpicture}[scale=1.2]
     % Axes
-    \draw[->] (0,0) -- (5,0) node[right] {Recall};
-    \draw[->] (0,0) -- (0,5) node[above] {Precision};
-    
+%     \draw[->] (0,0) -- (5,0) node[right] {Recall};
+%     \draw[->] (0,0) -- (0,5) node[above] {Precision};
+%     
     % Grid
-    \draw[gray, dotted] (0,0) grid (4.5,4.5);
-    
+%     \draw[gray, dotted] (0,0) grid (4.5,4.5);
+%     
     % Curve showing trade-off
-    \draw[blue, thick, domain=0.5:4.5, samples=100] 
-        plot (\x, {4.5 - 0.5*\x});
-    
+%     \draw[blue, thick, domain=0.5:4.5, samples=100] 
+%         plot (\x, {4.5 - 0.5*\x});
+%     
     % Points
-    \node[circle, fill=red, inner sep=2pt, label=above:High Precision] at (1, 4) {};
-    \node[circle, fill=red, inner sep=2pt, label=right:Balanced] at (2.5, 3) {};
-    \node[circle, fill=red, inner sep=2pt, label=below:High Recall] at (4, 2) {};
-    
+%     \node[circle, fill=red, inner sep=2pt, label=above:High Precision] at (1, 4) {};
+%     \node[circle, fill=red, inner sep=2pt, label=right:Balanced] at (2.5, 3) {};
+%     \node[circle, fill=red, inner sep=2pt, label=below:High Recall] at (4, 2) {};
+%     
     % Labels
-    \node at (2.5, -0.7) {\small Retrieve more → higher recall, lower precision};
-\end{tikzpicture}
-\end{center}
-
-\begin{alertblock}{Trade-off}
-\begin{itemize}
-    \item Retrieve more documents → Higher recall, lower precision
-    \item Retrieve fewer documents → Higher precision, lower recall
-    \item Need to balance based on application
-\end{itemize}
-\end{alertblock}
-\end{frame}
-
-\begin{frame}[shrink=15]{F-Measure}
-\textbf{Problem:} How to combine precision and recall into single metric?
-
-\vspace{1em}
-
-\begin{block}{F1 Score (Harmonic Mean)}
-$$F_1 = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}} = \frac{2TP}{2TP + FP + FN}$$
-\end{block}
-
-\vspace{1em}
-
-\begin{exampleblock}{Why Harmonic Mean?}
-Arithmetic mean: $\frac{P + R}{2}$ is too lenient
-\begin{itemize}
-    \item P=0.9, R=0.1: Arithmetic mean = 0.5 (misleading!)
-    \item P=0.9, R=0.1: Harmonic mean (F1) = 0.18 (more realistic)
-\end{itemize}
-Harmonic mean heavily penalizes low values
-\end{exampleblock}
-
-\vspace{1em}
-
-\begin{block}{General F-measure}
-$$F_\beta = (1 + \beta^2) \times \frac{\text{Precision} \times \text{Recall}}{\beta^2 \times \text{Precision} + \text{Recall}}$$
-\begin{itemize}
-    \item $\beta > 1$: Favor recall
-    \item $\beta < 1$: Favor precision
-\end{itemize}
-\end{block}
-\end{frame}
-
-\begin{frame}[shrink=15]{Ranked Retrieval Metrics}
-\textbf{Problem:} Precision/Recall don't account for ranking
-
-\vspace{1em}
-
-\begin{block}{Precision at K (P@K)}
-Precision of top-$k$ results
-$$P@10 = \frac{\text{\# relevant in top 10}}{10}$$
-\begin{itemize}
-    \item Users typically only look at first page
-    \item P@10 more practical than overall precision
-\end{itemize}
-\end{block}
-
-\begin{block}{Average Precision (AP)}
-Average of precision values at each relevant document
-$$AP = \frac{1}{|R|} \sum_{k=1}^{n} P(k) \times \text{rel}(k)$$
-where $\text{rel}(k) = 1$ if document at rank $k$ is relevant, 0 otherwise
-\begin{itemize}
-    \item Rewards putting relevant docs earlier
-    \item Single number summarizing entire ranking
-\end{itemize}
-\end{block}
-\end{frame}
-
-\begin{frame}[shrink=15]{Mean Average Precision (MAP)}
-\begin{block}{Definition}
-Average of Average Precision across multiple queries
-$$MAP = \frac{1}{|Q|} \sum_{q \in Q} AP(q)$$
-\end{block}
-
-\vspace{1em}
-
-\begin{exampleblock}{Example}
-\begin{tabular}{lcc}
-\toprule
-\textbf{Query} & \textbf{AP} \\
-\midrule
-Q1 & 0.75 \\
-Q2 & 0.60 \\
-Q3 & 0.85 \\
-\midrule
-\textbf{MAP} & \textbf{0.73} \\
-\bottomrule
-\end{tabular}
-\end{exampleblock}
-
-\vspace{1em}
-
-\textbf{Properties:}
-\begin{itemize}
-    \item Standard metric for IR evaluation
-    \item Emphasizes ranking quality
-    \item Single number for system comparison
-\end{itemize}
-\end{frame}
-
-\begin{frame}[shrink=15]{Other Important Metrics}
-\begin{block}{Normalized Discounted Cumulative Gain (NDCG)}
-Accounts for graded relevance (not just binary relevant/not relevant)
-\begin{itemize}
-    \item Documents can be highly relevant, somewhat relevant, not relevant
-    \item More realistic for many applications
-    \item More complex to compute
-\end{itemize}
-\end{block}
-
-\begin{block}{Reciprocal Rank (RR)}
-$$RR = \frac{1}{\text{rank of first relevant document}}$$
-\begin{itemize}
-    \item Simple metric for queries with one right answer
-    \item Used in question answering, entity search
-\end{itemize}
-\end{block}
-
-\begin{block}{Mean Reciprocal Rank (MRR)}
-$$MRR = \frac{1}{|Q|} \sum_{q \in Q} RR(q)$$
-\begin{itemize}
-    \item Average RR across queries
-\end{itemize}
-\end{block}
-\end{frame}
+%     \node at (2.5, -0.7) {\small Retrieve more → higher recall, lower precision};
+% \end{tikzpicture}
+% \end{center}
+% 
+% \begin{alertblock}{Trade-off}
+% \begin{itemize}
+%     \item Retrieve more documents → Higher recall, lower precision
+%     \item Retrieve fewer documents → Higher precision, lower recall
+%     \item Need to balance based on application
+% \end{itemize}
+% \end{alertblock}
+% \end{frame}
+% 
+% \begin{frame}[shrink=15]{F-Measure}
+% \textbf{Problem:} How to combine precision and recall into single metric?
+% 
+% \vspace{1em}
+% 
+% \begin{block}{F1 Score (Harmonic Mean)}
+% $$F_1 = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}} = \frac{2TP}{2TP + FP + FN}$$
+% \end{block}
+% 
+% \vspace{1em}
+% 
+% \begin{exampleblock}{Why Harmonic Mean?}
+% Arithmetic mean: $\frac{P + R}{2}$ is too lenient
+% \begin{itemize}
+%     \item P=0.9, R=0.1: Arithmetic mean = 0.5 (misleading!)
+%     \item P=0.9, R=0.1: Harmonic mean (F1) = 0.18 (more realistic)
+% \end{itemize}
+% Harmonic mean heavily penalizes low values
+% \end{exampleblock}
+% 
+% \vspace{1em}
+% 
+% \begin{block}{General F-measure}
+% $$F_\beta = (1 + \beta^2) \times \frac{\text{Precision} \times \text{Recall}}{\beta^2 \times \text{Precision} + \text{Recall}}$$
+% \begin{itemize}
+%     \item $\beta > 1$: Favor recall
+%     \item $\beta < 1$: Favor precision
+% \end{itemize}
+% \end{block}
+% \end{frame}
+% 
+% \begin{frame}[shrink=15]{Ranked Retrieval Metrics}
+% \textbf{Problem:} Precision/Recall don't account for ranking
+% 
+% \vspace{1em}
+% 
+% \begin{block}{Precision at K (P@K)}
+% Precision of top-$k$ results
+% $$P@10 = \frac{\text{\# relevant in top 10}}{10}$$
+% \begin{itemize}
+%     \item Users typically only look at first page
+%     \item P@10 more practical than overall precision
+% \end{itemize}
+% \end{block}
+% 
+% \begin{block}{Average Precision (AP)}
+% Average of precision values at each relevant document
+% $$AP = \frac{1}{|R|} \sum_{k=1}^{n} P(k) \times \text{rel}(k)$$
+% where $\text{rel}(k) = 1$ if document at rank $k$ is relevant, 0 otherwise
+% \begin{itemize}
+%     \item Rewards putting relevant docs earlier
+%     \item Single number summarizing entire ranking
+% \end{itemize}
+% \end{block}
+% \end{frame}
+% 
+% \begin{frame}[shrink=15]{Mean Average Precision (MAP)}
+% \begin{block}{Definition}
+% Average of Average Precision across multiple queries
+% $$MAP = \frac{1}{|Q|} \sum_{q \in Q} AP(q)$$
+% \end{block}
+% 
+% \vspace{1em}
+% 
+% \begin{exampleblock}{Example}
+% \begin{tabular}{lcc}
+% \toprule
+% \textbf{Query} & \textbf{AP} \\
+% \midrule
+% Q1 & 0.75 \\
+% Q2 & 0.60 \\
+% Q3 & 0.85 \\
+% \midrule
+% \textbf{MAP} & \textbf{0.73} \\
+% \bottomrule
+% \end{tabular}
+% \end{exampleblock}
+% 
+% \vspace{1em}
+% 
+% \textbf{Properties:}
+% \begin{itemize}
+%     \item Standard metric for IR evaluation
+%     \item Emphasizes ranking quality
+%     \item Single number for system comparison
+% \end{itemize}
+% \end{frame}
+% 
+% \begin{frame}[shrink=15]{Other Important Metrics}
+% \begin{block}{Normalized Discounted Cumulative Gain (NDCG)}
+% Accounts for graded relevance (not just binary relevant/not relevant)
+% \begin{itemize}
+%     \item Documents can be highly relevant, somewhat relevant, not relevant
+%     \item More realistic for many applications
+%     \item More complex to compute
+% \end{itemize}
+% \end{block}
+% 
+% \begin{block}{Reciprocal Rank (RR)}
+% $$RR = \frac{1}{\text{rank of first relevant document}}$$
+% \begin{itemize}
+%     \item Simple metric for queries with one right answer
+%     \item Used in question answering, entity search
+% \end{itemize}
+% \end{block}
+% 
+% \begin{block}{Mean Reciprocal Rank (MRR)}
+% $$MRR = \frac{1}{|Q|} \sum_{q \in Q} RR(q)$$
+% \begin{itemize}
+%     \item Average RR across queries
+% \end{itemize}
+% \end{block}
+% \end{frame}
 
 % ====================================================================
 % SECTION 7: CONNECTIONS TO FUTURE LECTURES
