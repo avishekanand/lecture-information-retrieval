@@ -1,6 +1,16 @@
 \documentclass[aspectratio=169]{beamer}
 \usetheme{TUDelft}
 
+% ====================================================================
+% ANIMATION TOGGLE
+% ====================================================================
+\newif\ifanimated
+\animatedtrue
+\ifdefined\staticmode
+  \animatedfalse
+\fi
+\newcommand{\cpause}{\ifanimated\pause\fi}
+
 % Packages
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -32,7 +42,7 @@
 
 % Title information
 \title[Ranking Models]{Information Retrieval Ranking Models}
-\subtitle{Lecture 3: Sparse Ranking Methods}
+\subtitle{Lecture 5: Sparse Ranking Methods (BM25)}
 \author{Avishek Anand}
 \institute{Information Retrieval}
 \date{\today}
@@ -147,11 +157,11 @@ Linear TF growth unrealistic:
 \small
 \begin{tabular}{lccccc}
 \toprule
-\textbf{Term} \& \textbf{Doc 1} \& \textbf{Doc 2} \& \textbf{df} \& \textbf{IDF} \& \textbf{Weight} \\
+\textbf{Term} & \textbf{Doc 1} & \textbf{Doc 2} & \textbf{df} & \textbf{IDF} & \textbf{Weight} \\
 \midrule
-information \& 3 \& 1 \& 5000 \& 1.30 \& High TF \\
-retrieval \& 2 \& 0 \& 500 \& 2.30 \& High IDF \\
-the \& 20 \& 15 \& 50000 \& 0.30 \& Low IDF \\
+information & 3 & 1 & 5000 & 1.30 & High TF \\
+retrieval & 2 & 0 & 500 & 2.30 & High IDF \\
+the & 20 & 15 & 50000 & 0.30 & Low IDF \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -279,12 +289,12 @@ $$\frac{f(t,d) \cdot (k_1+1)}{f(t,d) + k_1}$$
 \small
 \begin{tabular}{ccc}
 \toprule
-\textbf{TF} \& \textbf{$k_1=1.2$} \& \textbf{$k_1=2.0$} \\
+\textbf{TF} & \textbf{$k_1=1.2$} & \textbf{$k_1=2.0$} \\
 \midrule
-1 \& 0.55 \& 0.67 \\
-5 \& 1.53 \& 1.67 \\
-10 \& 1.79 \& 1.83 \\
-50 \& 1.98 \& 1.96 \\
+1 & 0.55 & 0.67 \\
+5 & 1.53 & 1.67 \\
+10 & 1.79 & 1.83 \\
+50 & 1.98 & 1.96 \\
 \bottomrule
 \end{tabular}
 \end{column}
@@ -368,12 +378,12 @@ Same TF, but short document scores higher due to length penalty
 \centering
 \begin{tabular}{lccc}
 \toprule
-\textbf{Term} \& \textbf{df} \& \textbf{IDF} \& \textbf{Interpretation} \\
+\textbf{Term} & \textbf{df} & \textbf{IDF} & \textbf{Interpretation} \\
 \midrule
-quantum \& 100 \& 6.21 \& Very discriminative \\
-algorithm \& 5{,}000 \& 2.99 \& Moderately discriminative \\
-system \& 50{,}000 \& -0.41 \& Not discriminative \\
-the \& 99{,}000 \& -6.21 \& Actively harmful \\
+quantum & 100 & 6.21 & Very discriminative \\
+algorithm & 5{,}000 & 2.99 & Moderately discriminative \\
+system & 50{,}000 & -0.41 & Not discriminative \\
+the & 99{,}000 & -6.21 & Actively harmful \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -697,14 +707,14 @@ Original vs. expansion weight
 \small
 \begin{tabular}{lll}
 \toprule
-\textbf{Aspect} \& \textbf{Rocchio} \& \textbf{RM3} \\
+\textbf{Aspect} & \textbf{Rocchio} & \textbf{RM3} \\
 \midrule
-Foundation \& Geometric (vector space) \& Probabilistic (LM) \\
-Term selection \& All terms (weighted) \& Top-k by probability \\
-Weighting \& Vector magnitude \& $P(w|R)$ \\
-Interpretability \& Geometric intuition \& Probabilistic \\
-Performance \& Good \& Better \\
-Usage today \& Historical \& Standard \\
+Foundation & Geometric (vector space) & Probabilistic (LM) \\
+Term selection & All terms (weighted) & Top-k by probability \\
+Weighting & Vector magnitude & $P(w|R)$ \\
+Interpretability & Geometric intuition & Probabilistic \\
+Performance & Good & Better \\
+Usage today & Historical & Standard \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -875,13 +885,13 @@ If query word doesn't appear in document:
 \centering
 \begin{tabular}{lccc}
 \toprule
-\textbf{Term} \& \textbf{count(w,d)} \& \textbf{$P_{\text{ML}}(w|d)$} \& \textbf{Result} \\
+\textbf{Term} & \textbf{count(w,d)} & \textbf{$P_{\text{ML}}(w|d)$} & \textbf{Result} \\
 \midrule
-machine \& 1 \& $1/15 = 0.067$ \& \checkmark \\
-learning \& 1 \& $1/15 = 0.067$ \& \checkmark \\
-algorithms \& 0 \& $0/15 = 0$ \& \textcolor{red}{\ding{55} ZERO!} \\
+machine & 1 & $1/15 = 0.067$ & \checkmark \\
+learning & 1 & $1/15 = 0.067$ & \checkmark \\
+algorithms & 0 & $0/15 = 0$ & \textcolor{red}{\ding{55} ZERO!} \\
 \midrule
-$P(q|d)$ \& \multicolumn{3}{c}{$0.067 \times 0.067 \times 0 = \mathbf{0}$} \\
+$P(q|d)$ & \multicolumn{3}{c}{$0.067 \times 0.067 \times 0 = \mathbf{0}$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -973,11 +983,11 @@ $$P(w|d) = \frac{\text{count}(w,d) + \mu \cdot P(w|C)}{|d| + \mu}$$
 \centering
 \begin{tabular}{lccc}
 \toprule
-\textbf{Document} \& \textbf{count(w,d)} \& \textbf{$|d|$} \& \textbf{$P(w|d)$} \\
+\textbf{Document} & \textbf{count(w,d)} & \textbf{$|d|$} & \textbf{$P(w|d)$} \\
 \midrule
-Short doc \& 2 \& 100 \& $\frac{2 + 2000 \times 0.001}{100 + 2000} = \frac{4}{2100} = 0.0019$ \\
+Short doc & 2 & 100 & $\frac{2 + 2000 \times 0.001}{100 + 2000} = \frac{4}{2100} = 0.0019$ \\
 \midrule
-Long doc \& 2 \& 2000 \& $\frac{2 + 2000 \times 0.001}{2000 + 2000} = \frac{4}{4000} = 0.001$ \\
+Long doc & 2 & 2000 & $\frac{2 + 2000 \times 0.001}{2000 + 2000} = \frac{4}{4000} = 0.001$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1000,14 +1010,14 @@ Long doc \& 2 \& 2000 \& $\frac{2 + 2000 \times 0.001}{2000 + 2000} = \frac{4}{4
 \small
 \begin{tabular}{lll}
 \toprule
-\textbf{Aspect} \& \textbf{Jelinek-Mercer} \& \textbf{Dirichlet} \\
+\textbf{Aspect} & \textbf{Jelinek-Mercer} & \textbf{Dirichlet} \\
 \midrule
-Formula \& $(1-\lambda) P_{\text{ML}}(w|d) + \lambda P(w|C)$ \& $\frac{\text{count}(w,d) + \mu P(w|C)}{|d| + \mu}$ \\
-Parameter \& $\lambda$ (0.1--0.3) \& $\mu$ (1000--2500) \\
-Length adaptation \& Fixed for all docs \& Automatic \\
-Smoothing amount \& Same for all docs \& More for short docs \\
-Interpretation \& Linear interpolation \& Pseudo-counts \\
-Best for \& Uniform-length collections \& Variable-length collections \\
+Formula & $(1-\lambda) P_{\text{ML}}(w|d) + \lambda P(w|C)$ & $\frac{\text{count}(w,d) + \mu P(w|C)}{|d| + \mu}$ \\
+Parameter & $\lambda$ (0.1--0.3) & $\mu$ (1000--2500) \\
+Length adaptation & Fixed for all docs & Automatic \\
+Smoothing amount & Same for all docs & More for short docs \\
+Interpretation & Linear interpolation & Pseudo-counts \\
+Best for & Uniform-length collections & Variable-length collections \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1029,15 +1039,15 @@ Best for \& Uniform-length collections \& Variable-length collections \\
 \small
 \begin{tabular}{lll}
 \toprule
-\textbf{Aspect} \& \textbf{BM25} \& \textbf{Language Models} \\
+\textbf{Aspect} & \textbf{BM25} & \textbf{Language Models} \\
 \midrule
-Philosophy \& Term matching score \& Generative probability \\
-TF handling \& Explicit saturation $(k_1)$ \& Implicit via smoothing \\
-Length norm \& Explicit $(b)$ \& Implicit via smoothing \\
-IDF \& Explicit component \& Through $P(w|C)$ \\
-Zero probabilities \& Avoided via IDF \& Smoothing essential \\
-Parameters \& $k_1, b$ \& $\lambda$ or $\mu$ \\
-Foundation \& Probabilistic relevance \& Language modeling \\
+Philosophy & Term matching score & Generative probability \\
+TF handling & Explicit saturation $(k_1)$ & Implicit via smoothing \\
+Length norm & Explicit $(b)$ & Implicit via smoothing \\
+IDF & Explicit component & Through $P(w|C)$ \\
+Zero probabilities & Avoided via IDF & Smoothing essential \\
+Parameters & $k_1, b$ & $\lambda$ or $\mu$ \\
+Foundation & Probabilistic relevance & Language modeling \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1129,11 +1139,11 @@ print(results[results['qid']=='1'][['qid', 'docno', 'score', 'rank']].head())
 \tiny
 \begin{tabular}{llcc}
 \toprule
-qid \& docno \& score \& rank \\
+qid & docno & score & rank \\
 \midrule
-1 \& 51 \& 8.234 \& 1 \\
-1 \& 486 \& 7.921 \& 2 \\
-1 \& 12 \& 7.456 \& 3 \\
+1 & 51 & 8.234 & 1 \\
+1 & 486 & 7.921 & 2 \\
+1 & 12 & 7.456 & 3 \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -1,6 +1,16 @@
 \documentclass[aspectratio=169]{beamer}
 \usetheme{TUDelft}
 
+% ====================================================================
+% ANIMATION TOGGLE
+% ====================================================================
+\newif\ifanimated
+\animatedtrue
+\ifdefined\staticmode
+  \animatedfalse
+\fi
+\newcommand{\cpause}{\ifanimated\pause\fi}
+
 % Packages
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -31,8 +41,8 @@
 \usetikzlibrary{shapes,arrows,positioning,calc}
 
 % Title information
-\title[Dense Retrieval]{Lecture 5: Dense Retrieval}
-\subtitle{Modern Deep Retrieval Architectures}
+\title[Dense Retrieval]{Dense Retrieval}
+\subtitle{Lecture 7: Modern Deep Retrieval Architectures}
 \author{Avishek Anand}
 \institute{Information Retrieval}
 \date{\today}

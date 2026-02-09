@@ -1,6 +1,16 @@
 \documentclass[aspectratio=169]{beamer}
 \usetheme{TUDelft}
 
+% ====================================================================
+% ANIMATION TOGGLE
+% ====================================================================
+\newif\ifanimated
+\animatedtrue
+\ifdefined\staticmode
+  \animatedfalse
+\fi
+\newcommand{\cpause}{\ifanimated\pause\fi}
+
 % Packages
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -31,8 +41,8 @@
 \usetikzlibrary{shapes,arrows,positioning,calc}
 
 % Title information
-\title[Embeddings \& Neural Ranking]{Lecture 4: Embeddings and Neural Ranking}
-\subtitle{From Word2Vec to Transformers}
+\title[Embeddings \& Neural Ranking]{Embeddings and Neural Ranking}
+\subtitle{Lecture 6: From Word2Vec to BERT}
 \author{Avishek Anand}
 \institute{Information Retrieval}
 \date{\today}

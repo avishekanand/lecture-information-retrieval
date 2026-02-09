@@ -3,11 +3,15 @@
 
 % ====================================================================
 % ANIMATION TOGGLE
-% Set \animatedtrue for animated version with \pause commands
+% Set \animatedtrue for animated version with \cpause commands
 % Set \animatedfalse for static version (all content visible at once)
+% Use: pdflatex "\def\staticmode{1} \input{01_intro_vector_space.tex}" for static version
 % ====================================================================
 \newif\ifanimated
-\animatedtrue  % Change to \animatedfalse for static version
+\animatedtrue
+\ifdefined\staticmode
+  \animatedfalse
+\fi
 
 % Conditional pause command
 \newcommand{\cpause}{\ifanimated\pause\fi}
@@ -43,8 +47,8 @@
 \usetikzlibrary{shapes,arrows,positioning,calc,patterns}
 
 % Title information
-\title[Introduction to IR]{Introduction to Information Retrieval}
-\subtitle{Lecture 1: The IR Process, Vector Space Model \& Boolean Retrieval}
+\title[Introduction to IR]{Information Retrieval Introduction}
+\subtitle{Lecture 1: Vector Space Model \& Boolean Retrieval}
 \author{Avishek Anand}
 \institute{Information Retrieval}
 \date{\today}
@@ -61,10 +65,10 @@
 \begin{enumerate}
     \item \textbf{Introduction to IR: Vector Space Model \& Boolean Retrieval} $\leftarrow$ Today
     \item Indexing: Sparse and Dense
-    \item Query Understanding
-    \item Ranking: BM25, Query Expansion, Language Models
+    \item Query Understanding \& Expansion
     \item Evaluation of IR Systems
-    \item Embeddings \& Transformer-based Re-rankers
+    \item Ranking: BM25, Language Models, and Beyond
+    \item Embeddings \& Neural Ranking
     \item Dense Retrieval
     \item Learning to Rank
     \item Recommender Systems
@@ -515,9 +519,9 @@ Documents are retrieved if they satisfy a Boolean expression of query terms
     \item Database-like queries on text
     \item Expert users who know what they want
 \end{itemize}
-\cpause
+% \cpause
 \end{exampleblock}
-\cpause
+% \cpause
 \end{frame}
 
 \begin{frame}{Limitations of Boolean Retrieval}
@@ -588,7 +592,7 @@ Documents are retrieved if they satisfy a Boolean expression of query terms
     \item Graceful degradation
     \item Better matching
 \end{itemize}
-\cpause
+% \cpause
 \end{column}
 \end{columns}
 
@@ -883,10 +887,10 @@ $$\text{sim}(\vec{q}, \vec{d}) = \frac{\vec{q} \cdot \vec{d}}{|\vec{q}| \times |
 
 \vspace{1em}
 
-\textbf{Ranking:} D1 (0.95) $>$ D2 (0.25) $>$ D3 (0.13)
+\textbf{Ranking:} D1 (0.95)  >  D2 (0.25)  >  D3 (0.13)
 \end{frame}
 
-\begin{frame}[shrink=15]{VSM vs. Boolean Retrieval}
+\begin{frame}{VSM vs. Boolean Retrieval}
 \begin{table}
 \centering
 \small
@@ -953,9 +957,7 @@ Relevance & All equal & Ranked by relevance \\
     \end{itemize}
 \cpause
 \end{enumerate}
-% \cpause
 \end{block}
-% \cpause
 \end{frame}
 
 \begin{frame}[shrink=10]{Limitations of Vector Space Model}
@@ -984,548 +986,23 @@ Relevance & All equal & Ranked by relevance \\
         \item ``bank'' (financial) vs. ``bank'' (river) undistinguished
         \item Can retrieve irrelevant documents
     \end{itemize}
-\cpause
-    \item \textbf{Scalability}
-    \begin{itemize}
-        \item Computing similarity for all documents expensive
-        \item Need optimizations for large collections
-    \end{itemize}
-% \cpause
+
 \end{enumerate}
-% \cpause
+
 \end{alertblock}
-% \cpause
+
 \end{frame}
 
-% 
-% \vspace{1em}
-% 
-% \begin{exampleblock}{Example}
-% \begin{tabular}{lcc}
-% \toprule
-% \textbf{Query} & \textbf{AP} \\
-% \midrule
-% Q1 & 0.75 \\
-% Q2 & 0.60 \\
-% Q3 & 0.85 \\
-% \midrule
-% \textbf{MAP} & \textbf{0.73} \\
-% \bottomrule
-% \end{tabular}
-% \end{exampleblock}
-\cpause
-% 
-% \vspace{1em}
-% 
-% \textbf{Properties:}
-% \begin{itemize}
-%     \item Standard metric for IR evaluation
-%     \item Emphasizes ranking quality
-%     \item Single number for system comparison
-% \end{itemize}
-\cpause
-% \end{frame}
-% 
-% \begin{frame}[shrink=15]{Other Important Metrics}
-% \begin{block}{Normalized Discounted Cumulative Gain (NDCG)}
-% Accounts for graded relevance (not just binary relevant/not relevant)
-% \begin{itemize}
-%     \item Documents can be highly relevant, somewhat relevant, not relevant
-%     \item More realistic for many applications
-%     \item More complex to compute
-% \end{itemize}
-\cpause
-% \end{block}
-\cpause
-% 
-% \begin{block}{Reciprocal Rank (RR)}
-% $$RR = \frac{1}{\text{rank of first relevant document}}$$
-% \begin{itemize}
-%     \item Simple metric for queries with one right answer
-%     \item Used in question answering, entity search
-% \end{itemize}
-\cpause
-% \end{block}
-\cpause
-% 
-% \begin{block}{Mean Reciprocal Rank (MRR)}
-% $$MRR = \frac{1}{|Q|} \sum_{q \in Q} RR(q)$$
-% \begin{itemize}
-%     \item Average RR across queries
-% \end{itemize}
-\cpause
-% \end{block}
-\cpause
-% \end{frame}
 
 % ====================================================================
 % SECTION 7: CONNECTIONS TO FUTURE LECTURES
 % ====================================================================
-\section{Looking Ahead}
+\section{Questions}
 \begin{frame}
   \centering
   \LARGE \textbf{Looking Ahead}
 \end{frame}
 
 
-\begin{frame}[shrink=15]{From Boolean/VSM to Modern IR}
-\textbf{Today we learned:}
-\begin{itemize}
-    \item Boolean retrieval: Exact matching, no ranking
-    \item Vector space model: TF-IDF, cosine similarity, ranked results
-\end{itemize}
-\cpause
-\vspace{1em}
-
-\textbf{But we still have major limitations:}
-\begin{itemize}
-    \item Bag of words (no semantics)
-    \item Exact term matching only
-    \item Simple weighting (TF-IDF)
-\end{itemize}
-\cpause
-\vspace{1em}
-
-\begin{block}{Preview of Course}
-\begin{enumerate}
-    \item \textbf{Lecture 2 (Indexing):} How to build inverted indexes efficiently at scale
-    \item \textbf{Lecture 3 (Ranking):} Better weighting (BM25), query expansion, language models
-    \item \textbf{Lecture 4 (Transformers):} Neural re-ranking with BERT
-    \item \textbf{Lecture 5 (Dense Retrieval):} Semantic matching with embeddings
-    \item \textbf{Lecture 6 (Learning to Rank):} Learning optimal ranking from data
-\end{enumerate}
-% \cpause
-\end{block}
-% \cpause
-\end{frame}
-
-\begin{frame}[shrink=5]{Preview: Lecture 2 — Indexing}
-\begin{block}{Why Indexing Matters}
-\begin{itemize}
-    \item Building inverted indexes for billions of documents
-    \item Sparse vs. dense representations
-    \item Compression techniques
-    \item Distributed indexing
-\end{itemize}
-\cpause
-\end{block}
-\cpause
-\vspace{1em}
-
-\begin{exampleblock}{Key Questions}
-\begin{enumerate}
-    \item How does Google index 100 trillion web pages?
-    \item How to keep index up-to-date with new documents?
-    \item How to compress posting lists for efficiency?
-    \item What are dense indexes and how do they differ?
-\end{enumerate}
-\cpause
-\end{exampleblock}
-\cpause
-\vspace{1em}
-
-\textbf{Connection:} Today we used inverted indexes conceptually; next lecture we'll build them efficiently
-\end{frame}
-
-\begin{frame}[shrink=5]{Preview: Lecture 3 — Ranking Models}
-\begin{block}{Beyond TF-IDF}
-\begin{itemize}
-    \item \textbf{BM25:} Probabilistic ranking with saturation
-    \item \textbf{Language models:} Generative approach to ranking
-    \item \textbf{Query expansion:} Automatic term expansion with RM3
-    \item \textbf{Pseudo relevance feedback:} Learn from top results
-\end{itemize}
-\cpause
-\end{block}
-\cpause
-\vspace{1em}
-
-\begin{exampleblock}{What You'll Learn}
-\begin{itemize}
-    \item Why BM25 is better than TF-IDF
-    \item How to handle term saturation and length normalization
-    \item How to expand queries automatically
-    \item How to implement these in PyTerrier
-\end{itemize}
-\cpause
-\end{exampleblock}
-\cpause
-\vspace{1em}
-
-\textbf{Connection:} TF-IDF is foundation; BM25 and LMs refine it with better theory and empirics
-\end{frame}
-
-\begin{frame}[shrink=10]{Preview: Lectures 4-6}
-\begin{block}{Lecture 4: Transformer Re-rankers}
-\begin{itemize}
-    \item BERT and transformer architectures
-    \item Contextualized word embeddings
-    \item Re-ranking with neural models
-    \item ``bank'' (river) vs. ``bank'' (financial) finally distinguished!
-\end{itemize}
-\cpause
-\end{block}
-\cpause
-\begin{block}{Lecture 5: Dense Retrieval}
-\begin{itemize}
-    \item Embed documents and queries in semantic space
-    \item No more vocabulary mismatch!
-    \item ``car'' and ``automobile'' are now similar
-    \item Approximate nearest neighbor search
-\end{itemize}
-\cpause
-\end{block}
-\cpause
-\begin{block}{Lecture 6: Learning to Rank}
-\begin{itemize}
-    \item Combine features from all models
-    \item Learn optimal ranking from labeled data
-    \item LambdaMART, RankNet, etc.
-    \item Put it all together
-\end{itemize}
-% \cpause
-\end{block}
-% \cpause
-\end{frame}
-
-\begin{frame}[shrink=15]{The Modern IR Stack}
-\begin{center}
-\begin{tikzpicture}[
-    node distance=1.2cm,
-    box/.style={rectangle, draw, fill=blue!20, text width=9cm, align=center, minimum height=0.8cm, font=\small},
-    arrow/.style={->, thick}
-]
-    \node[box, fill=green!20] (today) {Today: Boolean + Vector Space (TF-IDF, Cosine)};
-    \node[box, below=of today] (l2) {Lecture 2: Efficient Indexing (Sparse + Dense)};
-    \node[box, below=of l2] (l3) {Lecture 3: Better Ranking (BM25, LM, Query Expansion)};
-    \node[box, below=of l3] (l4) {Lecture 4: Neural Re-ranking (BERT, Transformers)};
-    \node[box, below=of l4] (l5) {Lecture 5: Dense Retrieval (Semantic Embeddings)};
-    \node[box, below=of l5, fill=orange!20] (l6) {Lecture 6: Learning to Rank (Combine Everything)};
-    
-    \draw[arrow] (today) -- (l2);
-    \draw[arrow] (l2) -- (l3);
-    \draw[arrow] (l3) -- (l4);
-    \draw[arrow] (l4) -- (l5);
-    \draw[arrow] (l5) -- (l6);
-\end{tikzpicture}
-\end{center}
-\end{frame}
-
-% ====================================================================
-% WRAP-UP
-% ====================================================================
-\section{Summary and Assignment}
-\begin{frame}
-  \centering
-  \LARGE \textbf{Summary and Assignment}
-\end{frame}
-
-
-\begin{frame}[shrink=5]{Key Takeaways}
-\begin{block}{1. Information Retrieval Fundamentals}
-\begin{itemize}
-    \item IR: Finding relevant unstructured documents at scale
-    \item Different from database systems (approximate, ranked)
-    \item Core challenges: representation, matching, ranking
-\end{itemize}
-\cpause
-\end{block}
-\cpause
-\begin{block}{2. The IR Process}
-\begin{itemize}
-    \item Text preprocessing: tokenization, normalization, stemming
-    \item Inverted index: maps terms to documents
-    \item Query processing: same preprocessing as documents
-\end{itemize}
-\cpause
-\end{block}
-\cpause
-\begin{block}{3. Boolean Retrieval}
-\begin{itemize}
-    \item Exact matching with AND/OR/NOT operators
-    \item Fast, transparent, but no ranking
-    \item Feast or famine problem
-\end{itemize}
-% \cpause
-\end{block}
-% \cpause
-\end{frame}
-
-\begin{frame}[shrink=5]{Key Takeaways (continued)}
-\begin{block}{4. Vector Space Model}
-\begin{itemize}
-    \item Documents and queries as weighted term vectors
-    \item TF-IDF weighting: term frequency × inverse document frequency
-    \item Cosine similarity for ranking
-    \item Solves Boolean's limitations: ranked results, partial matching
-\end{itemize}
-\cpause
-\end{block}
-\cpause
-\begin{block}{5. Evaluation}
-\begin{itemize}
-    \item Precision: fraction of retrieved that are relevant
-    \item Recall: fraction of relevant that are retrieved
-    \item MAP: average precision across queries (main metric)
-    \item Trade-offs based on application
-\end{itemize}
-\cpause
-\end{block}
-\cpause
-\begin{alertblock}{Remember}
-VSM is foundation for modern IR, but has limitations (bag of words, no semantics) that we'll address in future lectures
-\end{alertblock}
-\cpause
-\end{frame}
-
-\begin{frame}[shrink=5]{Assignment 1: Build Your First Search Engine}
-\textbf{Due:} Before Lecture 2
-
-\vspace{1em}
-
-\begin{block}{Part 1: Text Preprocessing (20 points)}
-\begin{itemize}
-    \item Implement tokenization, lowercasing, stop word removal
-    \item Implement Porter stemmer OR use existing library
-    \item Process provided document collection
-    \item Report: vocabulary size before/after preprocessing
-\end{itemize}
-\cpause
-\end{block}
-\cpause
-\begin{block}{Part 2: Boolean Retrieval (30 points)}
-\begin{itemize}
-    \item Build inverted index from preprocessed documents
-    \item Implement AND, OR, NOT query processing
-    \item Test on 10 queries, show results
-    \item Analyze: when does Boolean work well/poorly?
-\end{itemize}
-% \cpause
-\end{block}
-% \cpause
-\end{frame}
-
-\begin{frame}[shrink=5]{Assignment 1 (continued)}
-\begin{block}{Part 3: Vector Space Model (40 points)}
-\begin{itemize}
-    \item Implement TF-IDF weighting
-    \item Implement cosine similarity
-    \item Build ranked retrieval system
-    \item Compare with Boolean on same 10 queries
-    \item Report precision@10, recall for both systems
-\end{itemize}
-\cpause
-\end{block}
-\cpause
-\begin{block}{Part 4: Analysis (10 points)}
-\begin{itemize}
-    \item Show examples where VSM outperforms Boolean
-    \item Show examples where Boolean might be preferred
-    \item Discuss trade-offs: precision vs. recall
-    \item Identify limitations of your implementation
-\end{itemize}
-% \cpause
-\end{block}
-% \cpause
-\vspace{1em}
-
-\textbf{Deliverable:} Code + report (3-5 pages) + demo on sample queries
-\end{frame}
-
-\begin{frame}[shrink=5]{Starter Code and Dataset}
-\begin{block}{Provided Materials}
-\begin{itemize}
-    \item \textbf{Dataset:} TREC Disks 1-2 subset (10,000 documents) OR Cranfield collection
-    \item \textbf{Queries:} 50 test queries with relevance judgments
-    \item \textbf{Starter code:} Python skeleton with TODOs
-    \item \textbf{Evaluation script:} Compute precision, recall, MAP automatically
-\end{itemize}
-\cpause
-\end{block}
-\cpause
-\vspace{1em}
-
-\begin{alertblock}{Tips}
-\begin{itemize}
-    \item Start with small subset (100 docs) for debugging
-    \item Use Python dictionaries for inverted index
-    \item Test each component independently before integration
-    \item Compare your TF-IDF values with examples in lecture
-    \item Don't reinvent the wheel: use NLTK for tokenization, stemming
-\end{itemize}
-% \cpause
-\end{alertblock}
-% \cpause
-\end{frame}
-
-\begin{frame}[shrink=10]{Next Class: Indexing}
-\begin{block}{Preparation}
-\textbf{Read:}
-\begin{itemize}
-    \item Manning et al., Introduction to Information Retrieval, Chapter 4 (Index Construction)
-    \item Zobel \& Moffat (2006): ``Inverted files for text search engines''
-\end{itemize}
-\cpause
-\vspace{0.5em}
-
-\textbf{Skim:}
-\begin{itemize}
-    \item Original inverted index paper (historical perspective)
-\end{itemize}
-\cpause
-\end{block}
-\cpause
-\vspace{1em}
-\end{frame}
-
-\begin{frame}{Questions?}
-\begin{center}
-\Huge Questions?
-
-\vspace{2em}
-
-\Large
-Office Hours: [Your time]
-
-\vspace{1em}
-
-Email: [Your email]
-
-\vspace{1em}
-
-Course Website: [Your URL]
-
-\vspace{2em}
-
-\normalsize
-\textbf{Start early on the assignment!}
-
-\vspace{0.5em}
-
-Building a working search engine is more challenging (and fun!) than it looks.
-\end{center}
-\end{frame}
-
-% Backup slides
-\appendix
-
-\begin{frame}[shrink=15]{Backup: TF-IDF Variants}
-\begin{block}{Log-Frequency TF}
-$$\text{tf}(t,d) = \begin{cases} 1 + \log(\text{count}(t,d)) & \text{if count} > 0 \\ 0 & \text{otherwise} \end{cases}$$
-\begin{itemize}
-    \item Dampens effect of high term frequencies
-    \item 10 occurrences not 10× more important than 1
-\end{itemize}
-\cpause
-\end{block}
-\cpause
-\begin{block}{Augmented TF (Length Normalization)}
-$$\text{tf}(t,d) = 0.5 + 0.5 \times \frac{\text{count}(t,d)}{\max_{t'} \text{count}(t',d)}$$
-\begin{itemize}
-    \item Normalizes by maximum term frequency in document
-    \item Prevents bias toward long documents
-\end{itemize}
-\cpause
-\end{block}
-\cpause
-\begin{block}{Probabilistic IDF}
-$$\text{idf}(t) = \log \frac{N - \text{df}(t) + 0.5}{\text{df}(t) + 0.5}$$
-\begin{itemize}
-    \item Used in BM25 (Lecture 3)
-    \item Better theoretical foundation
-\end{itemize}
-% \cpause
-\end{block}
-% \cpause
-\end{frame}
-
-\begin{frame}[shrink=15]{Backup: Advanced Preprocessing}
-\begin{block}{Named Entity Recognition (NER)}
-Identify and preserve named entities
-\begin{itemize}
-    \item ``Barack Obama'' → single entity
-    \item ``New York City'' → single entity
-    \item Important for proper nouns
-\end{itemize}
-\cpause
-\end{block}
-\cpause
-\begin{block}{Compound Word Splitting}
-Handle compound words (especially in German, Dutch)
-\begin{itemize}
-    \item ``Informationssystem'' → ``Information'' + ``System''
-    \item Language-specific rules
-\end{itemize}
-\cpause
-\end{block}
-\cpause
-\begin{block}{Case Folding Exceptions}
-Preserve case for certain terms
-\begin{itemize}
-    \item Acronyms: ``USA'', ``IBM''
-    \item Names: ``Bush'' (president) vs. ``bush'' (plant)
-    \item Context-dependent decision
-\end{itemize}
-% \cpause
-\end{block}
-% \cpause
-\end{frame}
-
-\begin{frame}[shrink=15]{Backup: Alternative Similarity Measures}
-\begin{block}{Euclidean Distance}
-$$\text{dist}(\vec{q}, \vec{d}) = \sqrt{\sum_t (q_t - d_t)^2}$$
-\begin{itemize}
-    \item \textcolor{red}{\ding{55}} Sensitive to document length
-    \item \textcolor{red}{\ding{55}} Not normalized
-    \item Rarely used in IR
-\end{itemize}
-\cpause
-\end{block}
-\cpause
-\begin{block}{Jaccard Similarity}
-$$\text{Jaccard}(q,d) = \frac{|q \cap d|}{|q \cup d|}$$
-\begin{itemize}
-    \item Set-based similarity
-    \item \textcolor{red}{\ding{55}} Ignores term frequencies
-    \item Used for duplicate detection
-\end{itemize}
-\cpause
-\end{block}
-\cpause
-\begin{block}{Dice Coefficient}
-$$\text{Dice}(q,d) = \frac{2|q \cap d|}{|q| + |d|}$$
-\begin{itemize}
-    \item Similar to Jaccard
-    \item Weighs shared terms more heavily
-\end{itemize}
-% \cpause
-\end{block}
-% \cpause
-\end{frame}
-
-\begin{frame}[shrink=15]{Backup: Test Collections}
-\begin{block}{Standard IR Test Collections}
-\begin{itemize}
-    \item \textbf{TREC:} Text REtrieval Conference collections (various domains)
-    \item \textbf{Cranfield:} Classic small collection (1400 docs, aerodynamics)
-    \item \textbf{CACM:} Computer science abstracts (3200 docs)
-    \item \textbf{Reuters:} News articles (800,000+ docs)
-    \item \textbf{ClueWeb:} Web crawl (1+ billion pages)
-    \item \textbf{MS MARCO:} Microsoft passage ranking (8.8M passages)
-\end{itemize}
-\cpause
-\end{block}
-\cpause
-\begin{block}{Components of Test Collection}
-\begin{enumerate}
-    \item \textbf{Documents:} The corpus to search
-    \item \textbf{Topics/Queries:} Information needs
-    \item \textbf{Relevance judgments (qrels):} Which docs are relevant to which queries
-    \item Usually created by human assessors (expensive!)
-\end{enumerate}
-% \cpause
-\end{block}
-% \cpause
-\end{frame}
 
 \end{document}

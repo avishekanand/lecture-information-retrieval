@@ -1,6 +1,16 @@
 \documentclass[aspectratio=169]{beamer}
 \usetheme{TUDelft}
 
+% ====================================================================
+% ANIMATION TOGGLE
+% ====================================================================
+\newif\ifanimated
+\animatedtrue
+\ifdefined\staticmode
+  \animatedfalse
+\fi
+\newcommand{\cpause}{\ifanimated\pause\fi}
+
 % Packages
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -31,8 +41,8 @@
 \usetikzlibrary{shapes,arrows,positioning,calc,patterns,decorations.pathreplacing}
 
 % Title information
-\title[Indexing Deep Dive]{Information Retrieval Indexing}
-\subtitle{Posting Lists, Query Processing, Compression \& ANN Indexing}
+\title[IR Indexing]{Information Retrieval Indexing}
+\subtitle{Lecture 2: Posting Lists, Compression \& ANN Indexing}
 \author{Avishek Anand}
 \institute{Information Retrieval}
 \date{\today}
@@ -49,6 +59,22 @@
 
 \begin{frame}{Outline}
 \tableofcontents
+\end{frame}
+
+% Course Overview
+\begin{frame}{Course Overview}
+\begin{enumerate}
+    \item Introduction to IR: VSM \& Boolean Retrieval \checkmark
+    \item \textbf{Indexing: Sparse and Dense} $\leftarrow$ Today
+    \item Query Understanding \& Expansion
+    \item Evaluation of IR Systems
+    \item Ranking: BM25, Language Models, and Beyond
+    \item Embeddings \& Neural Ranking
+    \item Dense Retrieval
+    \item Learning to Rank
+\end{enumerate}
+\cpause
+\vspace{1em}
 \end{frame}
 
 % ====================================================================
@@ -167,9 +193,9 @@ Building an IR system happens in three main stages:
 
 \textbf{Each posting contains:}
 \begin{itemize}
-    \item Document ID \pause
-    \item Term frequency (for ranking) \pause
-    \item Positions (for phrase queries, proximity) \pause
+    \item Document ID \cpause
+    \item Term frequency (for ranking) \cpause
+    \item Positions (for phrase queries, proximity) \cpause
     \item Potentially: field info, offsets, payload data
 \end{itemize}
 \end{frame}
@@ -183,7 +209,7 @@ $$\langle \text{docID}_1, \text{docID}_2, \text{docID}_3, \ldots \rangle$$
     \item Example: [5, 12, 27, 89, 102]
 \end{itemize}
 \end{block}
-\pause
+\cpause
 
 \begin{block}{With Frequencies}
 $$\langle (\text{docID}_1, \text{tf}_1), (\text{docID}_2, \text{tf}_2), \ldots \rangle$$
@@ -218,7 +244,7 @@ $$\langle (\text{docID}_1, \text{tf}_1, [\text{pos}_{1,1}, \text{pos}_{1,2}, \ld
         \item Required for compression (gap encoding)
         \item Allows skip pointers
     \end{itemize}
-    \pause
+    \cpause
     
     \item \textbf{Variable Length}
     \begin{itemize}
@@ -226,7 +252,7 @@ $$\langle (\text{docID}_1, \text{tf}_1, [\text{pos}_{1,1}, \text{pos}_{1,2}, \ld
         \item Common terms: long lists (e.g., ``the'': millions of docs)
         \item Power-law distribution (Zipf's law)
     \end{itemize}
-    \pause
+    \cpause
     
     \item \textbf{Stored Sequentially}
     \begin{itemize}
@@ -443,8 +469,8 @@ Trade-off between space and speedup
 
 \textbf{Key challenge:} Efficiency
 \begin{itemize}
-    \item Can't score all documents (millions/billions) \pause
-    \item Must process posting lists cleverly \pause
+    \item Can't score all documents (millions/billions) \cpause
+    \item Must process posting lists cleverly \cpause
     \item Different algorithms for different scenarios
 \end{itemize}
 \end{frame}
@@ -809,17 +835,17 @@ Instead of sorting postings by docID, sort by impact (score)
 
 \textbf{Benefits:}
 \begin{itemize}
-    \item \textbf{Early termination:} Stop after processing top-$k$ high-impact postings \pause
-    \item \textbf{Safe to skip:} Low-impact docs unlikely to reach top-$k$ \pause
+    \item \textbf{Early termination:} Stop after processing top-$k$ high-impact postings \cpause
+    \item \textbf{Safe to skip:} Low-impact docs unlikely to reach top-$k$ \cpause
     \item \textbf{Query-independent:} Pre-computed at index time
 \end{itemize}
-\pause
+\cpause
 
 \vspace{0.5em}
 
 \textbf{Drawback:}
 \begin{itemize}
-    \item Can't use skip pointers (not sorted by docID) \pause
+    \item Can't use skip pointers (not sorted by docID) \cpause
     \item Boolean queries harder (need docID order for AND)
 \end{itemize}
 \end{frame}
@@ -1299,7 +1325,7 @@ In most posting lists, the vast majority of gaps fit in a small number of bits, 
     \item Compression: 6-8$\times$ for typical web collections
     \item Decompression: 3-5 GB/s on modern CPU
     \item Used in: Lucene, Elasticsearch (via FOR variants)
-\\end{itemize}
+\end{itemize}
 \end{exampleblock}
 \end{frame}
 

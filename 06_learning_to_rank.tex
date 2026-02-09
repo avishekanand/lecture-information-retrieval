@@ -1,6 +1,16 @@
 \documentclass[aspectratio=169]{beamer}
 \usetheme{TUDelft}
 
+% ====================================================================
+% ANIMATION TOGGLE
+% ====================================================================
+\newif\ifanimated
+\animatedtrue
+\ifdefined\staticmode
+  \animatedfalse
+\fi
+\newcommand{\cpause}{\ifanimated\pause\fi}
+
 % Packages
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -31,8 +41,8 @@
 \usetikzlibrary{shapes,arrows,positioning,calc}
 
 % Title information
-\title[Learning to Rank]{Lecture 6: Learning to Rank}
-\subtitle{The Machine Learning Framework for IR}
+\title[Learning to Rank]{Learning to Rank}
+\subtitle{Lecture 8: Learning optimal ranking from data}
 \author{Avishek Anand}
 \institute{Information Retrieval}
 \date{\today}
