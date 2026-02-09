@@ -51,34 +51,17 @@
 \vspace{1em}
 
 \begin{enumerate}
-    \item \textbf{Inverted Index Posting Lists}
-    \begin{itemize}
-        \item Structure and formats
-        \item Skip lists and optimizations
-    \end{itemize}
-    \pause
-    
-    \item \textbf{Query Processing Algorithms}
-    \begin{itemize}
-        \item Document-at-a-time (DAAT)
-        \item Term-at-a-time (TAAT)
-        \item Optimizations and early termination
-    \end{itemize}
-    \pause
-    
-    \item \textbf{Index Compression}
-    \begin{itemize}
-        \item Gap encoding
-        \item Variable-byte, Gamma, PForDelta
-        \item Trade-offs
-    \end{itemize}
-    \pause
-    
-    \item \textbf{Approximate k-NN Indexing}
-    \begin{itemize}
-        \item HNSW, IVF, Product Quantization
-        \item Dense retrieval for neural search
-    \end{itemize}
+    \item Introduction to IR: Vector Space Model \& Boolean Retrieval \checkmark
+    \item \textbf{Indexing: Sparse and Dense} $\leftarrow$ Today
+    \item Query Understanding
+    \item Ranking: BM25, Query Expansion, Language Models
+    \item Evaluation of IR Systems
+    \item Embeddings \& Transformer-based Re-rankers
+    \item Dense Retrieval
+    \item Learning to Rank
+    \item Recommender Systems
+    \item Retrieval Augmented Generation (RAG)
+    \item LLMs as a Judge
 \end{enumerate}
 \end{frame}
 
@@ -89,6 +72,64 @@
 % ====================================================================
 % SECTION 1: INVERTED INDEX POSTING LISTS
 % ====================================================================
+\section{The Information Retrieval Process}
+\begin{frame}[shrink=5]{The Complete IR Pipeline}
+\begin{center}
+\includegraphics[width=0.7\textwidth]{figures/ir_pipeline.png}
+\end{center}
+\end{frame}
+
+\begin{frame}[shrink=5]{Text Preprocessing \& Indexing}
+\begin{block}{The Foundation of Search}
+Building an IR system happens in three main stages:
+\end{block}
+
+\begin{itemize}
+    \item \textbf{Stage 1: Offline Indexing}
+    \begin{itemize}
+        \item Documents are preprocessed (tokenized, stemmed, etc.)
+        \item Inverted indexes are built and compressed
+    \end{itemize}
+    \item \textbf{Stage 2: Online Query Processing}
+    \begin{itemize}
+        \item Query is preprocessed \textbf{identically} to documents
+        \item Match terms in the index
+    \end{itemize}
+    \item \textbf{Stage 3: Ranking}
+    \begin{itemize}
+        \item Scored according to a model (TF-IDF, BM25, etc.)
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[shrink=10]{Step-by-Step: Query Processing}
+\textbf{Applying consistent preprocessing}
+
+\vspace{1em}
+
+\begin{exampleblock}{Example}
+\textbf{User Query:} ``Running Dogs in the Park''
+
+\vspace{0.5em}
+
+\begin{enumerate}
+    \item \textbf{Tokenization:} [Running, Dogs, in, the, Park]
+    \item \textbf{Lowercasing:} [running, dogs, in, the, park]
+    \item \textbf{Stop word removal:} [running, dogs, park]
+    \item \textbf{Stemming:} [run, dog, park]
+\end{enumerate}
+\vspace{0.5em}
+
+\textbf{Processed Query:} [run, dog, park]
+\end{exampleblock}
+
+\vspace{1em}
+
+\begin{alertblock}{The Consistency Principle}
+\textbf{Preprocessing must be identical for indexing and retrieval!}
+\end{alertblock}
+\end{frame}
+
 \section{Inverted Index Posting Lists}
 
 \begin{frame}{Inverted Index: Quick Recap}
@@ -986,7 +1027,6 @@ Gaps: [15, 5008, 84211] (large gaps)
 
 \textbf{Common term ``the'':} [1, 2, 5, 7, 8, 10, 12, ...] \\
 Gaps: [1, 1, 3, 2, 1, 2, 2, ...] (small gaps)
-\end{itemize}
 \end{exampleblock}
 
 \vspace{1em}

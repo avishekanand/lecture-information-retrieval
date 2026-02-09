@@ -59,12 +59,17 @@
 % Course Overview
 \begin{frame}{Course Overview}
 \begin{enumerate}
-    \item \textbf{Introduction to IR: Vector Space Model & Boolean Retrieval} $\leftarrow$ Today
+    \item \textbf{Introduction to IR: Vector Space Model \& Boolean Retrieval} $\leftarrow$ Today
     \item Indexing: Sparse and Dense
+    \item Query Understanding
     \item Ranking: BM25, Query Expansion, Language Models
-    \item Embeddings & Transformer-based Re-rankers
+    \item Evaluation of IR Systems
+    \item Embeddings \& Transformer-based Re-rankers
     \item Dense Retrieval
     \item Learning to Rank
+    \item Recommender Systems
+    \item Retrieval Augmented Generation (RAG)
+    \item LLMs as a Judge
 \end{enumerate}
 \cpause
 \vspace{1em}
@@ -73,7 +78,7 @@
     \item Understand what IR is and why it matters
     \item Learn the fundamental IR process
     \item Master Boolean retrieval and the vector space model
-    \item Build your first search engine
+    % \item Build your first search engine
 \end{itemize}
 \end{frame}
 
@@ -85,6 +90,11 @@
 % SECTION 1: WHAT IS INFORMATION RETRIEVAL?
 % ====================================================================
 \section{What is Information Retrieval?}
+\begin{frame}
+  \centering
+  \LARGE \textbf{What is Information Retrieval?}
+\end{frame}
+
 
 \begin{frame}{What is Information Retrieval?}
 \begin{block}{Definition}
@@ -93,12 +103,55 @@ Information Retrieval (IR) is finding material (usually documents) of an unstruc
 \cpause
 \vspace{1em}
 
-\begin{exampleblock}{Key Characteristics}
+\begin{exampleblock}{The Essence of IR: Given an Information Need}
 \begin{itemize}
-    \item \textbf{Unstructured data:} Text, images, audio (vs. databases with structured records)
-    \item \textbf{Large scale:} Billions of documents (web search, enterprise search)
-    \item \textbf{Information need:} User wants to learn something, not exact matching
-    \item \textbf{Relevance:} Not all results equally useful
+    \item \textbf{Find relevant results} that satisfy the information need
+    \item \textbf{By searching over a large collection} of items (billions of documents)
+    \item \textbf{In reasonable time:}
+    \begin{itemize}
+        \item Web search: $< 1$ second
+        \item AI/conversational systems: allow more time for generation
+    \end{itemize}
+    \item \textbf{Present results} in a manner that is easily consumable by humans
+\end{itemize}
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}[shrink]{The Retrieval Challenge: Understanding Intent}
+\begin{center}
+\begin{tikzpicture}[
+    searchbox/.style={rectangle, draw, thick, minimum width=8cm, minimum height=0.8cm, font=\large},
+    user/.style={circle, fill=gray!30, minimum size=0.8cm},
+    icon/.style={font=\huge}
+]
+    % User Icon
+    \node[user] (u) at (0,3) {};
+    \node[icon] at (u) {\ding{43}}; % Hand/User representation
+    \node[right=0.2cm of u] {\textbf{User with a need}};
+
+    % Search Box
+    \node[searchbox, fill=white] (box) at (4,1) {\texttt{mouse trap no poison}};
+    \node[right=0.2cm of box, fill=black, text=white, inner sep=5pt] {\textbf{Search}};
+    
+    % Cloud / Intent
+    \node[draw, ellipse, dashed, fill=blue!5, minimum width=4cm, minimum height=1.5cm] (intent) at (7,3.5) {
+        \begin{tabular}{c}
+            \small \textit{``I want to catch the mouse''} \\
+            \small \textit{``But I have a cat, so''} \\
+            \small \textit{``No chemicals/poison!''}
+        \end{tabular}
+    };
+    \draw[->, dotted] (u) -- (intent);
+    \draw[->, thick, blue] (intent) -- (box) node[midway, right] {\small Translation to keywords};
+\end{tikzpicture}
+\end{center}
+
+\vspace{1em}
+\begin{exampleblock}{The Semantic Gap}
+\begin{itemize}
+    \item \textbf{Syntactic match:} Docs containing ``mouse'', ``trap'', ``poison''.
+    \item \textbf{User intent:} Docs describing \textit{humane} traps or \textit{mechanical} traps.
+    \item \textbf{Danger:} Returning docs about ``how poison traps work'' (contains keywords!).
 \end{itemize}
 \end{exampleblock}
 \end{frame}
@@ -129,6 +182,42 @@ Databases: \textit{``Give me all records matching X''} \\
 IR: \textit{``Give me the most relevant documents about X''}
 \end{alertblock}
 \end{frame}
+
+\begin{frame}[shrink]{IR vs. Natural Language Processing (NLP)}
+\begin{block}{The Relationship}
+IR and NLP are closely related but have different focal points:
+\end{block}
+
+\begin{columns}
+\begin{column}{0.48\textwidth}
+\textbf{NLP (Language Centric)}
+\begin{itemize}
+    \item Focus on language \textbf{understanding}, representation, and \textbf{generation}.
+    \item Deep analysis of syntax, semantics, and pragmatics.
+    \item Models like BERT, Llama, GPT.
+\end{itemize}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\textbf{IR (Scale \& Need Centric)}
+\begin{itemize}
+    \item Focus on \textbf{information seeking} at a massive scale.
+    \item Uses NLP tech as a toolkit to model relevance.
+    \item Priority: Speed, ranking, and satisfying user needs.
+\end{itemize}
+\end{column}
+\end{columns}
+
+\vspace{0.5em}
+
+\begin{exampleblock}{Typical Tasks}
+\begin{itemize}
+    \item \textbf{NLP:} Named Entity Recognition, Dependency Parsing, Translation, Summarization.
+    \item \textbf{IR:} Web Search, Recommendation Systems, Ad-hoc Retrieval, Question Answering.
+\end{itemize}
+\end{exampleblock}
+\end{frame}
+
 
 \begin{frame}{Real-World IR Applications}
 \begin{columns}
@@ -178,7 +267,7 @@ IR: \textit{``Give me the most relevant documents about X''}
 \end{center}
 \end{frame}
 
-\begin{frame}{The Scale of Modern IR}
+\begin{frame}[shrink=5]{The Scale of Modern IR}
 \begin{block}{Web Search Statistics (2024)}
 \begin{itemize}
     \item \textbf{Google:} Processes 8.5+ billion searches per day
@@ -201,7 +290,7 @@ IR: \textit{``Give me the most relevant documents about X''}
 \end{exampleblock}
 \end{frame}
 
-\begin{frame}{The Information Retrieval Problem}
+\begin{frame}[shrink=10]{The Information Retrieval Problem}
 \begin{center}
 \begin{tikzpicture}[
     node distance=2cm,
@@ -235,259 +324,40 @@ IR: \textit{``Give me the most relevant documents about X''}
 \end{frame}
 
 % ====================================================================
-% SECTION 2: THE IR PROCESS
+% ====================================================================
+% SECTION 2: THE IR PROCESS (MOVED TO LECTURE 2)
 % ====================================================================
 \section{The Information Retrieval Process}
+\begin{frame}{The Information Retrieval Process}
+\begin{alertblock}{Forward Reference: Lecture 2}
+\textbf{The fundamental IR process}, including pipeline architectures and preprocessing, is now covered in detail in \textbf{Lecture 2: Indexing}.
+\end{alertblock}
 
-\begin{frame}[shrink=5]{The Complete IR Pipeline}
+\vspace{1em}
+\begin{exampleblock}{Why the change?}
+\begin{itemize}
+    \item Better logical flow: Preprocessing is tightly coupled with building indexes.
+    \item Focus for today: Understanding the models (Boolean and Vector Space).
+\end{itemize}
+\end{exampleblock}
+
+\vspace{1em}
 \begin{center}
-\includegraphics[width=0.7\textwidth]{figures/ir_pipeline.png}
+\textit{Proceeding to Section 3: Boolean Retrieval...}
 \end{center}
-\end{frame}
-
-\begin{frame}[shrink=10]{Step 1: Text Preprocessing}
-\textbf{Goal:} Convert raw text into a normalized, searchable form
-
-\vspace{1em}
-
-\begin{block}{Tokenization}
-Split text into individual tokens (words)
-\begin{itemize}
-    \item Input: ``The quick brown fox jumps over the lazy dog.''
-    \item Output: [``The'', ``quick'', ``brown'', ``fox'', ``jumps'', ``over'', ``the'', ``lazy'', ``dog'']
-\end{itemize}
-\end{block}
-\cpause
-\begin{alertblock}{Challenges}
-\begin{itemize}
-    \item Punctuation: ``don't'' → ``don'' + ``t'' or ``dont''?
-    \item Hyphens: ``state-of-the-art'' → one token or multiple?
-    \item Numbers: ``\$1,000.50'' $\rightarrow$ keep as is or normalize?
-    \item URLs, emails: ``http://example.com'' → one token?
-    \item Different languages: Chinese/Japanese no spaces between words
-\end{itemize}
-\end{alertblock}
-\end{frame}
-
-\begin{frame}[shrink=10]{Step 1: Text Preprocessing (continued)}
-\begin{block}{Normalization}
-Convert tokens to a standard form
-\begin{itemize}
-    \item \textbf{Lowercasing:} ``Apple'' → ``apple''
-    \item \textbf{Accent removal:} ``café'' → ``cafe''
-    \item \textbf{Date/number normalization:} ``5/10/2024'' → ``2024-10-05''
-\end{itemize}
-\cpause
-\end{block}
-\cpause
-\begin{exampleblock}{Stop Word Removal}
-Remove common words with little meaning
-\begin{itemize}
-    \item Stop words: ``the'', ``a'', ``an'', ``is'', ``of'', ``in'', ...
-    \item Before: ``the quick brown fox''
-    \item After: ``quick brown fox''
-    \item \textbf{Caution:} Can hurt phrase queries (``to be or not to be'')
-\end{itemize}
-\cpause
-\end{exampleblock}
-\cpause
-\begin{alertblock}{Modern Trend}
-Many systems now \textit{keep} stop words (storage is cheap, they can be important for some queries)
-\end{alertblock}
-\cpause
-\end{frame}
-
-\begin{frame}[shrink=10]{Step 1: Stemming vs. Lemmatization}
-\textbf{Goal:} Reduce words to their base form
-
-\vspace{1em}
-
-\begin{columns}
-\begin{column}{0.48\textwidth}
-\begin{block}{Stemming}
-Crude chopping of word endings
-\begin{itemize}
-    \item \textbf{Algorithm:} Porter Stemmer
-    \item running → run
-    \item runs → run
-    \item runner → runner
-    \item \textcolor{red}{university → univers}
-\end{itemize}
-\cpause
-\textbf{Fast but imprecise}
-\end{block}
-\cpause
-\end{column}
-
-\begin{column}{0.48\textwidth}
-\begin{block}{Lemmatization}
-Linguistic reduction to dictionary form
-\begin{itemize}
-    \item \textbf{Uses:} Dictionary lookup
-    \item running → run
-    \item runs → run
-    \item better → good
-    \item am/is/are → be
-\end{itemize}
-\cpause
-\textbf{Accurate but slower}
-\end{block}
-\cpause
-\end{column}
-\end{columns}
-
-\vspace{1em}
-
-\begin{exampleblock}{Trade-off}
-\begin{itemize}
-    \item \textbf{Stemming:} Faster, good for most IR tasks
-    \item \textbf{Lemmatization:} Better for precise matching, NLP tasks
-    \item Modern neural methods often skip both (learn representations directly)
-\end{itemize}
-\cpause
-\end{exampleblock}
-\cpause
-\end{frame}
-
-\begin{frame}{Preprocessing Pipeline Example}
-\begin{block}{Original Text}
-\texttt{The Quick Brown Fox Jumps Over The Lazy Dog!}
-\end{block}
-\cpause
-\vspace{0.5em}
-
-\begin{tikzpicture}[
-    node distance=0.05cm,
-    box/.style={rectangle, draw, fill=blue!10, text width=11cm, align=left, font=\small},
-    arrow/.style={->, thick}
-]
-    \node[box] (step1) {\textbf{Tokenization:} \\ {}
-    [\texttt{The}, \texttt{Quick}, \texttt{Brown}, \texttt{Fox}, \texttt{Jumps}, \texttt{Over}, \texttt{The}, \texttt{Lazy}, \texttt{Dog}, \texttt{!}]};
-    
-    \node[box, below=of step1] (step2) {\textbf{Lowercasing:} \\ {}
-    [\texttt{the}, \texttt{quick}, \texttt{brown}, \texttt{fox}, \texttt{jumps}, \texttt{over}, \texttt{the}, \texttt{lazy}, \texttt{dog}, \texttt{!}]};
-    
-    \node[box, below=of step2] (step3) {\textbf{Punctuation Removal:} \\ {}
-    [\texttt{the}, \texttt{quick}, \texttt{brown}, \texttt{fox}, \texttt{jumps}, \texttt{over}, \texttt{the}, \texttt{lazy}, \texttt{dog}]};
-    
-    \node[box, below=of step3] (step4) {\textbf{Stop Word Removal:} \\ {}
-    [\texttt{quick}, \texttt{brown}, \texttt{fox}, \texttt{jumps}, \texttt{lazy}, \texttt{dog}]};
-    
-    \node[box, below=of step4] (step5) {\textbf{Stemming:} \\ {}
-    [\texttt{quick}, \texttt{brown}, \texttt{fox}, \texttt{jump}, \texttt{lazi}, \texttt{dog}]};
-\end{tikzpicture}
-\end{frame}
-
-\begin{frame}[shrink=10]{Step 2: Building the Inverted Index}
-\textbf{Core Data Structure:} Maps each term to documents containing it
-
-\vspace{1em}
-
-\begin{exampleblock}{Simple Example}
-\textbf{Documents:}
-\begin{itemize}
-    \item Doc1: ``the cat sat on the mat''
-    \item Doc2: ``the dog sat on the log''
-    \item Doc3: ``cats and dogs are friends''
-\end{itemize}
-\cpause
-\end{exampleblock}
-\cpause
-\vspace{0.5em}
-
-\begin{table}
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{Term} & \textbf{Posting List (doc IDs)} \\
-\midrule
-cat & [1] \\
-sat & [1, 2] \\
-mat & [1] \\
-dog & [2, 3] \\
-log & [2] \\
-cats & [3] \\
-friends & [3] \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\textbf{Query ``dog'':} Look up posting list → return [2, 3]
-\end{frame}
-
-\begin{frame}{Inverted Index with Term Frequencies}
-\textbf{Enhancement:} Store not just document IDs, but also term frequencies
-
-\vspace{1em}
-
-\begin{table}
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{Term} & \textbf{Posting List [(docID, freq)]} \\
-\midrule
-cat & [(1, 1)] \\
-sat & [(1, 1), (2, 1)] \\
-mat & [(1, 1)] \\
-dog & [(2, 1), (3, 1)] \\
-the & [(1, 2), (2, 2)] \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\vspace{1em}
-
-\textbf{Why store frequency?}
-\begin{itemize}
-    \item Enables ranking (documents with term appearing more are often more relevant)
-    \item Foundation for TF-IDF, BM25 (Lecture 3)
-\end{itemize}
-\cpause
-\end{frame}
-
-\begin{frame}[shrink=10]{Step 3: Query Processing}
-\textbf{Apply same preprocessing to queries as documents}
-
-\vspace{1em}
-
-\begin{exampleblock}{Example}
-\textbf{User Query:} ``Running Dogs in the Park''
-
-\vspace{0.5em}
-
-\begin{enumerate}
-    \item \textbf{Tokenization:} [Running, Dogs, in, the, Park]
-    \item \textbf{Lowercasing:} [running, dogs, in, the, park]
-    \item \textbf{Stop word removal:} [running, dogs, park]
-    \item \textbf{Stemming:} [run, dog, park]
-\end{enumerate}
-\cpause
-\vspace{0.5em}
-
-\textbf{Processed Query:} [run, dog, park]
-\end{exampleblock}
-\cpause
-\vspace{1em}
-
-\begin{alertblock}{Critical Principle}
-\textbf{Same preprocessing for documents and queries!}
-\begin{itemize}
-    \item Otherwise terms won't match
-    \item If docs are stemmed, queries must be stemmed
-\end{itemize}
-\cpause
-\end{alertblock}
-\cpause
 \end{frame}
 
 % ====================================================================
 % SECTION 3: BOOLEAN RETRIEVAL
 % ====================================================================
 \section{Boolean Retrieval}
+\begin{frame}
+  \centering
+  \LARGE \textbf{Boolean Retrieval}
+\end{frame}
 
-\begin{frame}{Boolean Retrieval Model}
+
+\begin{frame}[shrink=5]{Boolean Retrieval Model}
 \begin{block}{Definition}
 Documents are retrieved if they satisfy a Boolean expression of query terms
 \end{block}
@@ -510,9 +380,9 @@ Documents are retrieved if they satisfy a Boolean expression of query terms
     \item \texttt{java NOT coffee} → docs with ``java'' but not ``coffee''
     \item \texttt{(climate AND change) OR (global AND warming)}
 \end{itemize}
-\cpause
+% \cpause
 \end{exampleblock}
-\cpause
+% \cpause
 \end{frame}
 
 \begin{frame}{Boolean Retrieval with Sets}
@@ -552,33 +422,7 @@ Documents are retrieved if they satisfy a Boolean expression of query terms
     \item \texttt{cat OR dog}: \{D1, D3\} $\cup$ \{D2, D3\} = \{D1, D2, D3\}
     \item \texttt{cat NOT dog}: \{D1, D3\} - \{D2, D3\} = \{D1\}
 \end{itemize}
-\cpause
-\end{frame}
-
-\begin{frame}[shrink=5]{Boolean Query Processing Algorithm}
-\begin{algorithmic}[1]
-\STATE \textbf{Input:} Boolean query (e.g., ``A AND B OR C'')
-\STATE \textbf{Output:} Set of matching document IDs
-\STATE
-\STATE Parse query into expression tree
-\FOR{each term in query}
-    \STATE Fetch posting list from inverted index
-\ENDFOR
-\STATE Evaluate expression bottom-up:
-\STATE \quad - For AND: Intersect posting lists
-\STATE \quad - For OR: Union posting lists
-\STATE \quad - For NOT: Remove from universe
-\RETURN Final set of document IDs
-\end{algorithmic}
-
-\vspace{1em}
-
-\textbf{Optimization:} Process smaller posting lists first
-\begin{itemize}
-    \item \texttt{rare AND common}: Process ``rare'' first (smaller list)
-    \item Intersection size $\le$ min(|list1|, |list2|)
-\end{itemize}
-\cpause
+% \cpause
 \end{frame}
 
 \begin{frame}[shrink=10]{Boolean Retrieval Example}
@@ -612,7 +456,7 @@ Documents are retrieved if they satisfy a Boolean expression of query terms
     \item \texttt{dog}: \{D2, D3\}
     \item \texttt{(cat AND mat) OR dog}: \{D1\} $\cup$ \{D2, D3\} = \{D1, D2, D3\}
 \end{enumerate}
-\cpause
+% \cpause
 \end{frame}
 
 \begin{frame}[shrink=10]{Advantages of Boolean Retrieval}
@@ -626,7 +470,7 @@ Documents are retrieved if they satisfy a Boolean expression of query terms
 \end{itemize}
 \cpause
 \end{block}
-\cpause
+% \cpause
 \vspace{1em}
 
 \begin{exampleblock}{Use Cases}
@@ -667,11 +511,11 @@ Documents are retrieved if they satisfy a Boolean expression of query terms
         \item Could return 0 results or 10 million
         \item Users want ``top 10'', not ``all matching''
     \end{itemize}
-\cpause
+% \cpause
 \end{enumerate}
-\cpause
+% \cpause
 \end{alertblock}
-\cpause
+% \cpause
 \end{frame}
 
 \begin{frame}{Boolean Retrieval: The Feast or Famine Problem}
@@ -720,12 +564,41 @@ Documents are retrieved if they satisfy a Boolean expression of query terms
 \end{center}
 \end{frame}
 
+\begin{frame}[shrink=5]{Examples of Search Systems}
+\begin{columns}
+\begin{column}{0.48\textwidth}
+\begin{center}
+\textbf{Conversational AI Search}\\[0.5em]
+\includegraphics[width=\textwidth]{figures/search_chatgpt.png}\\
+\small ChatGPT - AI-powered conversational search
+\end{center}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{center}
+\textbf{E-Commerce Search}\\[0.5em]
+\includegraphics[width=\textwidth]{figures/search_amazon.png}\\
+\small Amazon - Product search and recommendations
+\end{center}
+\end{column}
+\end{columns}
+
+\vspace{1em}
+\begin{alertblock}{Common Thread}
+All search systems share the same core challenge: finding relevant items from massive collections in real-time.
+\end{alertblock}
+\end{frame}
+
 % ====================================================================
 % SECTION 4: VECTOR SPACE MODEL
 % ====================================================================
 \section{The Vector Space Model}
+\begin{frame}
+  \centering
+  \LARGE \textbf{The Vector Space Model}
+\end{frame}
 
-\begin{frame}{From Boolean to Vector Space}
+
+\begin{frame}[shrink=10]{From Boolean to Vector Space}
 \begin{block}{Key Insight}
 Instead of documents being sets of terms (in/out), represent them as \textbf{vectors} with weights for each term
 \end{block}
@@ -776,7 +649,7 @@ Instead of documents being sets of terms (in/out), represent them as \textbf{vec
 \begin{exampleblock}{Advantage}
 D2 still returned (has ``cat''), just ranked lower than D1
 \end{exampleblock}
-\cpause
+% \cpause
 \end{frame}
 
 \begin{frame}[shrink=10]{Vector Space Model: Geometric View}
@@ -870,7 +743,7 @@ where:
     \item \textbf{High IDF:} Term is rare across collection → discriminative
     \item \textbf{High TF-IDF:} Important AND discriminative
 \end{itemize}
-\cpause
+% \cpause
 \end{frame}
 
 \begin{frame}[shrink=10]{TF-IDF Example}
@@ -945,7 +818,7 @@ D3 & 0 & 1 × log(3/2) = 0.18 & 0 & 2 × log(3/1) = 0.95 \\
     \item D2: [0.18, 0, 0.48, 0]
     \item D3: [0, 0.18, 0, 0.95]
 \end{itemize}
-\cpause
+% \cpause
 \end{frame}
 
 \begin{frame}[shrink=10]{Cosine Similarity}
@@ -974,7 +847,7 @@ $$\text{sim}(\vec{q}, \vec{d}) = \frac{\vec{q} \cdot \vec{d}}{|\vec{q}| \times |
     \item Cosine normalizes for document length
     \item Long documents don't automatically score higher
 \end{itemize}
-\cpause
+% \cpause
 \end{frame}
 
 \begin{frame}[shrink=10]{Cosine Similarity: Example Calculation}
@@ -1000,32 +873,6 @@ $$\text{sim}(\vec{q}, \vec{d}) = \frac{\vec{q} \cdot \vec{d}}{|\vec{q}| \times |
 \vspace{1em}
 
 \textbf{Ranking:} D1 (0.95) > D2 (0.25) > D3 (0.13)
-\end{frame}
-
-\begin{frame}[shrink=10]{Vector Space Retrieval Algorithm}
-\begin{algorithmic}[1]
-\STATE \textbf{Input:} Query $q$, Document collection $D$
-\STATE \textbf{Output:} Ranked list of documents
-\STATE
-\STATE \textbf{Offline (Indexing):}
-\FOR{each document $d \in D$}
-    \FOR{each term $t$ in vocabulary}
-        \STATE Compute $w_{t,d} = \text{tf}(t,d) \times \text{idf}(t)$
-    \ENDFOR
-    \STATE Store document vector $\vec{d}$
-\ENDFOR
-\STATE
-\STATE \textbf{Online (Query Processing):}
-\FOR{each term $t$ in query $q$}
-    \STATE Compute $w_{t,q} = \text{tf}(t,q) \times \text{idf}(t)$
-\ENDFOR
-\STATE Create query vector $\vec{q}$
-\FOR{each document $d$}
-    \STATE Compute $\text{sim}(q,d) = \cos(\vec{q}, \vec{d})$
-\ENDFOR
-\STATE Sort documents by similarity (descending)
-\RETURN Top-$k$ documents
-\end{algorithmic}
 \end{frame}
 
 \begin{frame}[shrink=15]{VSM vs. Boolean Retrieval}
@@ -1061,7 +908,7 @@ Relevance & All equal & Ranked by relevance \\
 \cpause
 \end{frame}
 
-\begin{frame}{Advantages of Vector Space Model}
+\begin{frame}[shrink=5]{Advantages of Vector Space Model}
 \begin{block}{\checkmark Key Advantages}
 \begin{enumerate}
     \item \textbf{Ranking by relevance}
@@ -1095,9 +942,9 @@ Relevance & All equal & Ranked by relevance \\
     \end{itemize}
 \cpause
 \end{enumerate}
-\cpause
+% \cpause
 \end{block}
-\cpause
+% \cpause
 \end{frame}
 
 \begin{frame}[shrink=10]{Limitations of Vector Space Model}
@@ -1132,11 +979,11 @@ Relevance & All equal & Ranked by relevance \\
         \item Computing similarity for all documents expensive
         \item Need optimizations for large collections
     \end{itemize}
-\cpause
+% \cpause
 \end{enumerate}
-\cpause
+% \cpause
 \end{alertblock}
-\cpause
+% \cpause
 \end{frame}
 
 % ====================================================================
@@ -1531,6 +1378,11 @@ Relevance & All equal & Ranked by relevance \\
 % SECTION 7: CONNECTIONS TO FUTURE LECTURES
 % ====================================================================
 \section{Looking Ahead}
+\begin{frame}
+  \centering
+  \LARGE \textbf{Looking Ahead}
+\end{frame}
+
 
 \begin{frame}[shrink=15]{From Boolean/VSM to Modern IR}
 \textbf{Today we learned:}
@@ -1558,12 +1410,12 @@ Relevance & All equal & Ranked by relevance \\
     \item \textbf{Lecture 5 (Dense Retrieval):} Semantic matching with embeddings
     \item \textbf{Lecture 6 (Learning to Rank):} Learning optimal ranking from data
 \end{enumerate}
-\cpause
+% \cpause
 \end{block}
-\cpause
+% \cpause
 \end{frame}
 
-\begin{frame}{Preview: Lecture 2 — Indexing}
+\begin{frame}[shrink=5]{Preview: Lecture 2 — Indexing}
 \begin{block}{Why Indexing Matters}
 \begin{itemize}
     \item Building inverted indexes for billions of documents
@@ -1591,7 +1443,7 @@ Relevance & All equal & Ranked by relevance \\
 \textbf{Connection:} Today we used inverted indexes conceptually; next lecture we'll build them efficiently
 \end{frame}
 
-\begin{frame}{Preview: Lecture 3 — Ranking Models}
+\begin{frame}[shrink=5]{Preview: Lecture 3 — Ranking Models}
 \begin{block}{Beyond TF-IDF}
 \begin{itemize}
     \item \textbf{BM25:} Probabilistic ranking with saturation
@@ -1619,7 +1471,7 @@ Relevance & All equal & Ranked by relevance \\
 \textbf{Connection:} TF-IDF is foundation; BM25 and LMs refine it with better theory and empirics
 \end{frame}
 
-\begin{frame}{Preview: Lectures 4-6}
+\begin{frame}[shrink=10]{Preview: Lectures 4-6}
 \begin{block}{Lecture 4: Transformer Re-rankers}
 \begin{itemize}
     \item BERT and transformer architectures
@@ -1647,12 +1499,12 @@ Relevance & All equal & Ranked by relevance \\
     \item LambdaMART, RankNet, etc.
     \item Put it all together
 \end{itemize}
-\cpause
+% \cpause
 \end{block}
-\cpause
+% \cpause
 \end{frame}
 
-\begin{frame}{The Modern IR Stack}
+\begin{frame}[shrink=15]{The Modern IR Stack}
 \begin{center}
 \begin{tikzpicture}[
     node distance=1.2cm,
@@ -1679,8 +1531,13 @@ Relevance & All equal & Ranked by relevance \\
 % WRAP-UP
 % ====================================================================
 \section{Summary and Assignment}
+\begin{frame}
+  \centering
+  \LARGE \textbf{Summary and Assignment}
+\end{frame}
 
-\begin{frame}{Key Takeaways}
+
+\begin{frame}[shrink=5]{Key Takeaways}
 \begin{block}{1. Information Retrieval Fundamentals}
 \begin{itemize}
     \item IR: Finding relevant unstructured documents at scale
@@ -1705,12 +1562,12 @@ Relevance & All equal & Ranked by relevance \\
     \item Fast, transparent, but no ranking
     \item Feast or famine problem
 \end{itemize}
-\cpause
+% \cpause
 \end{block}
-\cpause
+% \cpause
 \end{frame}
 
-\begin{frame}{Key Takeaways (continued)}
+\begin{frame}[shrink=5]{Key Takeaways (continued)}
 \begin{block}{4. Vector Space Model}
 \begin{itemize}
     \item Documents and queries as weighted term vectors
@@ -1737,7 +1594,7 @@ VSM is foundation for modern IR, but has limitations (bag of words, no semantics
 \cpause
 \end{frame}
 
-\begin{frame}{Assignment 1: Build Your First Search Engine}
+\begin{frame}[shrink=5]{Assignment 1: Build Your First Search Engine}
 \textbf{Due:} Before Lecture 2
 
 \vspace{1em}
@@ -1759,12 +1616,12 @@ VSM is foundation for modern IR, but has limitations (bag of words, no semantics
     \item Test on 10 queries, show results
     \item Analyze: when does Boolean work well/poorly?
 \end{itemize}
-\cpause
+% \cpause
 \end{block}
-\cpause
+% \cpause
 \end{frame}
 
-\begin{frame}{Assignment 1 (continued)}
+\begin{frame}[shrink=5]{Assignment 1 (continued)}
 \begin{block}{Part 3: Vector Space Model (40 points)}
 \begin{itemize}
     \item Implement TF-IDF weighting
@@ -1783,15 +1640,15 @@ VSM is foundation for modern IR, but has limitations (bag of words, no semantics
     \item Discuss trade-offs: precision vs. recall
     \item Identify limitations of your implementation
 \end{itemize}
-\cpause
+% \cpause
 \end{block}
-\cpause
+% \cpause
 \vspace{1em}
 
 \textbf{Deliverable:} Code + report (3-5 pages) + demo on sample queries
 \end{frame}
 
-\begin{frame}{Starter Code and Dataset}
+\begin{frame}[shrink=5]{Starter Code and Dataset}
 \begin{block}{Provided Materials}
 \begin{itemize}
     \item \textbf{Dataset:} TREC Disks 1-2 subset (10,000 documents) OR Cranfield collection
@@ -1812,17 +1669,17 @@ VSM is foundation for modern IR, but has limitations (bag of words, no semantics
     \item Compare your TF-IDF values with examples in lecture
     \item Don't reinvent the wheel: use NLTK for tokenization, stemming
 \end{itemize}
-\cpause
+% \cpause
 \end{alertblock}
-\cpause
+% \cpause
 \end{frame}
 
-\begin{frame}{Next Class: Indexing}
+\begin{frame}[shrink=10]{Next Class: Indexing}
 \begin{block}{Preparation}
 \textbf{Read:}
 \begin{itemize}
     \item Manning et al., Introduction to Information Retrieval, Chapter 4 (Index Construction)
-    \item Zobel & Moffat (2006): ``Inverted files for text search engines''
+    \item Zobel \& Moffat (2006): ``Inverted files for text search engines''
 \end{itemize}
 \cpause
 \vspace{0.5em}
@@ -1844,9 +1701,9 @@ VSM is foundation for modern IR, but has limitations (bag of words, no semantics
     \item Distributed indexing (MapReduce)
     \item Dense indexes for neural retrieval
 \end{itemize}
-\cpause
+% \cpause
 \end{exampleblock}
-\cpause
+% \cpause
 \end{frame}
 
 \begin{frame}{Questions?}
@@ -1905,9 +1762,9 @@ $$\text{idf}(t) = \log \frac{N - \text{df}(t) + 0.5}{\text{df}(t) + 0.5}$$
     \item Used in BM25 (Lecture 3)
     \item Better theoretical foundation
 \end{itemize}
-\cpause
+% \cpause
 \end{block}
-\cpause
+% \cpause
 \end{frame}
 
 \begin{frame}[shrink=15]{Backup: Advanced Preprocessing}
@@ -1937,9 +1794,9 @@ Preserve case for certain terms
     \item Names: ``Bush'' (president) vs. ``bush'' (plant)
     \item Context-dependent decision
 \end{itemize}
-\cpause
+% \cpause
 \end{block}
-\cpause
+% \cpause
 \end{frame}
 
 \begin{frame}[shrink=15]{Backup: Alternative Similarity Measures}
@@ -1969,9 +1826,9 @@ $$\text{Dice}(q,d) = \frac{2|q \cap d|}{|q| + |d|}$$
     \item Similar to Jaccard
     \item Weighs shared terms more heavily
 \end{itemize}
-\cpause
+% \cpause
 \end{block}
-\cpause
+% \cpause
 \end{frame}
 
 \begin{frame}[shrink=15]{Backup: Test Collections}
@@ -1994,9 +1851,9 @@ $$\text{Dice}(q,d) = \frac{2|q \cap d|}{|q| + |d|}$$
     \item \textbf{Relevance judgments (qrels):} Which docs are relevant to which queries
     \item Usually created by human assessors (expensive!)
 \end{enumerate}
-\cpause
+% \cpause
 \end{block}
-\cpause
+% \cpause
 \end{frame}
 
 \end{document}
