@@ -1,5 +1,6 @@
 # LaTeX build artifacts
 build/
+!build/*.pdf
 
 # Backup files
 *~
