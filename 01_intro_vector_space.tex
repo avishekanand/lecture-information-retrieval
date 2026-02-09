@@ -117,44 +117,6 @@ Information Retrieval (IR) is finding material (usually documents) of an unstruc
 \end{exampleblock}
 \end{frame}
 
-\begin{frame}[shrink]{The Retrieval Challenge: Understanding Intent}
-\begin{center}
-\begin{tikzpicture}[
-    searchbox/.style={rectangle, draw, thick, minimum width=8cm, minimum height=0.8cm, font=\large},
-    user/.style={circle, fill=gray!30, minimum size=0.8cm},
-    icon/.style={font=\huge}
-]
-    % User Icon
-    \node[user] (u) at (0,3) {};
-    \node[icon] at (u) {\ding{43}}; % Hand/User representation
-    \node[right=0.2cm of u] {\textbf{User with a need}};
-
-    % Search Box
-    \node[searchbox, fill=white] (box) at (4,1) {\texttt{mouse trap no poison}};
-    \node[right=0.2cm of box, fill=black, text=white, inner sep=5pt] {\textbf{Search}};
-    
-    % Cloud / Intent
-    \node[draw, ellipse, dashed, fill=blue!5, minimum width=4cm, minimum height=1.5cm] (intent) at (7,3.5) {
-        \begin{tabular}{c}
-            \small \textit{``I want to catch the mouse''} \\
-            \small \textit{``But I have a cat, so''} \\
-            \small \textit{``No chemicals/poison!''}
-        \end{tabular}
-    };
-    \draw[->, dotted] (u) -- (intent);
-    \draw[->, thick, blue] (intent) -- (box) node[midway, right] {\small Translation to keywords};
-\end{tikzpicture}
-\end{center}
-
-\vspace{1em}
-\begin{exampleblock}{The Semantic Gap}
-\begin{itemize}
-    \item \textbf{Syntactic match:} Docs containing ``mouse'', ``trap'', ``poison''.
-    \item \textbf{User intent:} Docs describing \textit{humane} traps or \textit{mechanical} traps.
-    \item \textbf{Danger:} Returning docs about ``how poison traps work'' (contains keywords!).
-\end{itemize}
-\end{exampleblock}
-\end{frame}
 
 \begin{frame}{IR vs. Database Systems}
 \begin{table}
@@ -265,6 +227,54 @@ IR and NLP are closely related but have different focal points:
 \begin{center}
 \textbf{IR is everywhere you search for information!}
 \end{center}
+\end{frame}
+
+% ====================================================================
+% SECTION: CHALLENGES IN IR
+% ====================================================================
+\section{Challenges in IR}
+\begin{frame}
+  \centering
+  \LARGE \textbf{Challenges in IR}
+\end{frame}
+
+\begin{frame}[shrink]{The Retrieval Challenge: Understanding Intent}
+\begin{center}
+\begin{tikzpicture}[
+    searchbox/.style={rectangle, draw, thick, minimum width=8cm, minimum height=0.8cm, font=\large},
+    user/.style={circle, fill=gray!30, minimum size=0.8cm},
+    icon/.style={font=\huge}
+]
+    % User Icon
+    \node[user] (u) at (0,3) {};
+    \node[icon] at (u) {\ding{43}}; % Hand/User representation
+    \node[right=0.2cm of u] {\textbf{User with a need}};
+
+    % Search Box
+    \node[searchbox, fill=white] (box) at (4,1) {\texttt{mouse trap no poison}};
+    \node[right=0.2cm of box, fill=black, text=white, inner sep=5pt] {\textbf{Search}};
+    
+    % Cloud / Intent
+    \node[draw, ellipse, dashed, fill=blue!5, minimum width=4cm, minimum height=1.5cm] (intent) at (7,3.5) {
+        \begin{tabular}{c}
+            \small \textit{``I want to catch the mouse''} \\
+            \small \textit{``But I have a cat, so''} \\
+            \small \textit{``No chemicals/poison!''}
+        \end{tabular}
+    };
+    \draw[->, dotted] (u) -- (intent);
+    \draw[->, thick, blue] (intent) -- (box) node[midway, right] {\small Translation to keywords};
+\end{tikzpicture}
+\end{center}
+
+\vspace{1em}
+\begin{exampleblock}{The Semantic Gap}
+\begin{itemize}
+    \item \textbf{Syntactic match:} Docs containing ``mouse'', ``trap'', ``poison''.
+    \item \textbf{User intent:} Docs describing \textit{humane} traps or \textit{mechanical} traps.
+    \item \textbf{Danger:} Returning docs about ``how poison traps work'' (contains keywords!).
+\end{itemize}
+\end{exampleblock}
 \end{frame}
 
 \begin{frame}[shrink=5]{The Scale of Modern IR}
@@ -454,6 +464,7 @@ Documents are retrieved if they satisfy a Boolean expression of query terms
     \item \texttt{mat}: \{D1\}
     \item \texttt{cat AND mat}: \{D1, D3\} $\cap$ \{D1\} = \{D1\}
     \item \texttt{dog}: \{D2, D3\}
+    \cpause
     \item \texttt{(cat AND mat) OR dog}: \{D1\} $\cup$ \{D2, D3\} = \{D1, D2, D3\}
 \end{enumerate}
 % \cpause
