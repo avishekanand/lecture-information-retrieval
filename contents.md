@@ -1,297 +1,174 @@
-Lecture Contents -- Indexing txt
----------------------------------
-
-PART 1 — The Interface Changed (Motivation)
-
-1. Title Slide
-
-Information Retrieval Indexing
-
-⸻
-
-2. Traditional Retrieval: 10 Blue Links
-
-Purpose: Establish the old interface.
-Message: System returned ranked documents.
-
-⸻
-
-3. Modern IR: Retrieval-Augmented Generation (RAG)
-
-Purpose: Show the new interface.
-Message: System returns synthesized answers.
-
-⸻
-
-4. NEW — The Interface Changed. The Engine Did Not.
-
-Content:
-	•	Old interface: ranked documents
-	•	New interface: generated answers
-	•	Same underlying components:
-	•	Index
-	•	Retrieval
-	•	Relevance modeling
-
-Key line:
-
-Retrieval now serves models instead of users.
-
-Pause here. Let this land.
-
-⸻
-
-PART 2 — Why Indexing Exists
-
-5. NEW — Why Do We Need Indexing?
-
-Content:
-	•	Cannot score all documents
-	•	Latency constraints
-	•	Must reduce millions → hundreds
-	•	Indexing makes retrieval possible
-
-Key line:
-
-Indexing is not optimization. It is feasibility.
-
-⸻
-
-6. Modern IR Landscape (Pipeline Diagram)
-
-Now show:
-Collection → Index/Retriever → Re-ranker → LLM → Interface
-
-This lands correctly now.
-
-⸻
-
-7. NEW — What Indexing Controls
-
-Content:
-	•	Recall ceiling
-	•	Latency budget
-	•	What LLM can see
-	•	Cost
-
-Key line:
-
-If retrieval misses it, the LLM cannot reason about it.
-
-⸻
-
-PART 3 — The Engine Room: Sparse Retrieval
-
-8. Inverted Index: Still the Backbone
-
-(Your existing slide, rename to remove year)
-
-Purpose: Show continuity.
-
-⸻
-
-9. Inverted Index: Core Structure
-
-Your existing diagram.
-
-⸻
-
-10. NEW — Inverted Index = Sparse Matrix
-
-Bridge to VSM:
-	•	Docs = rows
-	•	Terms = columns
-	•	Inverted index = compressed sparse column storage
-
-This connects to Lecture 1 knowledge.
-
-⸻
-
-11. Posting List Formats
-
-DocIDs → frequencies → positions
-
-⸻
-
-12. NEW — Score Aggregation = Efficient Dot Product
-
-Explicit accumulator logic.
-
-Key line:
-
-Retrieval computes VSM scoring without touching zero entries.
-
-This is the most important conceptual slide.
-
-⸻
-
-13. Why Inverted Index Is Fast
-
-Now complexity comparison lands properly.
-
-⸻
-
-PART 4 — Preprocessing: Classical vs Modern
-
-14. Text Preprocessing Pipeline
-
-Keep as is.
-
-⸻
-
-15. Key Decisions: Tokenization & Stemming
-
-Keep.
-
-⸻
-
-16. Stop Words: Modern Perspective
-
-Keep.
-
-⸻
-
-17. NEW — Preprocessing Depends on Representation
-
-Two columns:
-
-Sparse:
-	•	Tokenization defines vocabulary
-	•	Stemming optional
-	•	Stopwords optional
-
-Dense:
-	•	Model tokenizer fixed
-	•	No stemming
-	•	Windowing/truncation matters
-
-Key line:
-
-Preprocessing aligns representation — not just text cleaning.
-
-⸻
-
-PART 5 — Scale and Compression
-
-18. Index Compression: Why It Matters
-
-Keep.
-
-⸻
-
-19. Gap Encoding (High-Level Only)
-
-Keep intuition.
-
-⸻
-
-20. VB Encoding (Shortened Version)
-
-Keep concept, reduce step-by-step detail if needed.
-
-Purpose: show indexing must satisfy latency constraints.
-
-⸻
-
-PART 6 — Dense Retrieval (Concept Only)
-
-⚠️ This lecture does NOT deep dive IVF+PQ.
-
-⸻
-
-21. The Shift to Dense Vectors
-
-Sparse vs dense comparison.
-
-⸻
-
-22. ANN Search Problem (High-Level)
-
-Explain why inverted index no longer applies.
-
-⸻
-
-23. Accuracy–Speed Tradeoff Curve
-
-Conceptual only.
-
-⸻
-
-24. NEW — From Text to Index: Unified View
-
-Sparse:
-Text → tokens → postings
-
-Dense:
-Text → model tokenizer → embedding → ANN index
-
-Key line:
-
-Different representation. Same role.
-
-⸻
-
-25. NEW — Same Role, Different Engines
-
-	Sparse	Dense
-Representation	Terms	Vectors
-Index	Inverted	ANN
-Output	Ranked candidates	Ranked candidates
-Feeds	Reranker/LLM	Reranker/LLM
-
-This is the unifying anchor slide.
-
-⸻
-
-PART 7 — Where It Fits in Modern Pipelines
-
-26. Decision Matrix (Sparse vs Dense)
-
-Keep.
-
-⸻
-
-27. NEW — Retrieval → Reranking → Reasoning
-
-Show refined pipeline:
-
-Collection
-↓
-Index + Retrieval (fast, broad recall)
-↓
-Re-ranker (expensive, precise)
-↓
-LLM reasoning (very expensive, tiny context)
-↓
-Interface
-
-Key line:
-
-Indexing sets the ceiling. Everything else refines below it.
-
-⸻
-
-PART 8 — Summary
-
-28. What We Covered
-
-Update to reflect unified message.
-
-⸻
-
-29. Key Takeaways (Rewrite Slightly)
-	1.	Interface changed (links → answers)
-	2.	Engine room is still indexing + retrieval
-	3.	Retrieval = fast candidate selection under relevance model
-	4.	LLMs reason over what retrieval selects
-	5.	Compression and ANN satisfy latency constraints
-
-⸻
-
-30. Connection to Next Lectures
-
-Now it flows perfectly into:
-	•	BM25 (uses index)
-	•	Re-ranking (uses candidates)
-	•	Dense retrieval deep dive (ANN internals)
-
+# Information Retrieval Lecture Series - Contents
+
+## Lecture 1: Introduction to IR - Vector Space Model & Boolean Retrieval
+
+### Overview
+Introduction to Information Retrieval fundamentals, covering the core concepts of Boolean retrieval and the Vector Space Model (VSM). This lecture establishes the foundation for understanding how search systems work and introduces the mathematical framework for document ranking.
+
+### Topics Covered
+
+#### 1. What is Information Retrieval?
+- **Definition**: Finding unstructured material (text) that satisfies an information need from large collections
+- **IR vs. Database Systems**: Structured vs. unstructured data, exact vs. approximate matching
+- **IR vs. NLP**: Scale-centric vs. language-centric approaches
+- **Real-world applications**: Web search, enterprise search, e-commerce, specialized domains
+
+#### 2. Challenges in IR
+- **Understanding user intent**: The semantic gap between queries and information needs
+- **Scale**: Processing billions of documents in sub-second time
+- **The retrieval challenge**: Storage, speed, relevance, freshness, quality
+
+#### 3. Boolean Retrieval Model
+- **Core concepts**: AND, OR, NOT operators for precise query specification
+- **Implementation**: Documents as sets of terms, inverted index structure
+- **Query processing**: Set operations on posting lists
+- **Advantages**: Precise control, transparency, efficiency, predictability
+- **Limitations**: 
+  - No ranking (all results equally relevant)
+  - All-or-nothing matching (feast or famine problem)
+  - Hard to formulate queries for average users
+  - Unpredictable result set sizes
+
+#### 4. Vector Space Model (VSM)
+- **Key insight**: Represent documents and queries as weighted vectors in term space
+- **Geometric interpretation**: Documents as points in high-dimensional space
+- **Term weighting schemes**:
+  - Binary weights (presence/absence)
+  - Term Frequency (TF)
+  - TF-IDF weighting: Balancing frequency with rarity
+- **Similarity measurement**: Cosine similarity for ranking
+- **Advantages over Boolean**:
+  - Ranking by relevance
+  - Partial matching (graceful degradation)
+  - Automatic term weighting
+  - Simple natural language queries
+  - Tunable for different scenarios
+
+#### 5. TF-IDF Weighting
+- **Formula**: `w(t,d) = tf(t,d) × idf(t)`
+- **Intuition**: Important AND discriminative terms get high weights
+- **IDF calculation**: `log(N/df(t))` where N is total documents, df(t) is document frequency
+- **Effect**: Common words automatically downweighted, rare discriminative terms emphasized
+
+#### 6. Cosine Similarity
+- **Formula**: Normalized dot product of query and document vectors
+- **Properties**: Range [0,1] for positive weights, length-normalized
+- **Why cosine**: Prevents long documents from automatically scoring higher
+
+#### 7. Limitations of VSM
+- **Bag of words**: Word order ignored
+- **Term independence**: No phrase matching
+- **Synonymy**: Different words with same meaning treated separately
+- **Polysemy**: Same word with different meanings undistinguished
+
+### Key Takeaways
+1. Boolean retrieval provides precise control but lacks ranking
+2. Vector Space Model enables ranking and graceful degradation
+3. TF-IDF balances term importance with discriminative power
+4. Cosine similarity provides length-normalized relevance scoring
+5. VSM forms the foundation for modern ranking functions (BM25, neural models)
+
+### Connections to Future Lectures
+- **Lecture 2**: Indexing structures that enable efficient VSM implementation
+- **Lecture 3**: Advanced ranking functions (BM25) that improve on TF-IDF
+- **Lecture 6**: Neural embeddings as learned vector representations
+
+---
+
+## Lecture 2: Indexing - Sparse and Dense Retrieval
+
+### Overview
+Deep dive into indexing structures and preprocessing that enable fast retrieval at scale. Covers both classical sparse (inverted index) and modern dense (ANN) approaches, emphasizing that indexing sets the ceiling for what retrieval systems can achieve.
+
+### Topics Covered
+
+#### PART 1: The Interface Changed (Motivation)
+- **Traditional IR**: 10 blue links (ranked documents)
+- **Modern IR**: Retrieval-Augmented Generation (synthesized answers)
+- **Key insight**: Interface changed, but the engine (indexing + retrieval) remains the same
+- **New role**: Retrieval now serves models instead of users directly
+
+#### PART 2: Why Indexing Exists
+- **Feasibility constraint**: Cannot score all documents due to latency requirements
+- **Scale reduction**: Millions of documents → hundreds of candidates
+- **Key principle**: Indexing is not optimization, it is feasibility
+- **What indexing controls**:
+  - Recall ceiling (if retrieval misses it, LLM cannot reason about it)
+  - Latency budget
+  - What downstream models can see
+  - System cost
+
+#### PART 3: Sparse Retrieval - Inverted Index
+- **Core structure**: Term → list of (docID, frequency, positions)
+- **Inverted index as sparse matrix**:
+  - Documents = rows, Terms = columns
+  - Compressed Sparse Column (CSC) storage
+  - Avoids storing zeros
+- **Posting list formats**: DocIDs, frequencies, positions
+- **Score aggregation**: Efficient dot product via accumulators
+  - Only compute scores for documents containing query terms
+  - Implements VSM scoring without touching zero entries
+- **Complexity**: O(N·M) for linear scan vs. O(k) for inverted index where k = posting list length
+
+#### PART 4: Text Preprocessing
+- **Classical pipeline**:
+  - Tokenization: Split text into terms
+  - Lowercasing: Normalize capitalization
+  - Stop word removal: Eliminate common low-information words
+  - Stemming/Lemmatization: Reduce words to root forms
+- **Key principle**: Apply same preprocessing to queries and documents
+- **Modern perspective**: Preprocessing depends on representation
+  - **Sparse**: Tokenization defines vocabulary, stemming/stopwords optional
+  - **Dense**: Model tokenizer fixed, no stemming, windowing/truncation matters
+
+#### PART 5: Scale and Compression
+- **Why compression matters**: Index size affects memory and disk I/O
+- **Gap encoding**: Store differences between docIDs instead of absolute values
+- **Variable Byte (VB) encoding**: Compact representation for integers
+- **Purpose**: Satisfy latency constraints at scale
+
+#### PART 6: Dense Retrieval (Conceptual)
+- **The shift**: From sparse term vectors to dense embeddings
+- **ANN search problem**: Inverted index no longer applies to dense vectors
+- **Accuracy-speed tradeoff**: Approximate nearest neighbor search
+- **Unified view**:
+  - **Sparse path**: Text → tokens → postings → inverted index
+  - **Dense path**: Text → model tokenizer → embedding → ANN index
+  - **Same role**: Both produce ranked candidates for downstream processing
+
+#### PART 7: Modern IR Pipelines
+- **Three-stage architecture**:
+  1. **Index + Retrieval**: Fast, broad recall (sparse or dense)
+  2. **Re-ranker**: Expensive, precise scoring
+  3. **LLM reasoning**: Very expensive, tiny context window
+- **Key principle**: Indexing sets the ceiling, everything else refines below it
+- **Decision matrix**: When to use sparse vs. dense retrieval
+
+### Key Takeaways
+1. Indexing determines what's retrievable - it sets the recall ceiling
+2. Inverted index implements efficient VSM scoring via sparse matrix operations
+3. Preprocessing aligns representation, not just text cleaning
+4. Compression enables meeting latency constraints at scale
+5. Sparse and dense retrieval serve the same role with different representations
+6. Modern pipelines: Retrieval → Re-ranking → Reasoning
+7. If retrieval misses a document, downstream models cannot recover it
+
+### Connections to Future Lectures
+- **Lecture 3**: BM25 ranking uses the inverted index structure
+- **Lecture 4**: Neural embeddings create dense representations
+- **Lecture 5**: Deep dive into ANN index internals (IVF+PQ)
+- **Lecture 6**: Re-ranking models that refine retrieval candidates
+
+---
+
+## Lecture 3: Ranking (TBD)
+*Content to be added*
+
+---
+
+## In Development
+
+The following lectures are currently under development:
+- Lecture 4: Embeddings & Neural Ranking
+- Lecture 5: Dense Retrieval
+- Lecture 6: Learning to Rank

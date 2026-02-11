@@ -1,20 +1,15 @@
-\begin{tikzpicture}[
-    node distance=0.8cm,
-    label/.style={font=\tiny, gray},
-    vstep/.style={rectangle, draw, rounded corners, minimum width=3cm, minimum height=0.8cm, align=center, font=\small, drop shadow}
-]
-    \node[vstep, fill=blue!10] (ret) at (0, 3) {Retrieval (fast) \\ \tiny BM25 / ANN};
-    \node[vstep, fill=green!10] (rank) at (0, 1.5) {Re-ranking (precise) \\ \tiny Cross-Encoders};
-    \node[vstep, fill=orange!10] (llm) at (0, 0) {Reasoning (deep) \\ \tiny LLM (GPT-4 / Claude)};
+\begin{tikzpicture}
+    % Pipeline Steps using API
+    \IRPipelineTier{ret}{(0,3)}{Retrieval}{Millions of Docs}{primary}
+    \IRPipelineTier{rank}{(0,1.5)}{Re-ranking}{Top-100 Candidates}{secondary}
+    \IRPipelineTier{llm}{(0,0)}{Reasoning}{Top-10 Context}{accent}
     
-    \draw[->, thick, >=latex'] (ret) -- (rank);
-    \draw[->, thick, >=latex'] (rank) -- (llm);
+    % Connections
+    \IRArrow{ret}{rank}{}
+    \IRArrow{rank}{llm}{}
     
-    \node[anchor=west] at (2.2, 3) {\tiny \textbf{Scale:} Millions of documents};
-    \node[anchor=west] at (2.2, 1.5) {\tiny \textbf{Scale:} Top-100 candidates};
-    \node[anchor=west] at (2.2, 0) {\tiny \textbf{Scale:} Top-10 context chunks};
-    
-    \node[anchor=east] at (-2.2, 3) {\tiny $O(\text{ms})$};
-    \node[anchor=east] at (-2.2, 1.5) {\tiny $O(100\text{ms})$};
-    \node[anchor=east] at (-2.2, 0) {\tiny $O(\text{seconds})$};
+    % Latency Annotations using badges
+    \IRBadge{(-2.5, 3)}{$O(\text{ms})$}
+    \IRBadge{(-2.5, 1.5)}{$O(100\text{ms})$}
+    \IRBadge{(-2.5, 0)}{$O(\text{sec})$}
 \end{tikzpicture}

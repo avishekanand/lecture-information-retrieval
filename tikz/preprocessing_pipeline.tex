@@ -1,17 +1,17 @@
-\begin{tikzpicture}[
-    node distance=1.4cm,
-    box/.style={rectangle, draw, rounded corners, fill=blue!15, text width=4.2cm, align=center, minimum height=0.8cm, font=\small, drop shadow},
-    highlight/.style={fill=orange!25},
-    arrow/.style={->, thick, >=latex'}
-]
-    \node[box, fill=green!20] (raw) {The Neural Networks \\ are Learning!};
-    \node[box, below=of raw] (token) {[The, Neural, Networks, \\ are, Learning, !]};
-    \node[box, below=of token] (lower) {[the, neural, networks, \\ are, learning, !]};
-    \node[box, below=of lower] (stop) {[neural, networks, \\ learning]};
-    \node[box, below=of stop, highlight] (stem) {[neural, network, \\ learn]};
+\begin{tikzpicture}[spacing/.style={yshift=-1.8cm}]
+    % Sequential Boxes using API
+    \IRBox{raw}{(0,0)}{The Neural Networks \\ are Learning!}{String Input}{accent}
     
-    \draw[arrow] (raw) -- node[right, font=\scriptsize, text width=1.5cm, align=center] {Tokenize} (token);
-    \draw[arrow] (token) -- node[right, font=\scriptsize, text width=1.5cm, align=center] {Lowercase} (lower);
-    \draw[arrow] (lower) -- node[right, font=\scriptsize, text width=1.5cm, align=center] {Remove stop words} (stop);
-    \draw[arrow] (stop) -- node[right, font=\scriptsize, text width=1.5cm, align=center] {Stem/lemmatize} (stem);
+    \begin{scope}[spacing]
+        \IRBox{token}{($ (raw) + (0,-1.8) $)}{[The, Neural, Networks, \\ are, Learning, !]}{Tokenized}{primary}
+        \IRBox{lower}{($ (token) + (0,-1.8) $)}{[the, neural, networks, \\ are, learning, !]}{Normalized}{primary}
+        \IRBox{stop}{($ (lower) + (0,-1.8) $)}{[neural, networks, \\ learning]}{Filtered}{primary}
+        \IRBox{stem}{($ (stop) + (0,-1.8) $)}{[neural, network, \\ learn]}{Stemmed}{emph}
+    \end{scope}
+
+    % Connect with sloped labels
+    \IRArrow{raw}{token}{Tokenize}
+    \IRArrow{token}{lower}{Lowercase}
+    \IRArrow{lower}{stop}{Stopwords}
+    \IRArrow{stop}{stem}{Stem/Lemmatize}
 \end{tikzpicture}
