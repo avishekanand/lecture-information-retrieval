@@ -1,33 +1,29 @@
-\begin{tikzpicture}[
-    node distance=0.8cm,
-    box/.style={rectangle, draw, rounded corners, text width=2.2cm, align=center, minimum height=0.6cm, font=\tiny, drop shadow},
-    arrow/.style={->, thick, >=latex'}
-]
-    \node[box, fill=gray!10] (text) at (0,0) {Raw Text};
+\begin{tikzpicture}[scale=0.5, every node/.style={scale=0.5}]
+    % Raw Input
+    \IRBox{text}{(0,0)}{Raw Text}{Collection}{primary}
     
     % Sparse branch
-    \node[box, fill=blue!10, above right=0.3cm and 0.5cm of text] (tokens) {Tokenization};
-    \node[box, fill=blue!10, right=of tokens] (ids) {Term IDs};
-    \node[box, fill=blue!20, right=of ids] (sindex) {Inverted Index};
+    \IRBox{tokens}{(4,1.5)}{Tokenization}{Lexical Phase}{primary}
+    \IRBox{ids}{(8,1.5)}{Term IDs}{Mapping}{primary}
+    \IRBox{sindex}{(12,1.5)}{Inverted Index}{Static Index}{secondary}
     
     % Dense branch
-    \node[box, fill=red!10, below right=0.3cm and 0.5cm of text] (mtoken) {Model Tokenizer};
-    \node[box, fill=red!10, right=of mtoken] (embed) {Encoding (BERT)};
-    \node[box, fill=red!20, right=of embed] (dindex) {ANN Index};
+    \IRBox{mtoken}{(4,-1.5)}{Model Tokenizer}{Neural Phase}{accent}
+    \IRBox{embed}{(8,-1.5)}{Encoding (BERT)}{Vectorization}{accent}
+    \IRBox{dindex}{(12,-1.5)}{ANN Index}{Dynamic Index}{secondary}
     
     % Target
-    \node[box, fill=green!10, right=4.5cm of text] (res) {Ranked Candidates};
+    \IRBox{res}{(16,0)}{Ranked Candidates}{Top-$k$ List}{emph}
     
-    \draw[arrow] (text) -- (tokens);
-    \draw[arrow] (tokens) -- (ids);
-    \draw[arrow] (ids) -- (sindex);
-    \draw[arrow] (sindex) -- (res);
+    % Sparse Connections
+    \IRArrow{text.north}{tokens.west}{Sparse Pipeline}
+    \IRArrow{tokens}{ids}{}
+    \IRArrow{ids}{sindex}{}
+    \IRArrow{sindex}{res.north}{}
     
-    \draw[arrow] (text) -- (mtoken);
-    \draw[arrow] (mtoken) -- (embed);
-    \draw[arrow] (embed) -- (dindex);
-    \draw[arrow] (dindex) -- (res);
-    
-    \node[blue, font=\tiny\bf, above=0.1cm of tokens] {Sparse Pipeline};
-    \node[red, font=\tiny\bf, below=0.1cm of mtoken] {Dense Pipeline};
+    % Dense Connections
+    \IRArrow{text.south}{mtoken.west}{Dense Pipeline}
+    \IRArrow{mtoken}{embed}{}
+    \IRArrow{embed}{dindex}{}
+    \IRArrow{dindex}{res.south}{}
 \end{tikzpicture}

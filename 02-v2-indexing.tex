@@ -46,6 +46,8 @@
 \definecolor{dense}{RGB}{231,76,60}      % Red
 \definecolor{hybrid}{RGB}{46,204,113}    % Green
 
+\input{theme/macros.tex}
+
 % Title information
 \title[Indexing]{Information Retrieval Indexing}
 \subtitle{Lecture 2: Sparse and Dense Indexing}
@@ -60,21 +62,32 @@
 \titlepage
 \end{frame}
 
-\begin{frame}{The Modern IR Landscape}
+% \begin{frame}{The Modern IR Landscape}
+% \begin{center}
+% \input{tikz/landscape.tex}
+% \end{center}
+
+% \vspace{1em}
+
+% \textbf{Our Focus Today:} The engine room of this pipeline --- \textbf{Candidate Generation}.
+% \end{frame}
+
+\begin{frame}{Retrieval $\rightarrow$ Re-ranking $\rightarrow$ Reasoning}
 \begin{center}
-\input{tikz/landscape.tex}
+\input{tikz/retrieval_reasoning.tex}
 \end{center}
 
-\vspace{1em}
-
-\textbf{Our Focus Today:} The engine room of this pipeline --- \textbf{Candidate Generation}.
+\vspace{0.5em}
+\begin{alertblock}{Key Principle}
+\textbf{Indexing sets the ceiling.} Everything else (re-ranking, LLM reasoning) can only refine the results that retrieval finds.
+\end{alertblock}
 \end{frame}
 
 \begin{frame}{Traditional Retrieval: 10 Blue Links}
 \begin{columns}[T,onlytextwidth]
 \begin{column}{0.45\textwidth}
 \begin{center}
-\input{tikz/traditional_search.tex}
+\includegraphics[width=0.9\textwidth]{figures/trad-retrieval.pdf}
 \end{center}
 \end{column}
 \begin{column}{0.5\textwidth}
@@ -97,7 +110,7 @@ User does all the hard work of reading and combining information!
 \begin{columns}[T,onlytextwidth]
 \begin{column}{0.45\textwidth}
 \begin{center}
-\input{tikz/rag_search.tex}
+\includegraphics[width=0.9\textwidth]{figures/modern-rag.pdf}
 \end{center}
 \end{column}
 \begin{column}{0.5\textwidth}
@@ -193,20 +206,20 @@ If retrieval misses it, the LLM cannot reason about it.
 \end{alertblock}
 \end{frame}
 
-\begin{frame}{Course Context (Updated)}
-\begin{enumerate}
-    \item Introduction to IR: Vector Space Model \& Boolean Retrieval \faCheck 
-    \item \textbf{Modern Indexing for RAG} $\leftarrow$ Today
-    \item Ranking: BM25, Query Expansion, Language Models
-    \item Embeddings \& Transformer-based Re-rankers
-    \item Dense Retrieval (Deep Dive)
-    \item Learning to Rank
-\end{enumerate}
+% \begin{frame}{Course Context (Updated)}
+% \begin{enumerate}
+%     \item Introduction to IR: Vector Space Model \& Boolean Retrieval \faCheck 
+%     \item \textbf{Modern Indexing for RAG} $\leftarrow$ Today
+%     \item Ranking: BM25, Query Expansion, Language Models
+%     \item Embeddings \& Transformer-based Re-rankers
+%     \item Dense Retrieval (Deep Dive)
+%     \item Learning to Rank
+% \end{enumerate}
 
-\vspace{1em}
+% \vspace{1em}
 
-\textbf{Today's Focus:} Candidate Generation stage (Indexes).
-\end{frame}
+% \textbf{Today's Focus:} Candidate Generation stage (Indexes).
+% \end{frame}
 
 \begin{frame}{Outline}
 \tableofcontents
@@ -239,7 +252,7 @@ Answer: \textbf{Inverted indexes}
 \end{enumerate}
 \end{frame}
 
-\begin{frame}[shrink=10]{Inverted Index: Core Structure}
+\begin{frame}[shrink=15]{Inverted Index: Core Structure}
 \textbf{Documents:}
 \begin{itemize}
     \item Doc1: ``neural networks for deep learning''
@@ -260,7 +273,7 @@ Answer: \textbf{Inverted indexes}
 \textbf{Intersection:} [1] $\leftarrow$ Doc 1 contains both terms
 \end{frame}
 
-\begin{frame}{Inverted Index as a Sparse Matrix}
+\begin{frame}[shrink=10]{Inverted Index as a Sparse Matrix}
 \begin{block}{Vector Space Interpretation}
 \begin{itemize}
     \item Documents = Rows ($D$)
@@ -287,6 +300,7 @@ The Inverted Index is a \textbf{Compressed Sparse Column (CSC)} storage of the D
     \item Check if query terms present
     \item Rank matches
 \end{enumerate}
+\cpause
 
 \vspace{0.5em}
 
@@ -370,7 +384,38 @@ $\rightarrow$ \textbf{1000$\times$ faster!}
 \end{enumerate}
 \end{column}
 \begin{column}{0.48\textwidth}
-\input{tikz/score_aggregation.tex}
+\textbf{Example:}
+
+\textbf{Query:} ``neural learning''
+
+\vspace{0.3em}
+
+\textbf{Accumulators:}
+\begin{itemize}
+    \item[] Doc1: 0.0
+    \item[] Doc2: 0.0
+    \item[] Doc3: 0.0
+\end{itemize}
+
+\vspace{0.3em}
+
+\textbf{Process ``neural'':}
+\begin{itemize}
+    \item[] Doc1: +2.5
+    \item[] Doc3: +2.5
+\end{itemize}
+
+\vspace{0.3em}
+
+\textbf{Process ``learning'':}
+\begin{itemize}
+    \item[] Doc1: +3.0
+    \item[] Doc2: +3.0
+\end{itemize}
+
+\vspace{0.3em}
+
+\textbf{Final:} Doc1=5.5, Doc2=3.0, Doc3=2.5
 \end{column}
 \end{columns}
 
@@ -380,7 +425,7 @@ We only compute scores for documents that contain at least one query term!
 \end{exampleblock}
 \end{frame}
 
-\begin{frame}[shrink=15]{Text Preprocessing Pipeline}
+\begin{frame}[shrink=20]{Text Preprocessing Pipeline}
 
 \textbf{Raw text:} ``The Neural Networks are Learning!''
 
@@ -1193,16 +1238,7 @@ Research search engine with 100M papers (arXiv, PubMed, etc.)
 \end{block}
 \end{frame}
 
-\begin{frame}{Retrieval $\rightarrow$ Re-ranking $\rightarrow$ Reasoning}
-\begin{center}
-\input{tikz/retrieval_reasoning.tex}
-\end{center}
 
-\vspace{0.5em}
-\begin{alertblock}{Key Principle}
-\textbf{Indexing sets the ceiling.} Everything else (re-ranking, LLM reasoning) can only refine the results that retrieval finds.
-\end{alertblock}
-\end{frame}
 
 % ====================================================================
 % WRAP-UP
