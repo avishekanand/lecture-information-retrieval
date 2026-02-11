@@ -1,0 +1,10 @@
+\begin{tikzpicture}[scale=0.65, every node/.style={transform shape}]
+    % Mock browser
+    \draw[thick, fill=gray!10] (0,0) rectangle (5,3.5);
+    \draw[thick] (0,3) -- (5,3);
+    \draw[fill=white] (0.5, 2.6) rectangle (4.5, 2.9);
+    \foreach \y in {0.5, 1.2, 1.9} {
+        \draw[blue, thick] (0.5, \y+0.2) -- (4, \y+0.2);
+        \draw[gray!50] (0.5, \y) -- (3, \y);
+    }
+\end{tikzpicture}

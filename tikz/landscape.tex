@@ -1,0 +1,20 @@
+\begin{tikzpicture}[
+    node distance=1.2cm,
+    box/.style={rectangle, draw, rounded corners, fill=blue!15, text width=3.2cm, align=center, minimum height=0.8cm, font=\small, drop shadow},
+    arrow/.style={->, thick, >=latex'}
+]
+    \node[box, fill=green!20] (collection) {Document Collection \\ (Billions of items)};
+    \node[box, right=of collection] (gen) {\textbf{Candidate Generation} \\ (Indexes)};
+    \node[box, below=of gen] (ret) {\textbf{Retrieval} \\ (BM25, Dense)};
+    \node[box, right=of ret] (rank) {\textbf{Re-ranking} \\ (Cross-encoders)};
+    \node[box, right=of rank, fill=orange!20] (llm) {\textbf{Generation} \\ (LLM)};
+    
+    \draw[arrow] (collection) -- (gen);
+    \draw[arrow] (gen) -- (ret);
+    \draw[arrow] (ret) -- (rank);
+    \draw[arrow] (rank) -- (llm);
+    
+    \node[below=0.2cm of gen, font=\tiny, text width=3cm, align=center] {Classical \\ Neural};
+    \node[below=0.2cm of ret, font=\tiny, text width=3cm, align=center] {Sparse \\ Dense};
+    \node[below=0.2cm of rank, font=\tiny, text width=3cm, align=center] {BERT \\ T5};
+\end{tikzpicture}

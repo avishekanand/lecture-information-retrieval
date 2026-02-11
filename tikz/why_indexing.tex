@@ -1,0 +1,9 @@
+\begin{tikzpicture}[
+    node distance=1.5cm,
+    box/.style={rectangle, draw, rounded corners, fill=blue!15, text width=2.5cm, align=center, minimum height=0.8cm, drop shadow},
+    arrow/.style={->, thick, >=latex'}
+]
+    \node[box, fill=red!10] (all) {Billions of Documents};
+    \node[box, right=of all, fill=green!10] (few) {Top-$k$ Candidates};
+    \draw[arrow] (all) -- node[above, font=\small\bf] {Indexing} (few);
+\end{tikzpicture}

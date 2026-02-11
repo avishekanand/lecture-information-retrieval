@@ -1,0 +1,14 @@
+\begin{tikzpicture}[scale=0.8, every node/.style={transform shape}]
+    % Mock chat
+    \draw[thick, fill=gray!10] (0,0) rectangle (5,4);
+    \draw[thick] (0,3.5) -- (5,3.5);
+    \node at (2.5, 3.75) {\tiny ai-assistant.ai};
+    
+    % Chat bubble
+    \draw[fill=blue!10, rounded corners] (0.5, 2.5) rectangle (4.5, 3.3);
+    \node[text width=3.8cm] at (2.5, 2.9) {\tiny \textbf{Q:} what is IR?};
+    
+    % Answer bubble
+    \draw[fill=green!10, rounded corners] (0.5, 0.5) rectangle (4.5, 2.2);
+    \node[text width=3.8cm] at (2.5, 1.35) {\tiny \textbf{A:} IR is the field of finding relevant information in large collections. It involves...};
+\end{tikzpicture}

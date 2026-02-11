@@ -1,0 +1,33 @@
+\begin{tikzpicture}[
+    node distance=0.8cm,
+    box/.style={rectangle, draw, rounded corners, text width=2.2cm, align=center, minimum height=0.6cm, font=\tiny, drop shadow},
+    arrow/.style={->, thick, >=latex'}
+]
+    \node[box, fill=gray!10] (text) at (0,0) {Raw Text};
+    
+    % Sparse branch
+    \node[box, fill=blue!10, above right=0.3cm and 0.5cm of text] (tokens) {Tokenization};
+    \node[box, fill=blue!10, right=of tokens] (ids) {Term IDs};
+    \node[box, fill=blue!20, right=of ids] (sindex) {Inverted Index};
+    
+    % Dense branch
+    \node[box, fill=red!10, below right=0.3cm and 0.5cm of text] (mtoken) {Model Tokenizer};
+    \node[box, fill=red!10, right=of mtoken] (embed) {Encoding (BERT)};
+    \node[box, fill=red!20, right=of embed] (dindex) {ANN Index};
+    
+    % Target
+    \node[box, fill=green!10, right=4.5cm of text] (res) {Ranked Candidates};
+    
+    \draw[arrow] (text) -- (tokens);
+    \draw[arrow] (tokens) -- (ids);
+    \draw[arrow] (ids) -- (sindex);
+    \draw[arrow] (sindex) -- (res);
+    
+    \draw[arrow] (text) -- (mtoken);
+    \draw[arrow] (mtoken) -- (embed);
+    \draw[arrow] (embed) -- (dindex);
+    \draw[arrow] (dindex) -- (res);
+    
+    \node[blue, font=\tiny\bf, above=0.1cm of tokens] {Sparse Pipeline};
+    \node[red, font=\tiny\bf, below=0.1cm of mtoken] {Dense Pipeline};
+\end{tikzpicture}

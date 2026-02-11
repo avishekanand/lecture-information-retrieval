@@ -1,0 +1,33 @@
+\begin{tikzpicture}[
+    node distance=0.3cm,
+    dict/.style={rectangle, draw, fill=blue!20, minimum width=2cm, minimum height=0.6cm, font=\small},
+    post/.style={rectangle, draw, fill=green!20, minimum width=1.5cm, minimum height=0.5cm, font=\tiny}
+]
+    % Dictionary
+    \node[dict] (t1) {deep};
+    \node[dict, below=of t1] (t2) {learning};
+    \node[dict, below=of t2] (t3) {neural};
+    \node[dict, below=of t3] (t4) {networks};
+    
+    \node[left=0.8cm of t2.west, font=\small\bf] {Dictionary};
+    
+    % Postings
+    \node[post, right=1.5cm of t1] (p11) {1:1};
+    \node[post, right=0.1cm of p11] (p12) {2:1};
+    
+    \node[post, right=1.5cm of t2] (p21) {1:1};
+    \node[post, right=0.1cm of p21] (p22) {2:1};
+    
+    \node[post, right=1.5cm of t3] (p31) {1:1};
+    \node[post, right=0.1cm of p31] (p32) {3:1};
+    
+    \node[post, right=1.5cm of t4] (p41) {1:1};
+    
+    \node[above=0.5cm of p12, font=\small\bf] {Postings: (docID:freq)};
+    
+    % Arrows
+    \draw[->, thick] (t1) -- (p11);
+    \draw[->, thick] (t2) -- (p21);
+    \draw[->, thick] (t3) -- (p31);
+    \draw[->, thick] (t4) -- (p41);
+\end{tikzpicture}

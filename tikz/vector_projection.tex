@@ -1,0 +1,37 @@
+\begin{tikzpicture}[scale=0.8]
+    % Cluster 1
+    \draw[thick, blue] (0,0) circle (1.5);
+    \node[circle, fill=blue, inner sep=3pt, label=below:{\small $c_1$}] at (0,0) {};
+    \foreach \i in {1,...,7} {
+        \pgfmathsetmacro{\angle}{360/7*\i}
+        \pgfmathsetmacro{\r}{0.3+0.5*rnd}
+        \node[circle, fill=blue!30, inner sep=1.5pt] at (\angle:\r) {};
+    }
+    
+    % Cluster 2
+    \draw[thick, red] (5,0) circle (1.5);
+    \node[circle, fill=red, inner sep=3pt, label=below:{\small $c_2$}] at (5,0) {};
+    \foreach \i in {1,...,8} {
+        \pgfmathsetmacro{\angle}{360/8*\i}
+        \pgfmathsetmacro{\r}{0.3+0.6*rnd}
+        \node[circle, fill=red!30, inner sep=1.5pt] at ($(5,0)+(\angle:\r)$) {};
+    }
+    
+    % Cluster 3
+    \draw[thick, green!70!black] (2.5,3) circle (1.5);
+    \node[circle, fill=green!70!black, inner sep=3pt, label=above:{\small $c_3$}] at (2.5,3) {};
+    \foreach \i in {1,...,6} {
+        \pgfmathsetmacro{\angle}{360/6*\i}
+        \pgfmathsetmacro{\r}{0.4+0.5*rnd}
+        \node[circle, fill=green!30, inner sep=1.5pt] at ($(2.5,3)+(\angle:\r)$) {};
+    }
+    
+    % Query
+    \node[circle, fill=orange, inner sep=4pt, label=right:{\small Query}] (q) at (4,2.5) {};
+    
+    % Distance to nearest clusters
+    \draw[dashed, orange, very thick] (q) -- (2.5,3);
+    \draw[dashed, orange, very thick] (q) -- (5,0);
+    
+    \node at (2.5,-2.5) {\small Search only in 1-2 nearest clusters (not all!)};
+\end{tikzpicture}
