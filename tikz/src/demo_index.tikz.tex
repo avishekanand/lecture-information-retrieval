@@ -1,0 +1,18 @@
+\begin{tikzpicture}[node distance=1cm]
+    % Database Primitive
+    \IRDatabase{db}{(0,0)}{Storage}
+    
+    % Index Box
+    \IRBox{index}{(4,0)}{Inverted Index}{Static / Sparse}{primary}
+    
+    % Search Box
+    \IRBox{query}{(4, -2)}{User Query}{Natural Language}{accent}
+    
+    % Connection
+    \IRArrow{db}{index}{Indexing}
+    \IRArrowSlanted{query}{index}{Lookup}{0.5}{1.2cm}
+    
+    % Highlighting a future step
+    \IRBox{neural}{(8,0)}{Neural Index}{Dense Vectors}{ghost}
+    \IRArrow{index}{neural}{Evolution}
+\end{tikzpicture}

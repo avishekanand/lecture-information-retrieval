@@ -1,0 +1,72 @@
+\documentclass[aspectratio=169]{beamer}
+\usetheme{TUDelft}
+\input{theme/macros.tex}
+\setbeamercolor{page number in footline}{fg=irPrimary}
+\setbeamertemplate{footline}{
+  \hfill\usebeamercolor[fg]{page number in footline}\insertframenumber\,/\,\inserttotalframenumber\kern1em\vskip2ex
+}
+
+\title{TikZ Figure API: Component Catalog}
+
+\begin{document}
+
+\begin{frame}[fragile]{Primitives: Boxes and Variants}
+    \begin{center}
+    \begin{tikzpicture}
+        \IRBox{p}{(0,0)}{Primary Box}{Variant: primary}{primary}
+        \IRBox{s}{(4,0)}{Secondary Box}{Variant: secondary}{secondary}
+        \IRBox{a}{(8,0)}{Accent Box}{Variant: accent}{accent}
+        \IRBox{m}{(0,-2)}{Muted Box}{Variant: muted}{muted}
+        \IRBox{g}{(4,-2)}{Ghost Box}{Variant: ghost}{ghost}
+        \IRBox{e}{(8,-2)}{Emph Box}{Variant: emph}{emph}
+    \end{tikzpicture}
+    \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Primitives: Arrows, Badges, and Stacks}
+    \begin{center}
+    \begin{tikzpicture}
+        \IRDocStack{d1}{(0,0)}{Doc Stack}
+        \IRBox{b1}{(4,0)}{Target Box}{}{primary}
+        \IRArrow{d1}{b1}{The Arrow}
+        \IRBadge{(4, 0.8)}{The Badge}
+        \IRGroup{(d1) (b1)}{The Group}{primary}
+    \end{tikzpicture}
+    \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Layouts: Pipeline Demo}
+    \begin{center}
+    \input{tikz/src/demo_pipeline.tikz.tex}
+    \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Layouts: Indexing Demo}
+    \begin{center}
+    \input{tikz/src/demo_index.tikz.tex}
+    \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Advanced Components: Database and Tiers}
+    \begin{center}
+    \begin{tikzpicture}
+        \IRDatabase{db}{(0,0)}{Collection}
+        \IRTelescopeTier{t1}{(4,2)}{4cm}{Broad Candidates}{muted}
+        \IRTelescopeTier{t2}{(4,1)}{3cm}{Ranked List}{primary}
+        \IRTelescopeTier{t3}{(4,0)}{2cm}{Top-10}{accent}
+        \IRArrow{db.north}{t1.west}{Stream}
+    \end{tikzpicture}
+    \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Advanced Components: Sequential Steps}
+    \begin{center}
+    \begin{tikzpicture}
+        \IRStep{1}{(0,0)}{Tokenization}{Lexical}{primary}
+        \IRStep{2}{(0,-1.5)}{Filtering}{Stopwords}{primary}
+        \IRStep{3}{(0,-3)}{Indexing}{Postings}{secondary}
+    \end{tikzpicture}
+    \end{center}
+\end{frame}
+
+\end{document}

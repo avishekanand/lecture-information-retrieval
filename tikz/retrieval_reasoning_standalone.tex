@@ -1,0 +1,18 @@
+\begin{tikzpicture}[
+    box/.style={rectangle, draw, fill=#1!20, minimum width=4cm, minimum height=1cm, align=center, rounded corners=2pt},
+    arrow/.style={->, >=stealth, thick}
+]
+    % Pipeline Steps
+    \node[box=blue] (ret) at (0,3) {\textbf{Retrieval}\\{\small Millions of Docs}};
+    \node[box=orange] (rank) at (0,1.5) {\textbf{Re-ranking}\\{\small Top-100 Candidates}};
+    \node[box=green] (llm) at (0,0) {\textbf{Reasoning}\\{\small Top-10 Context}};
+    
+    % Connections
+    \draw[arrow] (ret) -- (rank);
+    \draw[arrow] (rank) -- (llm);
+    
+    % Latency Annotations
+    \node[anchor=east] at (-2.5, 3) {$O(\text{ms})$};
+    \node[anchor=east] at (-2.5, 1.5) {$O(100\text{ms})$};
+    \node[anchor=east] at (-2.5, 0) {$O(\text{sec})$};
+\end{tikzpicture}

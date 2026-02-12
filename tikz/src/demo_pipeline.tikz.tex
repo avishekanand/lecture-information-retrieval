@@ -1,0 +1,21 @@
+\begin{tikzpicture}[node distance=1.5cm]
+    % Composing the pipeline using API Primitives
+    \IRBox{retrieval}{(0,0)}{Retrieval}{BM25 / ANN}{primary}
+    \IRBox{rerank}{(4,0)}{Re-ranking}{Cross-Encoders}{secondary}
+    \IRBox{llm}{(8,0)}{Generation}{LLM / RAG}{accent}
+
+    % Connect with arrows
+    \IRArrow{retrieval}{rerank}{Top-k}
+    \IRArrow{rerank}{llm}{Top-10}
+    
+    % Slanted feedback arrow
+    \draw[irArrowBase, dashed] (llm) to[bend right] node[below, sloped, irLabel] {Feedback Loop with Long Text to Test Wrapping} (retrieval);
+
+    % Add annotations
+    \IRBadge{(0, 0.8)}{Fast}
+    \IRBadge{(4, 0.8)}{Precise}
+    \IRBadge{(8, 0.8)}{Reasoning}
+
+    % Grouping
+    \IRGroup{(retrieval) (rerank)}{Search Core}{primary}
+\end{tikzpicture}

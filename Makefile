@@ -2,7 +2,7 @@
 
 BUILD_DIR = build
 # Only compile active lectures (01, 02, 03)
-ACTIVE_LECTURES = 01_intro_vector_space.tex 02-v2-indexing.tex 03_ranking.tex
+ACTIVE_LECTURES = 01_intro_vector_space.tex 02_indexing.tex 03_ranking.tex
 PDFS_ANIMATED = $(addprefix $(BUILD_DIR)/, $(ACTIVE_LECTURES:.tex=_animated.pdf))
 PDFS_STATIC = $(addprefix $(BUILD_DIR)/, $(ACTIVE_LECTURES:.tex=_static.pdf))
 

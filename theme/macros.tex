@@ -1,0 +1,63 @@
+\input{theme/tikz-styles.tex}
+
+% Primitives
+% \IRBox{id}{at}{title}{subtitle}{variant}
+\newcommand{\IRBox}[5]{
+    \node[#5] (#1) at #2 {
+        \begin{tabular}{c}
+            #3 \\
+            \if\relax\detokenize{#4}\relax \else \tiny #4 \fi
+        \end{tabular}
+    };
+}
+
+% \IRArrow{from}{to}{label}
+\newcommand{\IRArrow}[3]{
+    \draw[irArrowBase] (#1) -- node[above, sloped, irLabel, pos=0.5] {#3} (#2);
+}
+
+% \IRArrowSlanted{from}{to}{label}{pos}{width}
+\newcommand{\IRArrowSlanted}[5]{
+    \draw[irArrowBase] (#1) -- node[above, sloped, irLabel, pos=#4, text width=#5] {#3} (#2);
+}
+
+% \IRBadge{at}{text}
+\newcommand{\IRBadge}[2]{
+    \node[draw=irAccent, fill=irAccent!20, rounded corners=1pt, font=\tiny\bfseries, inner sep=2pt] at #1 {#2};
+}
+
+% \IRGroup{fit nodes}{label}{variant}
+\newcommand{\IRGroup}[3]{
+    \node[draw, dashed, rounded corners, inner sep=0.3cm, #3, fit=#1] (group) {};
+    \node[anchor=north west, font=\tiny\bfseries, #3] at (group.north west) {#2};
+}
+
+% \IRDocStack{id}{at}{label}
+\newcommand{\IRDocStack}[3]{
+    \node[primary, double copy shadow={shadow xshift=2pt, shadow yshift=-2pt}] (#1) at #2 {#3};
+}
+
+% \IRDatabase{id}{at}{label}
+\newcommand{\IRDatabase}[3]{
+    \node[irDatabase] (#1) at #2 {#3};
+}
+
+% Layout Helpers
+% \IRPipelineTier{id}{at}{text}{label}{variant}
+\newcommand{\IRPipelineTier}[5]{
+    \IRBox{#1}{#2}{#3}{}{#5}
+    \node[anchor=west, irLabel, xshift=0.5cm] at (#1.east) {#4};
+}
+
+% \IRTelescopeTier{id}{at}{width}{text}{variant}
+\newcommand{\IRTelescopeTier}[5]{
+    \node[trapezium, trapezium stretches body, trapezium left angle=120, trapezium right angle=120, 
+          draw, #5, minimum width=#3, minimum height=0.7cm, inner sep=2pt] (#1) at #2 {#4};
+}
+
+% \IRStep{id}{at}{text}{label}{variant}
+\newcommand{\IRStep}[5]{
+    \node[circle, draw, fill=irAccent!20, font=\tiny\bfseries, inner sep=2pt] (#1_num) at #2 {#1};
+    \IRBox{#1}{($#2 + (3, 0)$)}{#3}{#4}{#5}
+    \draw[irArrowBase, thin] (#1_num.east) -- (#1.west);
+}

@@ -1,0 +1,43 @@
+\documentclass[aspectratio=169]{beamer}
+\usetheme{TUDelft}
+
+% Load the Figure API
+\input{theme/macros.tex}
+
+\title{TikZ Figure API: Modular IR Diagrams}
+\author{Avishek Anand}
+\date{February 2026}
+
+\begin{document}
+
+\begin{frame}
+    \titlepage
+\end{frame}
+
+\begin{frame}{The Pipeline API}
+    \begin{center}
+    \input{tikz/src/demo_pipeline.tikz.tex}
+    \end{center}
+    
+    \vspace{1em}
+    \begin{itemize}
+        \item Consists of \textbf{primary}, \textbf{secondary}, and \textbf{accent} variants.
+        \item Semantic arrows and badges for annotation.
+        \item Grouping primitive for logical sections.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{The Indexing API}
+    \begin{center}
+    \input{tikz/src/demo_index.tikz.tex}
+    \end{center}
+    
+    \vspace{1em}
+    \begin{itemize}
+        \item \textbf{DocStack} primitive for document collections.
+        \item \textbf{Ghost} variant for future or optional components.
+        \item Relative positioning ensures consistent spacing.
+    \end{itemize}
+\end{frame}
+
+\end{document}

@@ -1,0 +1,51 @@
+\usepackage{tikz}
+\usetikzlibrary{positioning, shapes, arrows, shadows, fit, calc}
+
+% Semantic Colors
+\definecolor{irPrimary}{HTML}{005EB8}   % TU Delft Blue like
+\definecolor{irSecondary}{HTML}{00A94F} % Success Green
+\definecolor{irAccent}{HTML}{FFB81C}    % Warning/Accent Gold
+\definecolor{irMuted}{HTML}{D9D9D9}     % Faint Gray
+\definecolor{irWarn}{HTML}{E03C31}      % Error Red
+
+% Base Styles
+\tikzset{
+    irBoxBase/.style={
+        rectangle, 
+        draw, 
+        rounded corners=2pt, 
+        minimum height=0.8cm, 
+        minimum width=2cm,
+        font=\small\sffamily,
+        align=center,
+        drop shadow={opacity=0.2}
+    },
+    irDatabase/.style={
+        cylinder, 
+        draw, 
+        shape border rotate=90, 
+        aspect=0.25, 
+        minimum height=1.2cm, 
+        minimum width=1cm,
+        fill=irMuted!20,
+        draw=irPrimary!80!black,
+        font=\tiny\sffamily,
+        align=center
+    },
+    % Variants
+    primary/.style={irBoxBase, fill=irPrimary!10, draw=irPrimary},
+    secondary/.style={irBoxBase, fill=irSecondary!10, draw=irSecondary},
+    accent/.style={irBoxBase, fill=irAccent!10, draw=irAccent},
+    muted/.style={irBoxBase, fill=irMuted!20, draw=irMuted!80!black, text=irMuted!50!black},
+    ghost/.style={irBoxBase, fill=white, draw=irMuted!50, text=irMuted, dashed},
+    emph/.style={draw=irWarn, thick, drop shadow={shadow xshift=0mm, shadow yshift=0mm, fill=irWarn, opacity=0.3}},
+    % Arrows
+    irArrowBase/.style={->, thick, >=latex', draw=irPrimary!80!black},
+    irLabel/.style={
+        font=\tiny\itshape, 
+        text=irPrimary!50!black, 
+        align=center, 
+        text width=2.5cm, 
+        inner sep=3pt
+    }
+}
