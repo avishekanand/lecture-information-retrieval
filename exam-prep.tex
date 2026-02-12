@@ -1,0 +1,1684 @@
+
+
+\documentclass[aspectratio=169]{beamer} \usetheme{TUDelft} % ==================================================================== % ANIMATION TOGGLE % ==================================================================== \newif\ifanimated \animatedtrue \ifdefined\staticmode \animatedfalse \fi \new
+
+pasted
+
+produce a full lecture notes from the beamer slides that i paste here. the lecture notes should be detailed 1) defining each concept with a proper definition environment 2) should have worked out examples 3) should have authoritative references or placeholders. Use the same figures refered in the slides:
+
+09:09
+Let me start by reading the relevant skill files for creating a high-quality document.
+
+
+Read the PDF skill for creating PDFs
+Since this is a LaTeX lecture notes document, I should use the docx skill approach but actually produce a LaTeX PDF. Let me check the docx skill too for document structure best practices, then build this as a proper LaTeX document compiled to PDF.
+
+
+Check LaTeX availability
+Good, LaTeX is available. Now let me create the comprehensive lecture notes document.
+
+
+Created 2 files, ran a command
+
+Create the comprehensive lecture notes LaTeX document
+lecture_notes.tex
+
+Remove existing file
+
+Script
+
+Create the comprehensive lecture notes LaTeX document
+text
+
+\documentclass[11pt,a4paper]{article}
+
+% ====================================================================
+% PACKAGES
+% ====================================================================
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{tikz}
+\usepackage{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{fontawesome5}
+\usepackage{tabularx}
+\usepackage{multicol}
+
+% TikZ libraries
+\usetikzlibrary{shapes,arrows,positioning,calc,patterns,decorations.pathreplacing,shadows}
+
+% ====================================================================
+% THEOREM-LIKE ENVIRONMENTS
+% ====================================================================
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{example}{Example}[section]
+\newtheorem{remark}{Remark}[section]
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+
+% ====================================================================
+% CUSTOM ENVIRONMENTS
+% ====================================================================
+\tcbuselibrary{breakable,skins}
+
+\newtcolorbox{keytakeaway}{
+  colback=green!5!white,
+  colframe=green!50!black,
+  title={\faKey\ Key Takeaway},
+  fonttitle=\bfseries,
+  breakable
+}
+
+\newtcolorbox{pitfall}{
+  colback=red!5!white,
+  colframe=red!60!black,
+  title={\faExclamationTriangle\ Common Pitfall},
+  fonttitle=\bfseries,
+  breakable
+}
+
+\newtcolorbox{production}{
+  colback=blue!5!white,
+  colframe=blue!50!black,
+  title={\faCog\ Production Note},
+  fonttitle=\bfseries,
+  breakable
+}
+
+% ====================================================================
+% CUSTOM COLORS
+% ====================================================================
+\definecolor{sparse}{RGB}{52,152,219}
+\definecolor{dense}{RGB}{231,76,60}
+\definecolor{hybrid}{RGB}{46,204,113}
+
+% ====================================================================
+% CODE LISTINGS
+% ====================================================================
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+    showstringspaces=false,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    backgroundcolor=\color{gray!10},
+    xleftmargin=2em,
+    framexleftmargin=1.5em
+}
+
+% ====================================================================
+% HEADER / FOOTER
+% ====================================================================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textsc{Information Retrieval}}
+\fancyhead[R]{\textsc{Lecture 2: Sparse and Dense Indexing}}
+\fancyfoot[C]{\thepage}
+
+% ====================================================================
+% TITLE
+% ====================================================================
+\title{%
+  \textbf{Lecture 2: Sparse and Dense Indexing} \\[0.5em]
+  \Large Information Retrieval --- Lecture Notes
+}
+\author{Avishek Anand \\ \textit{Information Retrieval Course}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+These lecture notes accompany Lecture~2 of the Information Retrieval course, covering the two foundational indexing paradigms that underpin modern retrieval systems: \textbf{sparse (inverted) indexing} and \textbf{dense (vector) indexing}. We present formal definitions, worked examples, algorithmic descriptions, and practical guidance for building production retrieval systems. The notes also discuss text preprocessing, index compression, approximate nearest neighbor search, and design decisions for choosing between indexing strategies.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% ====================================================================
+% SECTION: THE MODERN IR LANDSCAPE
+% ====================================================================
+\section{The Modern IR Landscape}
+\label{sec:landscape}
+
+Modern information retrieval (IR) has undergone a fundamental transformation. While the user-facing interface has evolved from ranked lists of blue links to synthesized natural-language answers, the underlying retrieval engine remains remarkably consistent.
+
+\subsection{From 10 Blue Links to RAG}
+
+% References the slide tikz/landscape.tex figure
+\begin{center}
+\textit{[See Figure: \texttt{tikz/landscape.tex} --- The modern IR pipeline: from query to candidate generation, re-ranking, and final output.]}
+\end{center}
+
+\begin{definition}[Traditional Retrieval]
+\label{def:traditional-retrieval}
+Traditional retrieval is a paradigm in which a user issues a keyword query and the system returns a ranked list of documents. The user is responsible for reading, evaluating, and synthesizing the returned results.
+\end{definition}
+
+Traditional search engines (Google, Bing, Yahoo circa 2000s) exemplify this model: the user searches for information, receives a list of relevant documents, and must click through links and read documents to find the answer.
+
+% References tikz/traditional_search.tex
+\begin{center}
+\textit{[See Figure: \texttt{tikz/traditional\_search.tex} --- Traditional retrieval: the user receives ranked documents and must synthesize information independently.]}
+\end{center}
+
+\begin{definition}[Retrieval-Augmented Generation (RAG)]
+\label{def:rag}
+Retrieval-Augmented Generation (RAG) is a paradigm in which a retrieval system first fetches relevant passages from a document collection, augments a large language model (LLM) prompt with these passages, and the LLM generates a synthesized natural-language answer~\cite{lewis2020rag}.
+\end{definition}
+
+% References tikz/rag_search.tex
+\begin{center}
+\textit{[See Figure: \texttt{tikz/rag\_search.tex} --- RAG: the system retrieves relevant facts, augments an LLM prompt, and generates a natural-language answer.]}
+\end{center}
+
+The RAG process consists of three stages:
+\begin{enumerate}
+    \item \textbf{Retrieve} relevant passages or documents from an index.
+    \item \textbf{Augment} the LLM prompt with the retrieved content.
+    \item \textbf{Generate} a final answer using the LLM.
+\end{enumerate}
+
+Modern systems such as ChatGPT (with browsing), Perplexity, and Bing Chat all follow this pattern.
+
+\subsection{The Interface Changed, the Engine Did Not}
+
+% References tikz/old_interface.tex and tikz/modern_interface.tex
+\begin{center}
+\textit{[See Figures: \texttt{tikz/old\_interface.tex} (Old Interface: ranked documents) and \texttt{tikz/modern\_interface.tex} (Modern Interface: generated answers).]}
+\end{center}
+
+Although the user-facing interface has changed dramatically, the core retrieval components (indexing, retrieval, relevance scoring) remain the same.
+
+\begin{keytakeaway}
+\textbf{Retrieval now serves models instead of users.} In RAG systems, the retrieval component acts as the LLM's ``eyes'' into the document collection. The underlying components---indexing, retrieval, and relevance scoring---remain the same whether we serve 10 blue links or a generated answer.
+\end{keytakeaway}
+
+
+\subsection{Why Indexing Matters}
+
+Indexing is the process of organizing a document collection into a data structure that enables efficient retrieval. Without indexing, every query would require scanning the entire collection---an operation that is infeasible at web scale.
+
+% References tikz/why_indexing.tex
+\begin{center}
+\textit{[See Figure: \texttt{tikz/why\_indexing.tex} --- Indexing reduces the search space from millions of documents to hundreds of candidates.]}
+\end{center}
+
+Three reasons make indexing indispensable:
+\begin{enumerate}
+    \item \textbf{Scale:} We cannot score every document for every query in real time.
+    \item \textbf{Latency:} Users and LLMs expect sub-second responses.
+    \item \textbf{Feasibility:} We must reduce millions of documents to hundreds of candidates that downstream re-rankers and LLMs can process.
+\end{enumerate}
+
+\begin{definition}[Recall Ceiling]
+\label{def:recall-ceiling}
+The \emph{recall ceiling} of an indexing system is the maximum recall achievable by any downstream component. If a relevant document is not returned by the candidate generation stage, no re-ranker or LLM can recover it.
+\end{definition}
+
+% References tikz/indexing_controls.tex
+\begin{center}
+\textit{[See Figure: \texttt{tikz/indexing\_controls.tex} --- Indexing controls the recall ceiling, latency budget, cost per query, and what the LLM is allowed to see.]}
+\end{center}
+
+\begin{keytakeaway}
+\textbf{Indexing is not just an optimization---it is the bridge to feasibility.} If retrieval misses a document, the LLM cannot reason about it.
+\end{keytakeaway}
+
+\subsection{Course Context}
+
+This lecture sits in the following sequence:
+\begin{enumerate}
+    \item Introduction to IR: Vector Space Model \& Boolean Retrieval \faCheck
+    \item \textbf{Modern Indexing for RAG} $\leftarrow$ \textit{Today}
+    \item Ranking: BM25, Query Expansion, Language Models
+    \item Embeddings \& Transformer-based Re-rankers
+    \item Dense Retrieval (Deep Dive)
+    \item Learning to Rank
+\end{enumerate}
+
+% ====================================================================
+% SECTION: SPARSE INDEXING
+% ====================================================================
+\section{Sparse Indexing: The Classical Approach}
+\label{sec:sparse}
+
+\subsection{The Inverted Index}
+
+The inverted index is the foundational data structure of text retrieval. It powers Google Search, Elasticsearch, OpenSearch, PostgreSQL full-text search, and the sparse retrieval component of virtually every RAG system in production today.
+
+\begin{definition}[Inverted Index]
+\label{def:inverted-index}
+An \emph{inverted index} is a data structure that maps each term $t$ in the vocabulary $V$ to a \emph{posting list}---an ordered list of document identifiers (and optionally term frequencies and positions) in which term $t$ appears. Formally:
+\[
+\text{InvertedIndex}: V \to \{(d_1, \mathrm{payload}_1), (d_2, \mathrm{payload}_2), \ldots\}
+\]
+where each $d_i$ is a document identifier and $\mathrm{payload}_i$ may contain the term frequency $\mathrm{tf}(t, d_i)$, positional information, or other metadata.
+\end{definition}
+
+The inverted index remains relevant in the age of neural networks for four reasons:
+\begin{enumerate}
+    \item \textbf{Exact matching:} It can find ``iPhone 15 Pro Max'' precisely.
+    \item \textbf{Speed:} It answers queries in 5--10\,ms over millions of documents.
+    \item \textbf{Explainability:} One can inspect which terms matched and why.
+    \item \textbf{Hybrid search:} It complements dense retrieval in production pipelines.
+\end{enumerate}
+
+\subsubsection{Worked Example: Building an Inverted Index}
+
+\begin{example}[Constructing an Inverted Index]
+\label{ex:inverted-index}
+Consider three documents:
+\begin{itemize}
+    \item \textbf{Doc 1:} ``neural networks for deep learning''
+    \item \textbf{Doc 2:} ``deep learning applications''
+    \item \textbf{Doc 3:} ``neural machine translation''
+\end{itemize}
+
+% References tikz/inverted_index_structure.tex
+\begin{center}
+\textit{[See Figure: \texttt{tikz/inverted\_index\_structure.tex} --- Inverted index structure for the example collection.]}
+\end{center}
+
+After tokenization and lowercasing, the inverted index is:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Term} & \textbf{Posting List} \\
+\midrule
+neural & $[1, 3]$ \\
+networks & $[1]$ \\
+for & $[1]$ \\
+deep & $[1, 2]$ \\
+learning & $[1, 2]$ \\
+applications & $[2]$ \\
+machine & $[3]$ \\
+translation & $[3]$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Query Processing.} For the query ``neural learning'':
+\begin{enumerate}
+    \item Look up ``neural'' $\to [1, 3]$.
+    \item Look up ``learning'' $\to [1, 2]$.
+    \item Intersect: $[1, 3] \cap [1, 2] = [1]$.
+    \item Result: Document~1 contains both terms.
+\end{enumerate}
+\end{example}
+
+\subsection{The Inverted Index as a Sparse Matrix}
+
+\begin{definition}[Document-Term Matrix]
+\label{def:doc-term-matrix}
+The \emph{document-term matrix} $\mathbf{M} \in \mathbb{R}^{D \times V}$ is a matrix where rows correspond to documents ($D$ total), columns correspond to terms in the vocabulary ($|V|$ total), and each entry $\mathbf{M}_{i,j}$ contains the weight (e.g., TF-IDF or BM25) of term $j$ in document $i$. Since each document contains only a small fraction of the vocabulary, this matrix is extremely sparse---typically $>$99.9\% zeros.
+\end{definition}
+
+% References tikz/sparse_matrix.tex
+\begin{center}
+\textit{[See Figure: \texttt{tikz/sparse\_matrix.tex} --- The document-term matrix viewed as a sparse matrix.]}
+\end{center}
+
+\begin{keytakeaway}
+The inverted index is a \textbf{Compressed Sparse Column (CSC)} storage format of the document-term matrix. By storing only non-zero entries, we avoid the enormous cost of representing the full $D \times |V|$ matrix.
+\end{keytakeaway}
+
+
+\subsection{Why the Inverted Index is Fast}
+
+\begin{proposition}[Complexity of Inverted Index Retrieval]
+Given a collection of $N$ documents with average length $M$ terms and a query of $k$ terms where each posting list has average length $p$:
+\begin{itemize}
+    \item \textbf{Naive scan:} $O(N \cdot M)$ comparisons.
+    \item \textbf{Inverted index:} $O(k \cdot p)$ comparisons, where typically $k \ll N$ and $p \ll N$.
+\end{itemize}
+\end{proposition}
+
+\begin{example}[Speed Comparison]
+\label{ex:speed}
+For a collection of 10 million documents, each 500 words long:
+\begin{itemize}
+    \item \textbf{Naive approach:} $10^7 \times 500 = 5 \times 10^9$ comparisons (5 billion).
+    \item \textbf{Inverted index} for query ``neural learning'' ($k = 2$, $p \approx 1000$): $2 \times 1000 = 2000$ comparisons.
+\end{itemize}
+The inverted index is approximately \textbf{1000$\times$ faster}.
+\end{example}
+
+
+\subsection{Posting List Formats}
+
+Posting lists come in three levels of increasing expressiveness and storage cost:
+
+\begin{definition}[Posting List Levels]
+\label{def:posting-levels}
+~
+\begin{enumerate}
+    \item \textbf{Level 1 --- DocID Only (Boolean Retrieval):}
+    \[
+    t \to [d_1, d_2, \ldots, d_n]
+    \]
+    Supports Boolean (AND, OR, NOT) queries but cannot rank documents by relevance.
+    
+    \item \textbf{Level 2 --- With Frequencies (Ranked Retrieval):}
+    \[
+    t \to [(d_1, \mathrm{tf}_1), (d_2, \mathrm{tf}_2), \ldots]
+    \]
+    Supports TF-IDF and BM25 scoring. \textbf{This is the standard in practice.}
+    
+    \item \textbf{Level 3 --- With Positions (Phrase Queries):}
+    \[
+    t \to [(d_1, \mathrm{tf}_1, [\mathrm{pos}_{1,1}, \mathrm{pos}_{1,2}, \ldots]), \ldots]
+    \]
+    Supports exact phrase queries (e.g., ``neural networks'') and proximity scoring. Costs 2--3$\times$ more storage.
+\end{enumerate}
+\end{definition}
+
+\begin{example}[Posting List Formats]
+For the term ``neural'':
+\begin{itemize}
+    \item \textbf{Level 1:} \texttt{neural: [1, 3, 5, 12, 27, 89]}
+    \item \textbf{Level 2:} \texttt{neural: [(1, tf=2), (3, tf=1), (5, tf=3), (12, tf=1), \ldots]}
+    \item \textbf{Level 3:} \texttt{neural: [(1, tf=2, pos=[5,42]), (3, tf=1, pos=[8]), \ldots]}
+\end{itemize}
+\end{example}
+
+
+\subsection{Score Aggregation and the Vector Space Model}
+
+\begin{definition}[Vector Space Model (VSM) Scoring]
+\label{def:vsm-scoring}
+In the Vector Space Model~\cite{salton1975vector}, the relevance score of a document $d$ with respect to a query $q$ is computed as:
+\begin{equation}
+\mathrm{score}(q, d) = \sum_{t \in q \cap d} w(t, q) \times w(t, d)
+\label{eq:vsm}
+\end{equation}
+where $w(t, q)$ and $w(t, d)$ are the weights of term $t$ in the query and document, respectively (e.g., TF-IDF weights).
+\end{definition}
+
+The retrieval engine computes this score efficiently using an \emph{accumulator}-based approach:
+
+\begin{enumerate}
+    \item Initialize an accumulator table: $\mathrm{Acc}[d] = 0$ for each document $d$.
+    \item For each query term $t$:
+    \begin{enumerate}
+        \item Traverse the posting list for $t$.
+        \item For each $(d, \mathrm{tf})$ in the posting list, update: $\mathrm{Acc}[d] \mathrel{+}= w(t, q) \times w(t, d)$.
+    \end{enumerate}
+    \item Return documents sorted by accumulator score.
+\end{enumerate}
+
+% References tikz/score_aggregation.tex
+\begin{center}
+\textit{[See Figure: \texttt{tikz/score\_aggregation.tex} --- Score accumulation across posting lists.]}
+\end{center}
+
+\begin{keytakeaway}
+The power of sparse indexing is that we \textbf{only compute scores for documents that contain at least one query term}. Documents with no term overlap are never touched.
+\end{keytakeaway}
+
+
+% ====================================================================
+% TEXT PREPROCESSING
+% ====================================================================
+\subsection{Text Preprocessing Pipeline}
+\label{sec:preprocessing}
+
+Before documents and queries can be indexed, raw text must be transformed through a preprocessing pipeline. The same pipeline must be applied to both documents (at index time) and queries (at query time) to ensure consistency.
+
+% References tikz/preprocessing_pipeline.tex
+\begin{center}
+\textit{[See Figure: \texttt{tikz/preprocessing\_pipeline.tex} --- The text preprocessing pipeline.]}
+\end{center}
+
+\begin{example}[Preprocessing Pipeline]
+\label{ex:preprocessing}
+\textbf{Raw text:} ``The Neural Networks are Learning!''
+\begin{enumerate}
+    \item \textbf{Tokenization:} [``The'', ``Neural'', ``Networks'', ``are'', ``Learning'', ``!'']
+    \item \textbf{Lowercasing:} [``the'', ``neural'', ``networks'', ``are'', ``learning'', ``!'']
+    \item \textbf{Stop word removal:} [``neural'', ``networks'', ``learning'']
+    \item \textbf{Stemming (Porter):} [``neural'', ``network'', ``learn'']
+\end{enumerate}
+\end{example}
+
+
+\subsubsection{Tokenization}
+
+\begin{definition}[Tokenization]
+\label{def:tokenization}
+\emph{Tokenization} is the process of segmenting a string of text into a sequence of discrete tokens (typically words or subwords). Tokenization defines the vocabulary of the index.
+\end{definition}
+
+Tokenization decisions are language-dependent:
+\begin{itemize}
+    \item \textbf{English:} ``don't'' $\to$ ``do'' + ``n't'' or ``dont''?
+    \item \textbf{German:} ``Informationssystem'' --- should compound words be split?
+    \item \textbf{Chinese/Japanese:} No spaces between words; segmentation requires statistical models.
+\end{itemize}
+
+
+\subsubsection{Stemming vs.\ Lemmatization}
+
+\begin{definition}[Stemming]
+\label{def:stemming}
+\emph{Stemming} is a heuristic process that reduces words to their stem (root form) by removing suffixes. The Porter stemmer~\cite{porter1980algorithm} is the most widely used algorithm.
+\end{definition}
+
+\begin{definition}[Lemmatization]
+\label{def:lemmatization}
+\emph{Lemmatization} is the process of reducing words to their dictionary form (lemma) using morphological analysis. Unlike stemming, lemmatization produces valid words.
+\end{definition}
+
+\begin{example}[Stemming vs.\ Lemmatization]
+\label{ex:stem-vs-lemma}
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Word} & \textbf{Porter Stemmer} & \textbf{Lemmatizer} \\
+\midrule
+running & run & run \\
+better & better & good \\
+university & univers \textcolor{red}{(incorrect!)} & university \\
+studies & studi & study \\
+\bottomrule
+\end{tabular}
+\end{center}
+Stemming is faster but cruder; lemmatization is more accurate but slower.
+\end{example}
+
+\begin{pitfall}
+\textbf{Do NOT stem text for neural models.} Pre-trained models (BERT, sentence-transformers) expect natural, unstemmed text. Stemming destroys subword information that these models rely on.
+\end{pitfall}
+
+
+\subsubsection{Stop Words: A Modern Perspective}
+
+\begin{definition}[Stop Words]
+\label{def:stopwords}
+\emph{Stop words} are common, high-frequency words (e.g., ``the'', ``a'', ``is'', ``in'') that carry little discriminative information for retrieval.
+\end{definition}
+
+Historically (pre-2010), stop words were removed to reduce index size and noise. The modern recommendation is to \textbf{keep stop words} by default:
+\begin{itemize}
+    \item Storage is cheap; the savings are marginal.
+    \item Stop words are important for phrase queries: ``to be or not to be'' would become empty after removal.
+    \item Named entities like ``The Who'' lose meaning without stop words.
+    \item Neural models require them.
+\end{itemize}
+
+Remove stop words only when operating at very large scale (web search), on memory-constrained devices, or when they are demonstrably unnecessary for a specific domain.
+
+\subsubsection{Preprocessing Depends on Representation}
+
+Different retrieval approaches require different preprocessing strategies:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Step} & \textbf{Sparse Retrieval} & \textbf{Dense Retrieval} \\
+\midrule
+Tokenization & Custom (defines vocabulary) & Fixed by model (BPE, WordPiece) \\
+Stemming & Useful for term matching & \textbf{Not used} (model handles variants) \\
+Stop words & Optional (saves space) & Kept (model needs context) \\
+Truncation & N/A & Critical (context window limits) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% References tikz/wordpiece_example.tex
+\begin{center}
+\textit{[See Figure: \texttt{tikz/wordpiece\_example.tex} --- WordPiece subword tokenization example.]}
+\end{center}
+
+
+% ====================================================================
+% INDEX COMPRESSION
+% ====================================================================
+\subsection{Index Compression}
+\label{sec:compression}
+
+Index compression is not optional---it makes systems both \textbf{faster} and cheaper. Modern CPUs can decompress data at 2--5~GB/s, while reading uncompressed data from SSD is limited to $\sim$0.5~GB/s. Therefore, reading compressed data and decompressing it in memory is faster than reading uncompressed data.
+
+\begin{example}[Compression Impact]
+For a collection of 10 million documents with 100 words each:
+\begin{itemize}
+    \item Uncompressed index: $\sim$10~GB.
+    \item Compressed ($5\times$): $\sim$2~GB.
+\end{itemize}
+Benefits: more of the index fits in RAM, lower storage costs, and faster I/O.
+\end{example}
+
+
+\subsubsection{Gap Encoding}
+
+\begin{definition}[Gap Encoding (Delta Encoding)]
+\label{def:gap-encoding}
+\emph{Gap encoding} replaces an ordered posting list of document IDs $[d_1, d_2, \ldots, d_n]$ with a list of gaps $[d_1, d_2 - d_1, d_3 - d_2, \ldots, d_n - d_{n-1}]$. Since consecutive document IDs are often close together, the resulting gaps are typically small integers that can be encoded with fewer bits.
+\end{definition}
+
+\begin{example}[Gap Encoding]
+\label{ex:gap-encoding}
+\textbf{Original posting list (docIDs):}
+\[
+[5, 127, 214, 215, 512, 1024, 2048, 10239]
+\]
+
+\textbf{Gap-encoded:}
+\[
+[5, 122, 87, 1, 297, 512, 1024, 8191]
+\]
+
+The original values range from 5 to 10,239 (requiring 14 bits each). Most gaps are small ($< 256$, requiring 8 bits or fewer), enabling much better compression.
+
+\textbf{Decoding} is sequential: $d_i = d_{i-1} + \mathrm{gap}_i$.
+\end{example}
+
+
+\subsubsection{Variable Byte (VB) Encoding}
+
+\begin{definition}[Variable Byte Encoding]
+\label{def:vb-encoding}
+\emph{Variable Byte (VB) encoding} is a compression scheme that represents each integer using a variable number of bytes. Each byte dedicates 7 bits to data and 1 bit (the most significant bit, MSB) as a continuation flag:
+\begin{itemize}
+    \item MSB $= 1$: this is the last byte of the encoded integer.
+    \item MSB $= 0$: more bytes follow.
+\end{itemize}
+\end{definition}
+
+\begin{example}[VB Encoding --- Step by Step]
+\label{ex:vb-encoding}
+
+\textbf{Encoding the number 5:}
+\begin{enumerate}
+    \item Binary: \texttt{101} (3 bits, fits in 7).
+    \item VB: \texttt{1\_0000101} (1 byte). The MSB $= 1$ indicates this is the final byte.
+\end{enumerate}
+
+\textbf{Encoding the number 122:}
+\begin
+Done
+Continue
+
+09:26
+<function_results>
+
+The file was cut off because it exceeded the maximum length. The first 18049 characters were saved to /home/claude/lecture_notes.tex. </parameter>
+
+The file got cut off. Let me build it in parts.
+
+
+Ran 2 commands
+Let me write the file using bash to avoid the character limit:
+
+
+Write the full lecture notes LaTeX file
+Now let me compile it:
+
+
+Ran 3 commands, read a file
+Here are your lecture notes — 14 pages compiled from the Beamer slides. The document includes:
+
+Formal definition environments for all key concepts (inverted index, document-term matrix, gap encoding, VB encoding, ANN search, IVF, Product Quantization, IVF+PQ, etc.)
+Worked examples for building an inverted index, gap encoding, VB encoding step-by-step (encoding/decoding 824), product quantization compression, and speed comparisons
+Custom colored boxes for key takeaways, common pitfalls, and production notes
+Algorithms for IVF construction and search
+Code listings for PyTerrier (sparse) and FAISS (dense)
+12 authoritative references (Lewis et al. 2020, Salton 1975, Porter 1980, Jégou et al. 2011, Manning et al. 2008, etc.)
+Figure placeholders referencing all the TikZ files from your slides (e.g., tikz/inverted_index_structure.tex, tikz/score_aggregation.tex, etc.) — drop those files alongside the .tex and they'll compile in place
+The .tex source is also provided so you can integrate your TikZ figures and customize further.
+
+Lecture notes
+Document · PDF 
+Lecture notes
+TEX 
+explain the query processing of produc quantization in detail and also with an example and pseudocode
+
+19:07
+Let me add a detailed section on PQ query processing to the lecture notes.
+
+
+Viewed 2 files
+Now I'll insert a detailed PQ query processing subsection after line 580 (after the existing PQ section, before IVF+PQ):
+
+
+Insert detailed PQ query processing section with example and pseudocode
+The replacement got cut off. Let me check what we have and finish it:
+
+
+Ran a command, viewed a file
+I need to fix the cut-off and add the remaining content (the worked example):
+
+
+Edited 2 files
+Now compile:
+
+
+Ran 3 commands, read a file
+The updated lecture notes (now 17 pages) include a substantially expanded PQ query processing section. Here's what was added:
+
+New content in Section 3.5 (Product Quantization):
+
+Three-phase breakdown — Offline Training (learn codebooks via k-means), Offline Encoding (compress database to PQ codes), Online Query Processing (ADC search)
+Formal definition of Asymmetric Distance Computation (ADC) — the key insight that the query stays exact while only database vectors are quantized, with the decomposition into precomputable lookup table entries
+Algorithm 3: PQ Query Processing pseudocode — Step 1 builds the 
+m
+×
+K
+m×K distance table, Step 2 scans all PQ codes with table lookups only, Step 3 returns top-
+k
+k
+Full worked example (
+d
+=
+8
+d=8, 
+m
+=
+4
+m=4, 
+K
+=
+3
+K=3) walking through every arithmetic step:
+Codebook centroids shown as a table
+Three documents' PQ codes
+Distance table computation for all 4 subspaces (12 squared-distance calculations shown)
+Scanning each document (4 lookups + 3 additions each)
+Final ranking: Doc A (2.31) < Doc C (6.65) < Doc B (10.54)
+Complexity analysis remark comparing exact brute-force FLOPs vs. PQ lookups
+Approximation error remark discussing when/why PQ distances diverge from exact distances
+Lecture notes
+Document · PDF 
+Lecture notes
+TEX 
+write a list of concepts and ideas covered in markdown to keep track for earlier and previous lectures
+
+08:35
+
+Created a file, read a file
+Here's the concept tracker. It covers both lectures in a consistent format:
+
+Lecture 1 — Boolean Retrieval, VSM, TF-IDF, cosine similarity, document-term incidence matrix, bag of words, and the key ideas linking them.
+
+Lecture 2 — Organized into subsections mirroring the lecture: Modern IR landscape (RAG, recall ceiling), Sparse indexing (inverted index, posting lists, accumulators, preprocessing, compression), Dense indexing (embeddings, ANN, IVF, PQ with ADC, IVF+PQ), Design decisions, Common pitfalls, Production tools, and Key principles.
+
+Each entry gives a concise definition with citations where applicable. The file is designed to grow — just append a new ## Lecture N section as the course progresses.
+
+Ir concept tracker
+Document · MD 
+
+\documentclass[aspectratio=169]{beamer} \usetheme{TUDelft} % ==================================================================== % ANIMATION TOGGLE % ==================================================================== \newif\ifanimated \animatedtrue \ifdefined\staticmode \animatedfalse \fi \new
+
+pasted
+
+now brainstorm what I can teach in the coming lectures the planned lectures are Ranking, Embeddings and re-ranking, Dense retrieval, learning to rank. I have some slides already, but i want to plan everything out properly so that i understand what to cover in which lecture. Here are the contents of Ranking:
+
+08:43
+Let me look at the existing concept tracker and the ranking slides to understand what's already covered, then plan the remaining lectures.
+
+
+Check the current concept tracker
+Now let me think through this carefully and produce a structured planning document.
+
+
+Created a file, read a file
+Here's the full planning document. The key design decisions:
+
+The cleanest split across L4–L6:
+
+L4 (Embeddings & Re-ranking) = cross-encoders. Word2Vec/GloVe as a 10-min bridge from bag-of-words to neural, then transformers/attention (intuition-level), then BERT fine-tuned for relevance. The deliverable: students understand the two-stage BM25→BERT pipeline.
+L5 (Dense Retrieval) = bi-encoders. The key distinction from L4: documents are encoded independently and offline, so you can actually retrieve with them (not just re-rank). Covers DPR, contrastive training, hard negatives, ColBERT as a bridge architecture, and hybrid retrieval (RRF). Connects directly back to L2's ANN/FAISS material.
+L6 (Learning to Rank) = everything becomes a feature. Pointwise/pairwise/listwise, LambdaMART as the workhorse, NDCG deep dive, and the complete multi-stage pipeline.
+The narrative arc: Each lecture solves a limitation of the previous one (no scoring → no scale → no saturation → no semantics → semantics only at re-rank → hand-tuned parameters). The cross-lecture table at the bottom maps this out.
+
+I also flagged potential risks (L4 being too heavy, L5 overlapping with L2, where to put ColBERT and evaluation metrics) with concrete mitigations.
+
+Ir lecture planning
+Document · MD 
+create the modified lecture slides for lecture 3 with your suggestions. Maybe also add other ways in which you can do query expansions using LLM prompting
+
+09:01
+Let me first review the existing L3 slides carefully to understand the full structure, then plan modifications.
+
+
+Check available skills for creating presentations
+Since the user has Beamer slides (LaTeX), not PPTX, I should produce the modified LaTeX Beamer file directly. Let me carefully plan the additions and then write the complete modified slide deck.
+
+
+Check uploaded files
+The original slides are in the conversation. Let me now build the modified Beamer file with all the enhancements. I'll write it in chunks to avoid truncation.
+
+
+Ran 4 commands
+Now let me compile to verify it's valid LaTeX:
+
+
+Compile to check for errors (will fail on TUDelft theme but check for LaTeX errors)
+As expected, the TUDelft theme isn't available here. Let me compile with a fallback to verify the LaTeX is valid:
+
+
+Compile with Madrid theme as fallback to verify LaTeX validity
+63 pages, no errors. Let me do a second pass for cross-references:
+
+
+Ran 2 commands, read a file
+Here are the modified slides (63 slides, compiles cleanly). The .tex uses your TUDelft theme — the preview PDF uses Madrid as a fallback since I don't have your theme installed.
+
+What changed from the original:
+
+Added slides (new content):
+
+Probability Ranking Principle (PRP) — Robertson 1977, the theoretical justification for probabilistic ranking. Frames BM25 and LM as approximations of the ideal.
+Full end-to-end BM25 worked example (2 slides) — Query "quantum algorithm" scored against two documents with all arithmetic shown: IDF computation, length normalization, saturating TF, final scores, and why the shorter doc wins despite fewer term hits.
+BM25F (Fielded Documents) — Promoted from backup to main lecture. Shows weighted TF across fields (title, body, URL), notes production usage in Elasticsearch/Solr/Bing.
+LLM-Based Query Expansion (6 new slides):
+Strategy 1: Synonym/paraphrase generation — prompt an LLM for medical synonyms ("heart attack" → "myocardial infarction")
+Strategy 2: HyDE (Gao et al., 2023) — generate a hypothetical relevant document, use it for sparse or dense retrieval
+Strategy 3: Chain-of-thought query decomposition — break complex queries into sub-queries
+Strategy 4: Query2Doc (Wang et al., 2023) — prepend LLM-generated pseudo-doc to the BM25 query
+Comparison table: Classical vs. LLM expansion (knowledge source, failure modes, latency, cost, cold-start)
+Updated "query drift" slide — now contrasts RM3 drift ("python" → snake terms) with LLM expansion correctly generating programming terms
+PyTerrier LLM expansion exercise — code showing how to integrate OpenAI API for query expansion and compare with RM3
+Three backup slides: HyDE pipeline diagram, Rocchio vs. RM3 vs. LLM comparison table, BM25 variants
+Structural improvements:
+
+Recap slide now references L1 and L2 (indexes) instead of just L1
+Modern retrieval stack diagram updated with clearer labels mapping to lecture numbers
+Preview of L4 updated to match the planned content (embeddings + cross-encoders)
+Assignment now includes LLM expansion as a bonus task
+Lecture3 ranking modified
+TEX 
+Lecture3 ranking preview
+Document · PDF 
+now make slides for lecture 4
+
+09:18
+Let me review the planning document to recall what was planned for L4, then build the full slide deck.
+
+
+Review the L4 plan from the planning document
+Let me build the full Lecture 4 slide deck based on the plan. This is a large file, so I'll write it in parts.
+
+
+Ran 3 commands
+Now let me compile to verify:
+
+
+Ran 2 commands
+
+Compile with Madrid theme as fallback
+
+Script
+
+Second pass for cross-references
+
+Script
+Done
+48 pages, no errors. Now let me also update the concept tracker with L3 and L4:
+
+
+Copy outputs
+Now update the concept tracker:
+
+
+Viewed a file, edited a file
+
+Find end of L2 section in tracker
+
+Add Lecture 3 and Lecture 4 sections to concept tracker, plus new references
++129
+Done
+continue with lecture 4
+
+13:09
+That was getting long. Let me do the replacement properly:
+
+
+Ran 3 commands, read a file
+
+Copy tracker to working directory for editing
+
+Script
+
+Create the L3+L4 addition for the tracker
+
+Script
+
+Assemble and copy final tracker
+
+Script
+
+Presented 3 files
+Done
+Here are all three files. The .tex uses your TUDelft theme; the preview PDF uses Madrid as a stand-in.
+
+Lecture 4 Slide Deck (48 slides, 6 sections)
+Section 1: From Sparse to Dense (7 slides)
+
+Recap connecting L2+L3 to today's problem
+The representation gap (sparse vs. dense diagram)
+Distributional hypothesis with the "tezguino" example
+Word2Vec (Skip-gram/CBOW architecture diagram)
+Word2Vec properties (analogies, similarity, limitation: no polysemy)
+GloVe (brief comparison)
+Average word embeddings — the naive approach and why it fails
+Static vs. contextualized embeddings (the 2018 transition)
+Section 2: Transformers & Attention (7 slides)
+
+Why transformers replaced RNNs
+Self-attention intuition ("it" → "animal" coreference example with diagram)
+Query/Key/Value formalism with the scaled dot-product formula
+Worked example: 2-token self-attention with full arithmetic (dot products → scale → softmax → weighted sum)
+Multi-head attention (12 heads, different relationship types)
+Positional encoding (sinusoidal, why it's needed)
+Transformer encoder block architecture diagram (with residual connections)
+Section 3: BERT for IR (8 slides)
+
+BERT pre-training (MLM + NSP)
+Why BERT matters for IR (synonymy, polysemy, negation, word order)
+Cross-encoder architecture (full diagram: tokenization → BERT → [CLS] → P(rel))
+Why cross-encoders work (full cross-attention) and why they're slow
+Latency analysis table (1M docs: impossible; 100 docs: feasible)
+Worked example: Cross-encoder scoring "side effects of aspirin" against two documents
+Fine-tuning details (MS MARCO, training objectives, hyperparameters)
+monoBERT vs. monoT5 comparison
+Section 4: Two-Stage Pipeline (4 slides)
+
+Full pipeline diagram (corpus → BM25 → cross-encoder → results)
+Why two stages (recall vs. precision trade-off)
+Pipeline variants with approximate NDCG scores
+What cross-encoders fix (vocabulary mismatch, semantic relevance, negation)
+Section 5: Hands-On (4 slides)
+
+PyTerrier + monoT5 setup
+BM25 vs. BM25+monoT5 comparison
+Pipeline combinations (BM25 ± RM3 ± monoT5)
+Re-rank depth experiment + student exercises
+Section 6: Connections & Summary (5 slides)
+
+Representation spectrum (BoW → Static → Cross-encoder → Bi-encoder)
+Cross-encoder vs. bi-encoder comparison (preview of L5)
+Preview of L5 (dense retrieval) and L6 (LTR)
+Complete modern retrieval stack diagram
+Backup slides (5): BERT model sizes, attention weight visualization, modern cross-encoders (RankGPT), WordPiece tokenization details, historical timeline
+
+The concept tracker is also updated with L3 and L4 entries plus 13 new references.
+
+Lecture4 embeddings reranking
+TEX 
+Lecture4 embeddings reranking preview
+Document · PDF 
+Ir concept tracker
+Document · MD 
+Add a section on Colbert as well, not too detailed. Also add a section on how to train cross encoders on MSmarco passage dataset, talk about batching and some practical advise. HOw to do evals and a bit about TREC DL
+
+13:13
+
+Viewed 3 files
+Good. I'll insert new sections after the monoT5 slide (line 847) and before the two-stage pipeline section. I'll add: (1) ColBERT, (2) Training cross-encoders on MS MARCO, (3) Evaluation & TREC DL.
+
+
+Insert ColBERT section, training section, and evaluation section after monoT5 slide
+Now let me compile to verify:
+
+
+Ran 2 commands
+61 slides, no errors. Now update the concept tracker with the new content:
+
+
+Viewed a file, edited a file
+Now add the new references:
+
+
+Edited 2 files
+Now copy the final files:
+
+
+Ran a command, read a file
+Updated Lecture 4 now has 61 slides (up from 48). Here's what was added:
+
+New: ColBERT (2 slides)
+Architecture diagram showing separate BERT encoders for query and document, producing per-token embeddings, combined via MaxSim
+Comparison table: Cross-encoder vs. ColBERT vs. Bi-encoder on interaction type, pre-computation, retrieval capability, accuracy, and storage
+Positions ColBERT as the "middle ground" — near cross-encoder accuracy with pre-computable document representations, at the cost of higher storage
+New: Training Cross-Encoders in Practice (4 slides)
+MS MARCO overview: 8.8M passages, 530K queries, sparse labels, the false-negative problem
+Training pipeline diagram: triples → tokenize → batch → forward → loss → backprop
+Negative sampling strategies: random (weak) → BM25 hard negatives (recommended) → cross-encoder mined (ANCE-style, advanced). Rule of thumb: BM25 negatives give 80% of benefit
+Practical advice in two columns: batching/memory (gradient accumulation, fp16, GPU requirements) and hyperparameters (LR, warmup, epochs)
+Common mistakes: too many epochs, LR too high, only random negatives, ignoring truncation
+Code sketch: HuggingFace Trainer with AutoModelForSequenceClassification, showing batch size, gradient accumulation, fp16, warmup
+New: Evaluation & TREC DL (5 slides)
+Evaluation overview: sparse (MS MARCO, MRR@10) vs. dense (TREC DL, NDCG@10) judgments
+Metrics: MRR@k, NDCG@k, MAP with formulas and when to use each
+NDCG@5 worked example: full arithmetic from relevance grades through DCG, ideal DCG, to final NDCG = 0.87
+TREC DL track: what it is, yearly stats (2019–2022), why it matters (reliable dense expert judgments vs. MS MARCO's noisy sparse labels)
+Best practices: train on MS MARCO / evaluate on TREC DL, statistical significance, always include BM25+RM3 baseline
+PyTerrier code: loading TREC DL 2019, running evaluation with nDCG@10, MAP, RR(rel=2)
+The concept tracker is also updated with all new entries (ColBERT, MS MARCO, negative sampling, evaluation metrics, TREC DL, training advice) and 2 new references.
+
+Lecture4 embeddings reranking
+TEX 
+Lecture4 embeddings reranking preview
+Document · PDF 
+Ir concept tracker
+Document · MD 
+also create a running index of every concept, technique, and key idea introduced across lectures 3 and 4. We will se this to review, cross-reference, and prepare for exams.
+
+13:53
+
+Check the current concept tracker to see what's already there for L3 and L4
+The existing tracker already has L3 and L4 content but it's in a concise bullet-point style mixed with L1 and L2. The user wants a separate, more detailed exam-prep document focused specifically on L3 and L4. Let me check the existing L3/L4 content to make sure the new document is significantly more detailed and exam-oriented.
+
+
+Check L3 and L4 content in existing tracker
+Good — the tracker has concise reference entries. The user wants a deeper exam-prep document with worked examples, cross-references, and "exam-ready" content. Let me build that as a dedicated PDF using LaTeX.
+
+
+Check the PDF skill for creating the exam review document
+I'll create a comprehensive, exam-oriented index document as a well-formatted PDF using LaTeX.
+
+
+Ran 4 commands
+There are undefined control sequences. Let me check:
+
+
+Ran 2 commands
+Need the colortbl package for \rowcolor:
+
+
+Add colortbl package
+Actually, xcolor with [table] option provides \rowcolor. But I'm loading xcolor twice. Let me fix:
+
+
+Ran 2 commands, edited a file
+14 pages, clean build.
+
+
+Ran a command, read a file
+Here's the 14-page concept index. It's structured for exam prep with these sections:
+
+Ranking & Scoring Functions — BM25 (full formula boxed, each component explained, parameter effects), BM25F, Query Likelihood Model, JM smoothing, Dirichlet smoothing, Cross-encoder, ColBERT/MaxSim. Every formula is in a highlighted box.
+Representations & Embeddings — Sparse vs. dense, distributional hypothesis, Word2Vec, GloVe, static vs. contextualized, average word embeddings.
+Transformer & BERT Internals — Self-attention (Q/K/V with formula), multi-head attention, positional encoding, transformer encoder block, BERT pre-training (MLM/NSP), WordPiece tokenization, fine-tuning.
+Query Expansion — Vocabulary mismatch, PRF, Rocchio, RM3 (formula boxed), query drift, all four LLM strategies (synonyms, HyDE, decomposition, Query2Doc).
+Architectures & Pipelines — PRP, two-stage pipeline, monoBERT, monoT5, RankGPT.
+Training & Practical Details — MS MARCO, negative sampling (3 strategies), batching/GPU, hyperparameters, common mistakes.
+Evaluation — MRR, NDCG (formula boxed), MAP, TREC DL track, best practices.
+Comparison Tables — BM25 vs. LM, classical vs. LLM expansion, cross-encoder vs. ColBERT vs. bi-encoder, negative sampling strategies, evaluation metrics.
+Key Principles — The "quotable" rules from each lecture, plus cross-lecture narrative arc table.
+Alphabetical Master Index — 55+ entries in two-column layout, each tagged with lecture and section number.
+Sample Exam Questions — 10 questions covering computation (BM25, NDCG, smoothing, attention), conceptual (cross-encoder vs. bi-encoder, query drift), and design (pipeline for medical search).
+Every entry is color-coded (blue = L3, red = L4) with green cross-references linking related concepts across lectures. Orange "Exam Tip" boxes highlight what to practice computing by hand.
+
+Ir l3 l4 concept index
+Document · PDF 
+Ir l3 l4 concept index
+TEX 
+
+
+Usage limit reached ∙ Resets 6:00 PM ∙ limits shared with Claude Code
+Keep working
+
+
+Claude is AI and can make mistakes. Please double-check responses.
+Ir l3 l4 concept index · TEX
+Copy
+
+\documentclass[11pt, a4paper]{article}
+\usepackage[margin=2cm]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage[table]{xcolor}
+\usepackage{tcolorbox}
+\usepackage{multicol}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{longtable}
+\usepackage{array}
+
+\hypersetup{colorlinks=true, linkcolor=blue!70!black, urlcolor=blue!60!black}
+
+% Colors
+\definecolor{L3color}{HTML}{1E5A8C}
+\definecolor{L4color}{HTML}{8C1E1E}
+\definecolor{crosscolor}{HTML}{2E7D32}
+\definecolor{examtip}{HTML}{E65100}
+\definecolor{formulabg}{HTML}{F5F5F5}
+
+% tcolorbox styles
+\tcbset{
+    formulabox/.style={colback=formulabg, colframe=black!40, boxrule=0.4pt, arc=2pt, left=4pt, right=4pt, top=3pt, bottom=3pt},
+    exambox/.style={colback=examtip!8, colframe=examtip!70, boxrule=0.5pt, arc=2pt, left=4pt, right=4pt, top=3pt, bottom=3pt, fonttitle=\bfseries\color{examtip}, title={Exam Tip}},
+    crossrefbox/.style={colback=crosscolor!6, colframe=crosscolor!60, boxrule=0.4pt, arc=2pt, left=4pt, right=4pt, top=3pt, bottom=3pt},
+}
+
+% Section formatting
+\titleformat{\section}{\Large\bfseries\color{black}}{}{0em}{}[\vspace{-0.5em}\rule{\textwidth}{0.8pt}]
+\titleformat{\subsection}{\large\bfseries}{}{0em}{}
+
+% Header/footer
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small\textit{IR Lectures 3--4: Concept Index}}
+\rhead{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\begin{document}
+
+\begin{center}
+{\LARGE\bfseries Information Retrieval --- Lectures 3 \& 4}\\[6pt]
+{\Large Running Concept Index}\\[6pt]
+{\large Exam Review \& Cross-Reference Guide}\\[10pt]
+{\small Covers: Ranking Models (BM25, LM, Query Expansion) \quad $\mid$ \quad Embeddings \& Transformer Re-rankers}\\[4pt]
+{\small\color{gray} Last updated: February 2026}
+\end{center}
+
+\vspace{0.5em}
+
+\noindent\textbf{How to use this document.} Every concept, technique, formula, and key idea from Lectures 3 and 4 is listed below in alphabetical order within thematic groups. Each entry states the lecture of origin (\textcolor{L3color}{\textbf{L3}} or \textcolor{L4color}{\textbf{L4}}), gives a concise definition, and includes the formula or key fact you'd need for an exam. Cross-references (\textcolor{crosscolor}{$\to$}) link related ideas across lectures. Section~\ref{sec:masterindex} provides a flat alphabetical master index for quick lookup.
+
+\vspace{0.5em}
+
+\tableofcontents
+
+\newpage
+
+% ====================================================================
+\section{Ranking \& Scoring Functions}
+% ====================================================================
+
+\subsection{BM25 \texorpdfstring{\textcolor{L3color}{[L3]}}{[L3]}}
+
+\begin{tcolorbox}[formulabox]
+$$\text{BM25}(q,d) = \sum_{t \in q} \underbrace{\log\frac{N - \text{df}_t + 0.5}{\text{df}_t + 0.5}}_{\text{IDF}(t)} \cdot \underbrace{\frac{f(t,d) \cdot (k_1+1)}{f(t,d) + k_1 \cdot \bigl(1-b+b \cdot \frac{|d|}{\text{avgdl}}\bigr)}}_{\text{Saturating TF with length norm}}$$
+\end{tcolorbox}
+
+\begin{description}[leftmargin=1.5cm, style=nextline]
+    \item[IDF component] $\text{IDF}(t) = \log\frac{N - \text{df}_t + 0.5}{\text{df}_t + 0.5}$. Negative when $\text{df}_t > N/2$ (very common terms). Rare terms dominate.
+    \item[Saturating TF] $\frac{f \cdot (k_1+1)}{f + k_1}$. Approaches $k_1 + 1$ asymptotically. Prevents high-frequency terms from dominating.
+    \item[$k_1$ parameter] Controls saturation speed. $k_1 \to 0$: Boolean matching. $k_1 \to \infty$: linear TF. \textbf{Default: 1.2}. Increase for verbose collections.
+    \item[$b$ parameter] Controls length normalization. $b=0$: no normalization. $b=1$: full. \textbf{Default: 0.75}. Increase for variable-length docs.
+    \item[Length norm term] $1 - b + b \cdot |d|/\text{avgdl}$. Long docs get penalized; short docs get boosted.
+\end{description}
+
+\begin{tcolorbox}[exambox]
+Be able to compute a full BM25 score by hand: (1) compute IDF for each query term, (2) compute length normalization, (3) compute saturating TF per term, (4) multiply and sum. Know the effect of changing $k_1$ and $b$.
+\end{tcolorbox}
+
+\noindent\textcolor{crosscolor}{$\to$ Cross-ref:} BM25 becomes a \emph{feature} in Learning to Rank (L6). BM25 serves as Stage 1 retriever in the two-stage pipeline (\textcolor{L4color}{L4}). BM25 hard negatives are used for training cross-encoders (\textcolor{L4color}{L4}).
+
+\subsection{BM25F (Fielded BM25) \texorpdfstring{\textcolor{L3color}{[L3]}}{[L3]}}
+
+Replace raw TF with a weighted sum across fields:
+$$\tilde{f}(t,d) = \sum_{z \in \text{fields}} w_z \cdot \frac{f(t,d_z)}{1 - b_z + b_z \cdot |d_z|/\text{avgdl}_z}$$
+Then plug $\tilde{f}$ into the standard BM25 formula in place of $f(t,d)$.
+
+Typical field weights: title $w=5$--$10$, body $w=1$, URL $w=2$--$3$, anchor text $w=3$--$5$. Per-field $b_z$ allows different length normalization per field.
+
+\noindent Used in Elasticsearch, Solr, Bing, and most production web search engines.
+
+\subsection{Query Likelihood Model \texorpdfstring{\textcolor{L3color}{[L3]}}{[L3]}}
+
+\begin{tcolorbox}[formulabox]
+$$P(q \mid d) = \prod_{w \in q} P(w \mid d)^{\,\text{count}(w,q)}$$
+\end{tcolorbox}
+
+\textbf{Ranking philosophy:} ``How likely would this document generate this query?'' Rank by $P(q|d)$.
+
+\textbf{Maximum likelihood estimate:} $P_\text{ML}(w|d) = \text{count}(w,d) / |d|$.
+
+\textbf{Critical problem --- zero probabilities:} If any query term $w$ has $\text{count}(w,d) = 0$, then $P(w|d) = 0$ and the \emph{entire} product collapses to 0, even if the document is otherwise relevant. Smoothing is essential.
+
+\noindent\textcolor{crosscolor}{$\to$ Cross-ref:} RM3 query expansion (\textcolor{L3color}{L3}) is built on the language modeling framework. Neural language models (\textcolor{L4color}{L4}) extend this probabilistic foundation.
+
+\subsection{Jelinek-Mercer Smoothing \texorpdfstring{\textcolor{L3color}{[L3]}}{[L3]}}
+
+\begin{tcolorbox}[formulabox]
+$$P(w|d) = (1-\lambda)\, P_\text{ML}(w|d) + \lambda\, P(w|C)$$
+\end{tcolorbox}
+
+$\lambda$ typically 0.1--0.3. Fixed interpolation: same smoothing amount for all documents regardless of length.
+
+$P(w|C) = \sum_{d'} \text{count}(w,d') / \sum_{d'} |d'|$ is the collection language model (background probability).
+
+\subsection{Dirichlet Smoothing \texorpdfstring{\textcolor{L3color}{[L3]}}{[L3]}}
+
+\begin{tcolorbox}[formulabox]
+$$P(w|d) = \frac{\text{count}(w,d) + \mu \cdot P(w|C)}{|d| + \mu}$$
+\end{tcolorbox}
+
+$\mu$ typically 1000--2500. \textbf{Length-adaptive:} short documents get more smoothing (collection dominates), long documents rely on their own counts. Interpretation: $\mu$ pseudo-counts from the collection mixed with actual counts. \textbf{Generally preferred} over Jelinek-Mercer for variable-length collections.
+
+\begin{tcolorbox}[exambox]
+Be able to compare JM vs.\ Dirichlet: (1) JM is fixed for all docs, Dirichlet adapts to length. (2) Know which to use when. (3) Compute $P(w|d)$ for a short vs.\ long document and show the difference.
+\end{tcolorbox}
+
+\subsection{Cross-Encoder (BERT Re-ranker) \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+
+\begin{tcolorbox}[formulabox]
+$$\text{Input: } \texttt{[CLS]}\; q \;\texttt{[SEP]}\; d \;\texttt{[SEP]} \quad\longrightarrow\quad \text{BERT} \quad\longrightarrow\quad P(\text{rel}) = \sigma(W \cdot h_\text{[CLS]})$$
+\end{tcolorbox}
+
+Query and document are fed \textbf{jointly} through BERT. Full cross-attention between all tokens. The \texttt{[CLS]} output is passed through a linear classification head.
+
+\textbf{Why accurate:} every query token attends to every document token through 12 transformer layers. Captures synonymy, negation, word order, semantic relevance.
+
+\textbf{Why slow:} must encode every $(q, d)$ pair at inference. Cannot pre-compute document representations. $\sim$5\,ms per pair on GPU.
+
+\textbf{Key variants:} monoBERT (Nogueira \& Cho, 2019), monoT5 (Nogueira et al., 2020), RankGPT (Sun et al., 2023).
+
+\noindent\textcolor{crosscolor}{$\to$ Cross-ref:} The cross-encoder is the second stage in the retrieve-then-rerank pipeline, after BM25 (\textcolor{L3color}{L3}). Cross-encoder scores become features in Learning to Rank (L6). Compare with bi-encoder (L5).
+
+\subsection{ColBERT (Late Interaction) \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+
+\begin{tcolorbox}[formulabox]
+$$\text{score}(q,d) = \sum_{i=1}^{|q|} \max_{j=1}^{|d|}\; \vec{q}_i \cdot \vec{d}_j \qquad \text{(MaxSim)}$$
+\end{tcolorbox}
+
+Encode query and document \textbf{separately} with BERT, producing \emph{per-token} embeddings. Compare via MaxSim: for each query token, find the document token with the highest dot-product similarity; sum across query tokens.
+
+Near-cross-encoder accuracy. Documents can be pre-encoded. Trade-off: much higher storage ($|d| \times 128$ floats per document vs.\ $1 \times 768$ for a bi-encoder).
+
+\noindent\textcolor{crosscolor}{$\to$ Cross-ref:} ColBERT bridges the cross-encoder (\textcolor{L4color}{L4}) and bi-encoder (L5). Detailed treatment in L5.
+
+
+% ====================================================================
+\section{Representations \& Embeddings}
+% ====================================================================
+
+\subsection{Sparse Representation \texorpdfstring{\textcolor{L3color}{[L3]}}{[L3]}}
+$\vec{d} \in \mathbb{R}^{|V|}$ where $|V| \approx 30{,}000$. Each dimension corresponds to one vocabulary term. $>$99.9\% zeros. Lexical matching only: ``car'' and ``automobile'' are orthogonal.
+
+\subsection{Dense Representation \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+$\vec{d} \in \mathbb{R}^{d}$ where $d \approx 768$. Every dimension is a learned latent feature. 100\% non-zero. Semantic matching: similar meanings $\to$ nearby vectors.
+
+\subsection{Distributional Hypothesis \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+``You shall know a word by the company it keeps'' (Firth, 1957). Words appearing in similar contexts get similar vector representations.
+
+\subsection{Word2Vec \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+Train a shallow neural network to predict context words from a target word (Skip-gram) or vice versa (CBOW). The hidden-layer weight matrix \emph{is} the word embedding. Typical $d = 100$--$300$. Famous property: $\vec{\text{king}} - \vec{\text{man}} + \vec{\text{woman}} \approx \vec{\text{queen}}$. (Mikolov et al., 2013)
+
+\subsection{GloVe \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+Factorize the global word co-occurrence matrix: $\vec{w}_i \cdot \vec{w}_j \approx \log(\text{co-occurrence count})$. Similar quality to Word2Vec. (Pennington et al., 2014)
+
+\subsection{Static vs.\ Contextualized Embeddings \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+\textbf{Static} (Word2Vec, GloVe): one vector per word \emph{type}, regardless of context. ``bank'' always has the same vector. \textbf{Contextualized} (BERT, GPT): a different vector for each word \emph{token}, depending on surrounding sentence. ``bank'' near ``money'' $\neq$ ``bank'' near ``river.'' Contextualized embeddings solve both synonymy and polysemy.
+
+\begin{tcolorbox}[exambox]
+A common exam question: explain the difference between static and contextualized embeddings with an example. Use the ``bank'' polysemy example and the ``car''/``automobile'' synonymy example.
+\end{tcolorbox}
+
+\subsection{Average Word Embeddings \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+Naive document representation: $\vec{d} = \frac{1}{|d|}\sum_{w \in d}\vec{w}$. Simple, fixed-size output for any document. Problems: loses word order (``dog bites man'' = ``man bites dog''), drowns rare/important words, no polysemy resolution.
+
+
+% ====================================================================
+\section{Transformer \& BERT Internals}
+% ====================================================================
+
+\subsection{Self-Attention \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+
+\begin{tcolorbox}[formulabox]
+$$\text{Attention}(Q, K, V) = \text{softmax}\!\left(\frac{QK^T}{\sqrt{d_k}}\right) V$$
+\end{tcolorbox}
+
+For each token $i$: project into Query ($\vec{q}_i$), Key ($\vec{k}_i$), Value ($\vec{v}_i$). Compute dot product $\vec{q}_i \cdot \vec{k}_j$ for all pairs. Scale by $\sqrt{d_k}$ to prevent extreme values before softmax. Softmax yields attention weights (sum to 1). Output for token $i$ is a weighted sum of all value vectors.
+
+\textbf{Intuition:} Q = ``what am I looking for?'', K = ``what do I contain?'', V = ``what information do I provide?''
+
+\begin{tcolorbox}[exambox]
+Be able to compute attention weights for a small example (2--3 tokens): dot products $\to$ scale $\to$ softmax $\to$ weighted sum. Know what $\sqrt{d_k}$ scaling does and why it's needed (prevent softmax saturation).
+\end{tcolorbox}
+
+\subsection{Multi-Head Attention \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+Run $h$ parallel attention heads, each with its own $W^Q_i$, $W^K_i$, $W^V_i$ projections. Each head captures different relationship types (syntactic, semantic, coreference, positional). Concatenate outputs and project: $\text{MultiHead} = \text{Concat}(\text{head}_1, \ldots, \text{head}_h) W^O$. BERT uses $h=12$ heads.
+
+\subsection{Positional Encoding \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+Self-attention is permutation-invariant: ``dog bites man'' = ``man bites dog'' without position information. Solution: add a positional encoding vector to each token embedding before feeding into the transformer: $\vec{x}_i = \vec{e}_{\text{word}_i} + \vec{p}_i$.
+
+Vaswani et al.\ use sinusoidal encoding: $PE_{(pos, 2i)} = \sin(pos/10000^{2i/d})$, $PE_{(pos, 2i+1)} = \cos(pos/10000^{2i/d})$. BERT uses learned positional embeddings (up to 512 positions).
+
+\subsection{Transformer Encoder Block \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+Input $\to$ Multi-Head Self-Attention $\to$ Add \& LayerNorm $\to$ Feed-Forward Network $\to$ Add \& LayerNorm $\to$ Output. Residual connections (skip connections) allow gradient flow and stabilize training. BERT stacks 12 such blocks.
+
+\subsection{BERT Pre-training \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+\textbf{Masked Language Modeling (MLM):} Randomly mask 15\% of input tokens. Predict the masked tokens from bidirectional context. Forces model to build deep language understanding.
+
+\textbf{Next Sentence Prediction (NSP):} Given sentences A and B, classify whether B actually follows A. Learns inter-sentence relationships. (Later work showed NSP is less important than MLM.)
+
+Pre-trained on BooksCorpus + English Wikipedia ($\sim$3.3B words). BERT-base: 12 layers, 768 hidden dims, 12 heads, 110M parameters. BERT-large: 24 layers, 1024 dims, 16 heads, 340M parameters.
+
+\subsection{WordPiece Tokenization \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+BERT does not tokenize by whitespace. WordPiece splits rare words into known subwords. Vocabulary: 30,522 tokens. Common words stay whole (``information''); rare words split (``transformers'' $\to$ ``transform'' + ``\#\#ers''). ``\#\#'' prefix means continuation of previous token. Max sequence length: 512 tokens --- long documents must be truncated or split into passages.
+
+\subsection{Fine-Tuning for IR \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+Start from pre-trained BERT checkpoint. Add a task-specific classification head. Fine-tune on IR data (MS~MARCO) with low learning rate ($1$--$3 \times 10^{-5}$) to preserve pre-trained knowledge. Typically 2--3 epochs. Optimizer: AdamW with linear warmup (10\% of steps) and linear decay.
+
+\noindent\textcolor{crosscolor}{$\to$ Cross-ref:} Fine-tuning connects to the practical training section below. The pre-trained representations are what make the cross-encoder powerful for re-ranking.
+
+
+% ====================================================================
+\section{Query Expansion}
+% ====================================================================
+
+\subsection{Vocabulary Mismatch Problem \texorpdfstring{\textcolor{L3color}{[L3]}}{[L3]}}
+Queries and relevant documents use different words: ``heart attack'' vs.\ ``myocardial infarction'', ``ML'' vs.\ ``machine learning.'' Since BM25 and language models are term-based, they score 0 when no terms overlap. Query expansion and dense retrieval are the two solutions.
+
+\noindent\textcolor{crosscolor}{$\to$ Cross-ref:} Dense retrieval (L5) solves this at the representation level. Query expansion (\textcolor{L3color}{L3}) solves it by adding related terms. Cross-encoders (\textcolor{L4color}{L4}) solve it via cross-attention but only at re-ranking time.
+
+\subsection{Pseudo Relevance Feedback (PRF) \texorpdfstring{\textcolor{L3color}{[L3]}}{[L3]}}
+Assume the top-$k$ retrieved documents are relevant. Extract terms from them. Expand the query. Re-retrieve. No user interaction needed, but risky if the assumption fails (query drift).
+
+\subsection{Rocchio Algorithm \texorpdfstring{\textcolor{L3color}{[L3]}}{[L3]}}
+
+\begin{tcolorbox}[formulabox]
+$$\vec{q}_\text{new} = \alpha\,\vec{q}_\text{orig} + \beta\,\frac{1}{|R|}\sum_{d \in R}\vec{d} \;-\; \gamma\,\frac{1}{|NR|}\sum_{d \in NR}\vec{d}$$
+\end{tcolorbox}
+
+Vector-space PRF method (1971). Move query centroid toward relevant docs, away from non-relevant. Defaults: $\alpha=1$, $\beta=0.75$, $\gamma=0.15$ (in PRF, $\gamma=0$ since no explicit negative feedback). Geometric intuition. Historically important but outperformed by RM3.
+
+\subsection{RM3 (Relevance Model 3) \texorpdfstring{\textcolor{L3color}{[L3]}}{[L3]}}
+
+\begin{tcolorbox}[formulabox]
+\textbf{Step 1:}\quad $P(w \mid R) \propto \sum_{d \in R} P(w \mid d) \cdot P(d \mid q)$\\[4pt]
+\textbf{Step 2:}\quad $P(w \mid Q_\text{new}) = (1-\lambda)\,P(w \mid Q_\text{orig}) + \lambda\,P(w \mid R)$
+\end{tcolorbox}
+
+Probabilistic query expansion using language modeling. Select top \texttt{fb\_terms} words by $P(w|R)$. Interpolate with original query to prevent drift.
+
+\textbf{Key parameters:} fb\_docs (3--10, how many top docs), fb\_terms (10--20, how many expansion terms), $\lambda$ (0.5--0.8, original vs.\ expansion weight).
+
+\noindent\textcolor{crosscolor}{$\to$ Cross-ref:} RM3 uses the language modeling framework (\textcolor{L3color}{L3} Query Likelihood). RM3 improves Stage 1 recall, which raises the ceiling for cross-encoder re-ranking (\textcolor{L4color}{L4}).
+
+\subsection{Query Drift \texorpdfstring{\textcolor{L3color}{[L3]}}{[L3]}}
+When the top-$k$ documents are not actually relevant (PRF assumption fails), expansion terms are off-topic. Example: query ``python programming'' $\to$ top result about Python snakes $\to$ RM3 adds ``reptile'', ``venom'' $\to$ results get worse. Mitigated by: keeping $\lambda$ moderate, using fewer fb\_docs, or using LLM expansion instead.
+
+\subsection{LLM-Based Query Expansion \texorpdfstring{\textcolor{L3color}{[L3]}}{[L3]}}
+Four modern strategies:
+\begin{enumerate}[leftmargin=2cm]
+    \item[\textbf{Synonyms}] Prompt LLM for synonyms/paraphrases. Zero-shot. No retrieval needed.
+    \item[\textbf{HyDE}] Generate a hypothetical relevant document; use its terms for BM25 or its embedding for dense retrieval. (Gao et al., 2023)
+    \item[\textbf{Decomposition}] Break complex query into sub-queries; retrieve for each; merge results.
+    \item[\textbf{Query2Doc}] Prepend LLM-generated pseudo-document to query; run BM25 on concatenation. (Wang et al., 2023)
+\end{enumerate}
+
+\textbf{Classical vs.\ LLM:} RM3 uses corpus evidence (risk: drift). LLM uses parametric knowledge (risk: hallucination). Combining both is current best practice.
+
+
+% ====================================================================
+\section{Architectures \& Pipelines}
+% ====================================================================
+
+\subsection{Probability Ranking Principle (PRP) \texorpdfstring{\textcolor{L3color}{[L3]}}{[L3]}}
+``If documents are ranked by decreasing $P(\text{relevant} \mid q, d)$, then the expected effectiveness of the system is maximized'' (Robertson, 1977). Assumes independent relevance. All scoring functions (TF-IDF, BM25, LM, BERT) are approximations of this ideal.
+
+\subsection{Two-Stage Retrieve-then-Rerank Pipeline \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+
+\begin{tcolorbox}[formulabox]
+\textbf{Stage 1:} BM25 retrieves top-1000 ($\sim$5\,ms) $\longrightarrow$ \textbf{Stage 2:} Cross-encoder re-ranks top-100 ($\sim$500\,ms) $\longrightarrow$ Top-10 to user
+\end{tcolorbox}
+
+Stage 1 is recall-oriented (catch as many relevant docs as possible). Stage 2 is precision-oriented (push truly relevant docs to the top). This is the de facto architecture of modern search.
+
+\textbf{Recall ceiling:} The re-ranker can only reorder what Stage 1 retrieves. If BM25 misses a relevant document, the cross-encoder can never recover it. This motivates dense retrieval (L5).
+
+\subsection{monoBERT \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+BERT-base or BERT-large with a linear classification head on \texttt{[CLS]}. Input: \texttt{[CLS] q [SEP] d [SEP]}. Output: $P(\text{relevant})$. (Nogueira \& Cho, 2019)
+
+\subsection{monoT5 \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+T5 encoder-decoder. Input: ``Query: q Document: d Relevant:''. Output: ``true'' or ``false''. Score = $P(\text{``true''})$. monoT5-3B slightly outperforms monoBERT. (Nogueira et al., 2020)
+
+\subsection{RankGPT \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+Give a large LLM (GPT-4) a list of documents and ask it to sort by relevance. Listwise re-ranking. No fine-tuning needed. Very expensive but very effective. (Sun et al., 2023)
+
+
+% ====================================================================
+\section{Training \& Practical Details}
+% ====================================================================
+
+\subsection{MS MARCO Passage Ranking \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+Standard training dataset for neural IR. 8.8M passages, 530K training queries, $\sim$1 relevant passage per query (sparse labels), 6,980 dev queries. Challenge: many relevant passages are unlabeled (false negatives), so negative sampling strategy is critical. (Nguyen et al., 2016)
+
+\subsection{Negative Sampling \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+For each query with 1 labeled positive, we need negatives for training:
+\begin{enumerate}
+    \item \textbf{Random negatives:} Sample random passage from corpus. Easy to distinguish $\to$ weak training signal.
+    \item \textbf{BM25 hard negatives} (recommended): Run BM25, take top non-relevant passages. Topically related but not relevant $\to$ strong signal. Forces model to learn beyond term overlap.
+    \item \textbf{Cross-encoder mined negatives:} Use a trained model to find hardest negatives iteratively (ANCE-style). Best quality, most expensive.
+\end{enumerate}
+
+\noindent Rule of thumb: BM25 hard negatives give $\sim$80\% of the benefit of iterative mining.
+
+\subsection{Batching \& GPU Training \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+Max sequence length 512 tokens (query $\approx$ 10 + passage $\approx$ 500). Batch size 16--32 (limited by GPU memory). \textbf{Gradient accumulation:} simulate larger effective batch size by accumulating gradients over multiple forward passes (e.g., 4 steps $\times$ batch 8 = effective batch 32). \textbf{Mixed precision (fp16):} halves memory, $\sim$1.5$\times$ faster. A single 24\,GB GPU can train BERT-base comfortably.
+
+\subsection{Training Hyperparameters \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+Learning rate: $1$--$3 \times 10^{-5}$. Optimizer: AdamW ($\epsilon=10^{-6}$). Warmup: 10\% of total steps. Schedule: linear decay after warmup. Epochs: 2--3 (more leads to overfitting). Evaluate on dev set every 5--10K steps.
+
+\subsection{Common Training Mistakes \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+\begin{itemize}[nosep]
+    \item Too many epochs $\to$ overfitting (cross-encoders overfit quickly on MS MARCO).
+    \item Learning rate too high ($> 3 \times 10^{-5}$) $\to$ catastrophic forgetting of pre-trained knowledge.
+    \item Only random negatives $\to$ model never sees hard cases, poor generalization.
+    \item Ignoring document truncation $\to$ long passages cut at 512 tokens, losing content.
+\end{itemize}
+
+
+% ====================================================================
+\section{Evaluation}
+% ====================================================================
+
+\subsection{MRR@$k$ (Mean Reciprocal Rank) \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+
+\begin{tcolorbox}[formulabox]
+$$\text{MRR@}k = \frac{1}{|Q|}\sum_{q \in Q} \frac{1}{\text{rank of first relevant doc (within top } k\text{)}}$$
+\end{tcolorbox}
+
+``How quickly do I find one good result?'' Best for QA and navigational queries. Primary metric for MS MARCO dev evaluation: MRR@10.
+
+\subsection{NDCG@$k$ (Normalized Discounted Cumulative Gain) \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+
+\begin{tcolorbox}[formulabox]
+$$\text{DCG@}k = \sum_{i=1}^{k} \frac{2^{\text{rel}_i} - 1}{\log_2(i+1)} \qquad\qquad \text{NDCG@}k = \frac{\text{DCG@}k}{\text{Ideal DCG@}k}$$
+\end{tcolorbox}
+
+Handles graded relevance (0, 1, 2, 3). Position-weighted: relevant docs at higher positions contribute more. Normalized by the ideal ranking's DCG. Ranges from 0 to 1. \textbf{Primary metric for TREC DL and web search evaluation: NDCG@10.}
+
+\begin{tcolorbox}[exambox]
+Be able to compute NDCG@$k$ by hand: (1) compute gain $2^{\text{rel}} - 1$ for each position, (2) discount by $1/\log_2(i+1)$, (3) sum for DCG, (4) compute ideal DCG by sorting relevances descending, (5) divide. Know that NDCG handles graded relevance while MAP only handles binary.
+\end{tcolorbox}
+
+\subsection{MAP (Mean Average Precision) \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+For each query: compute precision at each position where a relevant doc appears; average these precisions. Then average over all queries. Standard for binary relevance (older TREC evaluations). Does not handle graded relevance.
+
+\subsection{TREC Deep Learning Track \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+Annual evaluation run by NIST (since 2019). Uses MS MARCO corpus with 50--100 queries per year. Dense expert judgments (graded 0--3) by trained NIST assessors. Gold standard for neural ranking evaluation. Primary metric: NDCG@10.
+
+\textbf{Why it matters:} MS MARCO dev has sparse labels (only $\sim$1 relevant per query), which can be misleading. TREC DL provides reliable evaluation with 100--200 judged documents per query.
+
+\subsection{Evaluation Best Practices \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+\begin{itemize}[nosep]
+    \item Train on MS MARCO, evaluate on TREC DL. Report both MRR@10 and NDCG@10.
+    \item Always include BM25 \emph{and} BM25+RM3 baselines.
+    \item TREC DL has few queries (43--76) $\to$ test statistical significance (paired $t$-test, Bonferroni).
+    \item Some papers report gains over BM25 that disappear against BM25+RM3 --- always check.
+\end{itemize}
+
+
+% ====================================================================
+\section{Comparison Tables}
+\label{sec:comparisons}
+% ====================================================================
+
+\subsection{BM25 vs.\ Language Models \texorpdfstring{\textcolor{L3color}{[L3]}}{[L3]}}
+
+\begin{center}
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{BM25} & \textbf{Language Models} \\
+\midrule
+Philosophy & Term matching score & Generative probability $P(q|d)$ \\
+TF handling & Explicit saturation ($k_1$) & Implicit via smoothing \\
+Length norm & Explicit ($b$) & Implicit via smoothing (Dirichlet) \\
+IDF & Explicit component & Emerges through $P(w|C)$ \\
+Zero probabilities & Not an issue & Must smooth \\
+Parameters & $k_1$, $b$ & $\lambda$ (JM) or $\mu$ (Dirichlet) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Classical vs.\ LLM Query Expansion \texorpdfstring{\textcolor{L3color}{[L3]}}{[L3]}}
+
+\begin{center}
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Classical (RM3)} & \textbf{LLM-Based} \\
+\midrule
+Knowledge source & Top-$k$ retrieved docs & Parametric (training data) \\
+Failure mode & Query drift (bad top-$k$) & Hallucination \\
+Latency & Fast (statistics only) & Slower (LLM inference) \\
+Cost & Free & API cost / GPU \\
+Cold-start & Fails (needs corpus) & Works zero-shot \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Cross-Encoder vs.\ ColBERT vs.\ Bi-Encoder \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+
+\begin{center}
+\small
+\begin{tabular}{lccc}
+\toprule
+& \textbf{Cross-Encoder} & \textbf{ColBERT} & \textbf{Bi-Encoder (L5)} \\
+\midrule
+Interaction & Full (all layers) & Late (token-level) & None (single vector) \\
+Pre-compute docs & No & Yes (per-token) & Yes (single vector) \\
+Use for retrieval & No & Yes (with ANN) & Yes (with ANN) \\
+Accuracy & Highest & Near cross-enc. & Lower \\
+Storage per doc & N/A & $|d| \times 128$ & $1 \times 768$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Negative Sampling Strategies \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+
+\begin{center}
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Strategy} & \textbf{Signal Strength} & \textbf{Cost} & \textbf{When to Use} \\
+\midrule
+Random negatives & Weak & Free & Never (as sole strategy) \\
+BM25 hard negatives & Strong & Low & Default / always \\
+Cross-encoder mined & Strongest & High & Iterative refinement \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Evaluation Metrics \texorpdfstring{\textcolor{L4color}{[L4]}}{[L4]}}
+
+\begin{center}
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Relevance Type} & \textbf{Best For} & \textbf{Dataset} \\
+\midrule
+MRR@$k$ & Binary & QA, navigational & MS MARCO dev \\
+NDCG@$k$ & Graded (0--3) & Web search & TREC DL \\
+MAP & Binary & Set retrieval & Older TREC \\
+P@$k$ / Recall@$k$ & Binary & Quick diagnostics & Any \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+
+% ====================================================================
+\section{Key Principles \& Exam Themes}
+\label{sec:principles}
+% ====================================================================
+
+\subsection{Lecture 3 Principles}
+
+\begin{enumerate}
+    \item \textbf{``BM25 is the foundation layer.''} Every modern retrieval system uses it as first-stage retrieval or as a feature in learning to rank.
+    \item \textbf{``Not all term matches are equal.''} IDF drives discrimination: rare terms dominate scoring. Common terms contribute little or negatively.
+    \item \textbf{``Smoothing is essential, not optional.''} Without smoothing, language models assign zero probability to partially relevant documents, which zeroes out the entire score.
+    \item \textbf{``Query expansion is a double-edged sword.''} RM3 improves recall when top-$k$ are relevant, but causes query drift when they're not. LLM expansion avoids drift but risks hallucination.
+\end{enumerate}
+
+\subsection{Lecture 4 Principles}
+
+\begin{enumerate}
+    \item \textbf{``Contextualized embeddings solve both synonymy and polysemy.''} Unlike static embeddings, BERT generates different representations for the same word in different contexts.
+    \item \textbf{``Cross-encoders are the most accurate rankers but cannot retrieve.''} They must be paired with a fast first-stage retriever (BM25 or dense).
+    \item \textbf{``The two-stage pipeline is the standard architecture.''} BM25 (recall) $\to$ Cross-encoder (precision). RM3 can further improve Stage 1.
+    \item \textbf{``Train on MS MARCO, evaluate on TREC DL.''} Sparse labels for training; dense expert judgments for reliable evaluation.
+    \item \textbf{``Negative sampling is critical.''} BM25 hard negatives should be the default. Random negatives alone produce weak models.
+    \item \textbf{``The recall ceiling determines the pipeline ceiling.''} If Stage 1 misses a document, the re-ranker can never recover it.
+\end{enumerate}
+
+\subsection{Cross-Lecture Narrative Arc}
+
+\begin{center}
+\small
+\begin{tabular}{clll}
+\toprule
+\textbf{L} & \textbf{Representation} & \textbf{Matching} & \textbf{Limitation Addressed} \\
+\midrule
+1 & Bag-of-words (TF-IDF) & Cosine similarity & --- \\
+2 & Same, indexed efficiently & Inverted index / ANN & Scale \\
+\rowcolor{L3color!8} 3 & Bag-of-words (BM25/LM) & Probabilistic scoring & Principled scoring \\
+\rowcolor{L4color!8} 4 & Contextualized (BERT) & Cross-attention & No semantics \\
+5 & Dense embeddings & Dot product + ANN & Semantics at retrieval \\
+6 & All as features & Learned combination & Hand-tuned parameters \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Each lecture solves the previous one's limitation: L3 gives BM25/LM for principled scoring $\to$ L4 adds semantic understanding via transformers $\to$ L5 will bring semantics to retrieval (not just re-ranking) $\to$ L6 will learn to combine everything optimally.
+
+
+% ====================================================================
+\section{Alphabetical Master Index}
+\label{sec:masterindex}
+% ====================================================================
+
+Quick-reference for all concepts. Page numbers and lecture tags for fast lookup.
+
+\vspace{0.5em}
+
+\begin{multicols}{2}
+\small
+\begin{description}[leftmargin=0.5cm, itemsep=1pt, parsep=0pt]
+    \item[Attention (self-)] \textcolor{L4color}{L4} --- \S3.1
+    \item[Average word embeddings] \textcolor{L4color}{L4} --- \S2.7
+    \item[BERT pre-training (MLM, NSP)] \textcolor{L4color}{L4} --- \S3.5
+    \item[BM25] \textcolor{L3color}{L3} --- \S1.1
+    \item[BM25F (fielded)] \textcolor{L3color}{L3} --- \S1.2
+    \item[$b$ parameter (BM25)] \textcolor{L3color}{L3} --- \S1.1
+    \item[Chain-of-thought decomposition] \textcolor{L3color}{L3} --- \S4.6
+    \item[ColBERT (MaxSim)] \textcolor{L4color}{L4} --- \S1.7
+    \item[Collection language model] \textcolor{L3color}{L3} --- \S1.4
+    \item[Contextualized embeddings] \textcolor{L4color}{L4} --- \S2.6
+    \item[Cross-encoder] \textcolor{L4color}{L4} --- \S1.6
+    \item[DCG / NDCG] \textcolor{L4color}{L4} --- \S6.2
+    \item[Dense representation] \textcolor{L4color}{L4} --- \S2.2
+    \item[Dirichlet smoothing] \textcolor{L3color}{L3} --- \S1.5
+    \item[Distributional hypothesis] \textcolor{L4color}{L4} --- \S2.3
+    \item[Evaluation best practices] \textcolor{L4color}{L4} --- \S6.5
+    \item[Fine-tuning (BERT for IR)] \textcolor{L4color}{L4} --- \S3.7
+    \item[GloVe] \textcolor{L4color}{L4} --- \S2.5
+    \item[Gradient accumulation] \textcolor{L4color}{L4} --- \S5.3
+    \item[HyDE] \textcolor{L3color}{L3} --- \S4.6
+    \item[IDF (BM25)] \textcolor{L3color}{L3} --- \S1.1
+    \item[Jelinek-Mercer smoothing] \textcolor{L3color}{L3} --- \S1.4
+    \item[$k_1$ parameter (BM25)] \textcolor{L3color}{L3} --- \S1.1
+    \item[Length normalization] \textcolor{L3color}{L3} --- \S1.1
+    \item[LLM query expansion] \textcolor{L3color}{L3} --- \S4.6
+    \item[MAP] \textcolor{L4color}{L4} --- \S6.3
+    \item[MaxSim (ColBERT)] \textcolor{L4color}{L4} --- \S1.7
+    \item[Mixed precision (fp16)] \textcolor{L4color}{L4} --- \S5.3
+    \item[monoBERT] \textcolor{L4color}{L4} --- \S5.3
+    \item[monoT5] \textcolor{L4color}{L4} --- \S5.4
+    \item[MRR] \textcolor{L4color}{L4} --- \S6.1
+    \item[MS MARCO] \textcolor{L4color}{L4} --- \S5.1
+    \item[Multi-head attention] \textcolor{L4color}{L4} --- \S3.2
+    \item[Negative sampling] \textcolor{L4color}{L4} --- \S5.2
+    \item[Positional encoding] \textcolor{L4color}{L4} --- \S3.3
+    \item[PRP] \textcolor{L3color}{L3} --- \S5.1
+    \item[Pseudo relevance feedback] \textcolor{L3color}{L3} --- \S4.2
+    \item[Query drift] \textcolor{L3color}{L3} --- \S4.5
+    \item[Query likelihood model] \textcolor{L3color}{L3} --- \S1.3
+    \item[Query2Doc] \textcolor{L3color}{L3} --- \S4.6
+    \item[Q, K, V (attention)] \textcolor{L4color}{L4} --- \S3.1
+    \item[RankGPT] \textcolor{L4color}{L4} --- \S5.5
+    \item[Recall ceiling] \textcolor{L4color}{L4} --- \S5.2
+    \item[RM3] \textcolor{L3color}{L3} --- \S4.4
+    \item[Rocchio algorithm] \textcolor{L3color}{L3} --- \S4.3
+    \item[Saturating TF] \textcolor{L3color}{L3} --- \S1.1
+    \item[Smoothing (zero prob.\ problem)] \textcolor{L3color}{L3} --- \S1.4, 1.5
+    \item[Sparse representation] \textcolor{L3color}{L3} --- \S2.1
+    \item[Static embeddings] \textcolor{L4color}{L4} --- \S2.6
+    \item[Transformer encoder block] \textcolor{L4color}{L4} --- \S3.4
+    \item[TREC Deep Learning Track] \textcolor{L4color}{L4} --- \S6.4
+    \item[Two-stage pipeline] \textcolor{L4color}{L4} --- \S5.2
+    \item[Vocabulary mismatch] \textcolor{L3color}{L3} --- \S4.1
+    \item[Word2Vec] \textcolor{L4color}{L4} --- \S2.4
+    \item[WordPiece tokenization] \textcolor{L4color}{L4} --- \S3.6
+    \item[Zero probability problem] \textcolor{L3color}{L3} --- \S1.3
+\end{description}
+\end{multicols}
+
+
+% ====================================================================
+\section{Sample Exam Questions}
+\label{sec:examqs}
+% ====================================================================
+
+\begin{enumerate}[leftmargin=1.5cm]
+    \item \textbf{[BM25 Computation]} Given a query with 2 terms, a collection of $N$ documents, and two candidate documents with specified term frequencies and lengths, compute the full BM25 score for each and determine the ranking. Explain the effect of changing $b$ from 0.75 to 0.3.
+
+    \item \textbf{[LM Smoothing]} Document $d$ has 100 words. Term ``algorithm'' appears 2 times. $P(\text{``algorithm''} \mid C) = 0.001$. Compute $P(\text{``algorithm''} \mid d)$ using (a) Jelinek-Mercer with $\lambda = 0.2$ and (b) Dirichlet with $\mu = 2000$. Which gives higher probability? Why?
+
+    \item \textbf{[Zero Probability]} Explain why smoothing is essential in language model-based ranking. Give a concrete example where a clearly relevant document would receive a score of zero without smoothing.
+
+    \item \textbf{[Query Expansion]} A user searches for ``python web framework.'' The top-3 BM25 results are about Python snakes. (a) What expansion terms would RM3 add? (b) What would LLM-based expansion add? (c) Which approach avoids query drift here, and why?
+
+    \item \textbf{[Self-Attention]} Given 3 tokens with their Query, Key, and Value vectors ($d_k = 2$), compute the attention output for the first token. Show all steps: dot products, scaling, softmax, weighted sum.
+
+    \item \textbf{[Cross-Encoder vs.\ Bi-Encoder]} Explain why a cross-encoder cannot be used for full-corpus retrieval. Describe the two-stage pipeline that addresses this limitation. What is the ``recall ceiling'' and why does it matter?
+
+    \item \textbf{[NDCG Computation]} Given a ranked list of 5 documents with graded relevance judgments (0--3), compute NDCG@5. Show your work for both DCG and ideal DCG.
+
+    \item \textbf{[Training]} You are fine-tuning a BERT cross-encoder on MS MARCO. (a) Why should you use BM25 hard negatives instead of random negatives? (b) Why is the learning rate kept very low ($2 \times 10^{-5}$)? (c) Why do you limit training to 2--3 epochs?
+
+    \item \textbf{[Pipeline Design]} Design a retrieval pipeline for a medical search engine. Which components from L3 and L4 would you include? Justify each choice and discuss the latency-quality trade-off.
+
+    \item \textbf{[Compare \& Contrast]} Compare BM25 and the query likelihood model (with Dirichlet smoothing) on three dimensions: how they handle term frequency, document length, and IDF.
+\end{enumerate}
+
+
+% ====================================================================
+\section{Key References}
+% ====================================================================
+
+\begin{description}[leftmargin=0.2cm, itemsep=2pt]
+    \item[\textcolor{L3color}{L3}] Robertson \& Zaragoza (2009). ``The Probabilistic Relevance Framework: BM25 and Beyond.'' \textit{FnTIR}.
+    \item[\textcolor{L3color}{L3}] Lavrenko \& Croft (2001). ``Relevance-Based Language Models.'' \textit{SIGIR}.
+    \item[\textcolor{L3color}{L3}] Gao et al.\ (2023). ``Precise Zero-Shot Dense Retrieval without Relevance Labels (HyDE).'' \textit{ACL}.
+    \item[\textcolor{L3color}{L3}] Wang et al.\ (2023). ``Query2Doc: Query Expansion with LLMs.'' \textit{EMNLP}.
+    \item[\textcolor{L4color}{L4}] Vaswani et al.\ (2017). ``Attention Is All You Need.'' \textit{NeurIPS}.
+    \item[\textcolor{L4color}{L4}] Devlin et al.\ (2019). ``BERT: Pre-training of Deep Bidirectional Transformers.'' \textit{NAACL}.
+    \item[\textcolor{L4color}{L4}] Nogueira \& Cho (2019). ``Passage Re-ranking with BERT.'' \textit{arXiv}.
+    \item[\textcolor{L4color}{L4}] Nogueira et al.\ (2020). ``Document Ranking with a Pretrained Seq2Seq Model.'' \textit{EMNLP Findings}.
+    \item[\textcolor{L4color}{L4}] Khattab \& Zaharia (2020). ``ColBERT: Efficient and Effective Passage Search.'' \textit{SIGIR}.
+    \item[\textcolor{L4color}{L4}] Sun et al.\ (2023). ``Is ChatGPT Good at Search? (RankGPT).'' \textit{arXiv}.
+    \item[\textcolor{L4color}{L4}] Nguyen et al.\ (2016). ``MS MARCO: A Human Generated Machine Reading Comprehension Dataset.'' \textit{arXiv}.
+\end{description}
+
+\end{document}
