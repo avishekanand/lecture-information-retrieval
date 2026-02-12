@@ -1,0 +1,13 @@
+\begin{tikzpicture}[
+    level distance=1.5cm,
+    level 1/.style={sibling distance=4cm},
+    level 2/.style={sibling distance=2cm},
+    every node/.style={circle, draw, minimum size=0.8cm, font=\small}
+]
+    \node {OR}
+        child {node {AND}
+            child {node {cat}}
+            child {node {mat}}
+        }
+        child {node {dog}};
+\end{tikzpicture}

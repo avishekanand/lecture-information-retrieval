@@ -1,0 +1,272 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{multicol}
+\usepackage{fontawesome5}
+\usepackage{pifont}
+
+\tcbuselibrary{breakable,skins}
+
+% Theorem environments
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{example}{Example}[section]
+\newtheorem{remark}{Remark}[section]
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}[section]
+
+% Custom boxes
+\newtcolorbox{keytakeaway}{colback=green!5!white,colframe=green!50!black,title={Key Takeaway},fonttitle=\bfseries,breakable}
+\newtcolorbox{pitfall}{colback=red!5!white,colframe=red!60!black,title={Common Pitfall},fonttitle=\bfseries,breakable}
+\newtcolorbox{production}{colback=blue!5!white,colframe=blue!50!black,title={Production Note},fonttitle=\bfseries,breakable}
+
+% Code listings
+\lstset{language=Python,basicstyle=\ttfamily\footnotesize,keywordstyle=\color{blue},commentstyle=\color{gray},stringstyle=\color{red},showstringspaces=false,breaklines=true,frame=single,numbers=left,numberstyle=\tiny\color{gray},backgroundcolor=\color{gray!10},xleftmargin=2em,framexleftmargin=1.5em}
+
+% TikZ libraries for included figures
+\usetikzlibrary{shapes,arrows,positioning,calc,patterns,decorations.pathreplacing,shadows,fit}
+
+% Header/Footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textsc{Information Retrieval}}
+\fancyhead[R]{\textsc{Lecture 1: Introduction \& Vector Space Model}}
+\fancyfoot[C]{\thepage}
+
+\title{\textbf{Lecture 1: Introduction \& Vector Space Model}\\[0.5em]\Large Information Retrieval --- Lecture Notes}
+\author{Avishek Anand\\\textit{Information Retrieval Course}}
+\date{\today}
+
+% Custom macros and TikZ styles
+\input{theme/macros.tex}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+These lecture notes accompany Lecture~1 of the Information Retrieval course. We introduce the fundamental concepts of Information Retrieval (IR), distinguishing it from database systems and natural language processing. We explore the core challenges of scale and semantic understanding before diving into the two classical retrieval models: the \textbf{Boolean Retrieval Model} and the \textbf{Vector Space Model (VSM)}. Key topics include TF-IDF term weighting and cosine similarity.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+%=======================================================================
+\section{What is Information Retrieval?}
+\label{sec:what-is-ir}
+%=======================================================================
+
+\begin{definition}[Information Retrieval]
+Information Retrieval (IR) is the field concerned with finding material (usually documents) of an unstructured nature (usually text) that satisfies an information need within large collections.
+\end{definition}
+
+In essence, IR is about bridging the gap between a user's \emph{information need} and a massive collection of items. Unlike structured data retrieval in databases, IR deals with the inherent ambiguity of natural language.
+
+\subsection{IR vs. Database Systems}
+
+The primary difference between IR and Database Management Systems (DBMS) lies in the structure of the data and the precision of the query.
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Database Systems} & \textbf{IR Systems} \\
+\midrule
+Data & Structured (tables, schemas) & Unstructured (text, documents) \\
+Queries & Precise (SQL) & Vague (natural language) \\
+Matching & Exact & Approximate/Ranked \\
+Result & All matching records & Top-$k$ relevant documents \\
+Failure & No results or all results & Ranked list (best effort) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{keytakeaway}
+Databases ask: \textit{``Give me all records matching X''}. IR asks: \textit{``Give me the most relevant documents about X''}.
+\end{keytakeaway}
+
+\subsection{IR vs. Natural Language Processing (NLP)}
+
+While IR and NLP share tools (like tokenizers and embeddings), they have different focal points:
+\begin{itemize}
+    \item \textbf{NLP (Understanding):} Focuses on language representation, syntax, semantics, and generation.
+    \item \textbf{IR (Retrieval):} Focuses on information seeking, scale, and ranking.
+\end{itemize}
+
+%=======================================================================
+\section{The Core Challenges of IR}
+\label{sec:challenges}
+%=======================================================================
+
+\subsection{The Semantic Gap}
+
+The most significant challenge in IR is the \emph{semantic gap}---the difference between the keywords used in a query and the underlying intent of the user.
+
+\begin{center}
+\input{tikz/semantic_gap_mouse.tex}
+\end{center}
+
+For a query like \texttt{mouse trap no poison}, a simple keyword matching system might return documents discussing how poison traps work because the words ``poison'' and ``trap'' appear. However, the user's intent is to find \emph{mechanical} or \emph{humane} alternatives.
+
+\subsection{Scale and Freshness}
+
+Modern IR systems must operate at a scale that is difficult to comprehend:
+\begin{itemize}
+    \item \textbf{Scale:} Google indexes over 100 trillion pages.
+    \item \textbf{Throughput:} Billions of queries per day.
+    \item \textbf{Latency:} Sub-second response times are mandatory.
+    \item \textbf{Freshness:} The index must reflect the state of the web in near real-time.
+\end{itemize}
+
+%=======================================================================
+\section{The Information Retrieval Problem}
+\label{sec:ir-problem}
+%=======================================================================
+
+The retrieval process follows a cycle where a user formulates a need into a query, the system searches a collection, and the user evaluates the ranked results.
+
+\begin{center}
+\input{tikz/retrieval_reasoning_flow.tex}
+\end{center}
+
+This process raises three fundamental questions that define the design of any IR system:
+\begin{enumerate}
+    \item How do we represent documents and queries?
+    \item How do we match queries to documents efficiently?
+    \item How do we rank documents by relevance?
+\end{enumerate}
+
+%=======================================================================
+\section{The Boolean Retrieval Model}
+\label{sec:boolean}
+%=======================================================================
+
+The Boolean model is the simplest retrieval model. It treats documents as sets of terms and queries as Boolean expressions.
+
+\begin{definition}[Boolean Retrieval]
+In the \emph{Boolean retrieval model}, a document is retrieved if it satisfies a Boolean expression of query terms using operators \texttt{AND}, \texttt{OR}, and \texttt{NOT}.
+\end{definition}
+
+\subsection{Query Processing with Set Operations}
+
+Queries are processed as set intersections, unions, and differences of posting lists (the sets of document IDs containing each term).
+
+\begin{example}[Boolean Query Tree]
+Consider the query: \texttt{(cat AND mat) OR dog}. The system first intersects the sets of documents containing ``cat'' and ``mat'', then unions the result with the set of documents containing ``dog''.
+
+\begin{center}
+\input{tikz/boolean_query_tree.tex}
+\end{center}
+\end{example}
+
+\subsection{The Feast or Famine Problem}
+
+Boolean retrieval suffers from a binary view of relevance: a document is either in or out.
+\begin{itemize}
+    \item \textbf{Famine:} A query with too many \texttt{AND} terms may return 0 results if even one minor term is missing (too restrictive).
+    \item \textbf{Feast:} A broad query may return millions of results with no way to identify the best ones (too permissive).
+\end{itemize}
+
+\begin{keytakeaway}
+Boolean retrieval lacks \textbf{ranking} and \textbf{partial matching}. This motivates the transition to weighted models like the Vector Space Model.
+\end{keytakeaway}
+
+%=======================================================================
+\section{The Vector Space Model (VSM)}
+\label{sec:vsm}
+%=======================================================================
+
+The Vector Space Model represents documents and queries as vectors in a high-dimensional space, where each dimension corresponds to a term in the vocabulary.
+
+\begin{center}
+\input{tikz/vsm_geometric_view.tex}
+\end{center}
+
+\subsection{Term Weighting: TF-IDF}
+
+To create meaningful vectors, we must assign weights to terms. The standard approach is \textbf{TF-IDF} (Term Frequency-Inverse Document Frequency).
+
+\begin{definition}[TF-IDF]
+The weight of term $t$ in document $d$ is:
+\[ w_{t,d} = \mathrm{tf}(t,d) \times \log\left(\frac{N}{\mathrm{df}(t)}\right) \]
+where:
+\begin{itemize}
+    \item $\mathrm{tf}(t,d)$ is the number of occurrences of term $t$ in document $d$.
+    \item $N$ is the total number of documents in the collection.
+    \item $\mathrm{df}(t)$ is the number of documents containing term $t$.
+\end{itemize}
+\end{definition}
+
+\textbf{Intuition:}
+\begin{itemize}
+    \item \textbf{TF} rewards terms that appear often in a document (local importance).
+    \item \textbf{IDF} penalizes terms that appear often in the collection (stop words like ``the'') and rewards rare, discriminative terms (global importance).
+\end{itemize}
+
+\subsection{Worked Example: TF-IDF Calculation}
+
+\begin{example}[TF-IDF Weights]
+Collection of 10,000 documents. Document $d$ contains: ``neural'' (5 times), ``network'' (3 times), and ``the'' (50 times).
+\begin{center}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Term} & \textbf{tf(t,d)} & \textbf{df(t)} & \textbf{idf(t)} & \textbf{tf-idf} \\
+\midrule
+neural & 5 & 100 & $\log(10000/100) = 2.0$ & 10.0 \\
+network & 3 & 500 & $\log(10000/500) = 1.3$ & 3.9 \\
+the & 50 & 9000 & $\log(10000/9000) = 0.05$ & 2.5 \\
+\bottomrule
+\end{tabular}
+\end{center}
+Despite appearing 10 times more often, ``the'' receives a lower weight than ``neural'' because it carries less discriminative information.
+\end{example}
+
+%=======================================================================
+\section{Cosine Similarity}
+\label{sec:cosine}
+%=======================================================================
+
+In VSM, the relevance of a document to a query is measured by the \emph{cosine} of the angle between their vectors.
+
+\begin{definition}[Cosine Similarity]
+The similarity between query vector $\vec{q}$ and document vector $\vec{d}$ is:
+\[ \mathrm{sim}(\vec{q}, \vec{d}) = \frac{\vec{q} \cdot \vec{d}}{\|\vec{q}\| \|\vec{d}\|} = \frac{\sum_{t} q_t \times d_t}{\sqrt{\sum_{t} q_t^2} \times \sqrt{\sum_{t} d_t^2}} \]
+\end{definition}
+
+\begin{keytakeaway}
+Cosine similarity normalizes for document length. Without this normalization, long documents would naturally have larger dot products simply because they contain more words, regardless of their actual relevance.
+\end{keytakeaway}
+
+%=======================================================================
+\section{VSM vs. Boolean Retrieval}
+\label{sec:comparison}
+%=======================================================================
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Boolean} & \textbf{Vector Space} \\
+\midrule
+Matching & Exact (in/out) & Partial (weighted) \\
+Ranking & No & Yes (by similarity) \\
+Robustness & Brittle & Graceful degradation \\
+Term weighting & Binary & TF-IDF \\
+User friendliness & Expert users & General users \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{remark}[Bag of Words Assumption]
+Both Boolean and simple VSM models share the \textbf{bag-of-words} assumption: they treat documents as unordered collections of words, ignoring grammar and word order. This limitation is addressed in later lectures using phrase matching and transformer-based models.
+\end{remark}
+
+\end{document}

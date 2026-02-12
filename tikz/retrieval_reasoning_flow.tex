@@ -1,0 +1,17 @@
+\begin{tikzpicture}[
+    node distance=2cm,
+    box/.style={rectangle, draw, fill=blue!20, text width=3cm, align=center, minimum height=1cm},
+    arrow/.style={->, thick}
+]
+    \node[box] (user) {User with Information Need};
+    \node[box, right=of user] (query) {Query \\ (e.g., ``climate change'')};
+    \node[box, right=of query] (system) {IR System};
+    \node[box, below=of system] (collection) {Document Collection \\ (millions of docs)};
+    \node[box, left=of collection] (results) {Ranked Results \\ (top-k docs)};
+    
+    \draw[arrow] (user) -- (query) node[midway, above] {\small formulate};
+    \draw[arrow] (query) -- (system) node[midway, above] {\small submit};
+    \draw[arrow] (system) -- (collection) node[midway, right] {\small search};
+    \draw[arrow] (collection) -- (results) node[midway, below] {\small rank};
+    \draw[arrow] (results) -- (user) node[midway, below] {\small satisfy};
+\end{tikzpicture}
