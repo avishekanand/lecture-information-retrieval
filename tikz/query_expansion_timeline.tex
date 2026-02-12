@@ -1,0 +1,12 @@
+\begin{tikzpicture}[
+    node distance=1.2cm,
+    box/.style={rectangle, draw, rounded corners, text width=3.5cm, align=center, minimum height=0.9cm, font=\small},
+    arrow/.style={->, thick}
+]
+    \node[box, fill=blue!15] (classical) {Classical PRF\\{\footnotesize Rocchio, RM3}};
+    \node[box, fill=green!15, right=1.5cm of classical] (llm) {LLM-Based\\{\footnotesize GPT, Claude, LLaMA}};
+    \node[box, fill=orange!15, right=1.5cm of llm] (hybrid) {Hybrid\\{\footnotesize LLM + Retriever}};
+    
+    \draw[arrow] (classical) -- (llm) node[midway, above, font=\footnotesize] {2022+};
+    \draw[arrow] (llm) -- (hybrid) node[midway, above, font=\footnotesize] {2023+};
+\end{tikzpicture}

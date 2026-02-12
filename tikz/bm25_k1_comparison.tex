@@ -1,0 +1,8 @@
+\begin{tikzpicture}[scale=0.6]
+    \draw[->, thick] (0,0) -- (5,0) node[right] {TF};
+    \draw[->, thick] (0,0) -- (0,3) node[above] {Score};
+    \draw[blue, thick, domain=0:4.5, samples=100] 
+        plot (\x, {2.5*\x*2.2/(1.2*\x+1.2)}) node[right] {\tiny $k_1=1.2$};
+    \draw[red, thick, domain=0:4.5, samples=100] 
+        plot (\x, {2.5*\x*3/(2*\x+2)}) node[right] {\tiny $k_1=2.0$};
+\end{tikzpicture}

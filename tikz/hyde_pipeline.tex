@@ -1,0 +1,17 @@
+\begin{tikzpicture}[
+    node distance=1cm,
+    box/.style={rectangle, draw, rounded corners, text width=4cm, align=center, minimum height=0.8cm, font=\small},
+    arrow/.style={->, thick}
+]
+    \node[box, fill=blue!15] (query) {User Query\\\footnotesize ``What causes ocean acidification?''};
+    \node[box, fill=green!15, below=of query] (llm) {LLM generates\\hypothetical document};
+    \node[box, fill=orange!15, below left=1cm and -0.5cm of llm] (sparse) {Extract terms $\to$\\BM25 retrieval};
+    \node[box, fill=purple!15, below right=1cm and -0.5cm of llm] (dense) {Embed hypo-doc $\to$\\ANN retrieval};
+    \node[box, fill=red!15, below=2.5cm of llm] (merge) {Merge \& Re-rank};
+    
+    \draw[arrow] (query) -- (llm);
+    \draw[arrow] (llm) -- (sparse);
+    \draw[arrow] (llm) -- (dense);
+    \draw[arrow] (sparse) -- (merge);
+    \draw[arrow] (dense) -- (merge);
+\end{tikzpicture}

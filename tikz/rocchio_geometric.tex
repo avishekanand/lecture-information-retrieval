@@ -1,0 +1,17 @@
+\begin{tikzpicture}[scale=1.2]
+    \draw[->, thick] (-0.5,0) -- (6,0) node[right] {Term 1};
+    \draw[->, thick] (0,-0.5) -- (0,5) node[above] {Term 2};
+    \node[circle, fill=blue, inner sep=2pt, label=left:$q_{\text{orig}}$] (q) at (1,1) {};
+    \node[circle, fill=green, inner sep=2pt] (d1) at (3,3.5) {};
+    \node[circle, fill=green, inner sep=2pt] (d2) at (4,3) {};
+    \node[circle, fill=green, inner sep=2pt] (d3) at (3.5,4) {};
+    \node at (3.5,4.5) {Relevant docs};
+    \node[diamond, fill=green, inner sep=3pt, label=above:Centroid] (c) at (3.5,3.5) {};
+    \node[circle, fill=red, inner sep=2pt] (n1) at (1,4) {};
+    \node[circle, fill=red, inner sep=2pt] (n2) at (0.5,3.5) {};
+    \node at (0.5,4.5) {Non-relevant};
+    \node[circle, fill=purple, inner sep=3pt, label=right:$q_{\text{new}}$] (qn) at (2.5,2.5) {};
+    \draw[->, thick, blue] (q) -- (c) node[midway, above] {$+\beta$};
+    \draw[->, thick, red] (q) -- (n1) node[midway, left] {$-\gamma$};
+    \draw[->, thick, purple, dashed] (q) -- (qn);
+\end{tikzpicture}
