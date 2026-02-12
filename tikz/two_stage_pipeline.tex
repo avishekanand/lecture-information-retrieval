@@ -1,0 +1,14 @@
+\begin{tikzpicture}[
+    node distance=1.8cm,
+    stage/.style={rectangle, draw, rounded corners, minimum width=5cm, minimum height=1.2cm, align=center, font=\small},
+    arrow/.style={->, thick, >=stealth}
+]
+    \node[stage, fill=blue!15] (corpus) {Document Corpus\\$N = 1{,}000{,}000$};
+    \node[stage, fill=orange!15, below of=corpus] (bm25) {\textbf{Stage 1: BM25 / LM}\\Retrieve top-1000 candidates\\$\sim$5 ms};
+    \node[stage, fill=green!15, below of=bm25] (rerank) {\textbf{Stage 2: Cross-Encoder (BERT)}\\Re-rank top-100\\$\sim$500 ms};
+    \node[stage, fill=purple!15, below of=rerank] (result) {Final Ranked List\\Top-10 to user};
+
+    \draw[arrow] (corpus) -- (bm25) node[midway, right, font=\footnotesize] {1M docs};
+    \draw[arrow] (bm25) -- (rerank) node[midway, right, font=\footnotesize] {1000 $\to$ 100 docs};
+    \draw[arrow] (rerank) -- (result) node[midway, right, font=\footnotesize] {100 $\to$ 10 docs};
+\end{tikzpicture}

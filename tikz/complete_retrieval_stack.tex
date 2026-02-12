@@ -1,0 +1,16 @@
+\begin{tikzpicture}[
+    node distance=1.2cm,
+    stage/.style={rectangle, draw, rounded corners, minimum width=10cm, minimum height=0.85cm, align=center, font=\small},
+    arrow/.style={->, thick, >=stealth}
+]
+    \node[stage, fill=blue!15] (s1) {Stage 1: BM25 retrieves 1000 candidates (L3) \textit{or} Dense retrieval (L5)};
+    \node[stage, fill=orange!15, below of=s1] (s1b) {Optional: RM3 / LLM expansion improves recall (L3)};
+    \node[stage, fill=green!15, below of=s1b] (s2) {\textbf{Stage 2: Cross-encoder (BERT) re-ranks top 100 (L4 --- today)}};
+    \node[stage, fill=purple!15, below of=s2] (s3) {Stage 3: Learning to Rank combines all signals (L6)};
+    \node[stage, fill=gray!15, below of=s3] (out) {Final ranked list $\to$ User or LLM (RAG)};
+
+    \draw[arrow] (s1) -- (s1b);
+    \draw[arrow] (s1b) -- (s2);
+    \draw[arrow] (s2) -- (s3);
+    \draw[arrow] (s3) -- (out);
+\end{tikzpicture}

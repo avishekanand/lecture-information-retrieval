@@ -1,0 +1,25 @@
+\begin{tikzpicture}[
+    node distance=0.8cm,
+    box/.style={rectangle, draw, minimum width=2cm, minimum height=0.6cm, font=\footnotesize, align=center},
+    arrow/.style={->, thick}
+]
+    \node[font=\footnotesize] (ctx1) {``the''};
+    \node[font=\footnotesize, below=0.3cm of ctx1] (ctx2) {``cat''};
+    \node[box, fill=blue!15, right=1.2cm of ctx1, yshift=-0.4cm] (hidden) {Hidden layer\\$d = 300$ dims};
+    \node[font=\footnotesize, right=1.2cm of hidden, yshift=0.4cm] (out1) {``on''};
+    \node[font=\footnotesize, below=0.3cm of out1] (out2) {``the''};
+    \node[font=\footnotesize, below=0.3cm of out2] (out3) {``mat''};
+
+    \draw[arrow] (ctx1) -- (hidden);
+    \draw[arrow] (ctx2) -- (hidden);
+    \draw[arrow] (hidden) -- (out1);
+    \draw[arrow] (hidden) -- (out2);
+    \draw[arrow] (hidden) -- (out3);
+
+    \node[above=0.1cm of ctx1, font=\footnotesize\bfseries] {Input (context)};
+    \node[above=0.1cm of out1, font=\footnotesize\bfseries] {Predict (target)};
+
+    \node[below=1.5cm of hidden, font=\footnotesize, text width=7cm, align=center] {
+    \textbf{After training:} each word gets a $d$-dimensional vector.\\
+    Words in similar contexts $\to$ similar vectors.};
+\end{tikzpicture}

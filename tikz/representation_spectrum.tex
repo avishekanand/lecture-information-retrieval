@@ -1,0 +1,22 @@
+\begin{tikzpicture}[
+    box/.style={rectangle, draw, rounded corners, minimum width=2.2cm, minimum height=1.5cm, align=center, font=\footnotesize},
+    arrow/.style={->, thick, >=stealth}
+]
+    \node[box, fill=red!15] (bow) at (0, 0) {\textbf{Bag of Words}\\BM25, LM\\L3};
+    \node[box, fill=orange!15] (static) at (3.5, 0) {\textbf{Static Embed.}\\Word2Vec\\GloVe};
+    \node[box, fill=blue!15] (cross) at (7, 0) {\textbf{Cross-Encoder}\\monoBERT\\monoT5\\L4 (today)};
+    \node[box, fill=green!15] (bi) at (10.5, 0) {\textbf{Bi-Encoder}\\DPR, ColBERT\\L5 (next)};
+
+    \draw[arrow] (bow) -- (static);
+    \draw[arrow] (static) -- (cross);
+    \draw[arrow] (cross) -- (bi);
+
+    \node[below=0.4cm of bow, font=\tiny, text width=2.2cm, align=center] {Fast retrieval\\No semantics};
+    \node[below=0.4cm of static, font=\tiny, text width=2.2cm, align=center] {Some semantics\\No context};
+    \node[below=0.4cm of cross, font=\tiny, text width=2.2cm, align=center] {Best accuracy\\Re-rank only};
+    \node[below=0.4cm of bi, font=\tiny, text width=2.2cm, align=center] {Semantic retrieval\\Pre-compute docs};
+
+    \draw[<->, thick, gray] (0, -1.8) -- (10.5, -1.8);
+    \node[font=\footnotesize, gray] at (2, -2.2) {Faster};
+    \node[font=\footnotesize, gray] at (8.5, -2.2) {More accurate};
+\end{tikzpicture}

@@ -1,0 +1,19 @@
+\begin{tikzpicture}[
+    box/.style={rectangle, draw, rounded corners, text width=5cm, align=center, minimum height=2cm, font=\small}
+]
+    \node[box, fill=orange!15] (static) at (0,0) {
+        \textbf{Static Embeddings}\\[3pt]
+        Word2Vec, GloVe\\[3pt]
+        ``bank'' $\to$ one vector always\\[3pt]
+        \textit{Context-independent}
+    };
+
+    \node[box, fill=blue!15] (context) at (7.5,0) {
+        \textbf{Contextualized Embeddings}\\[3pt]
+        ELMo, BERT, GPT\\[3pt]
+        ``bank'' $\to$ different vector\\depending on sentence\\[3pt]
+        \textit{Context-dependent}
+    };
+
+    \draw[->, ultra thick, >=stealth] (3.2,0) -- (4.8,0) node[midway, above, font=\footnotesize\bfseries] {2018};
+\end{tikzpicture}

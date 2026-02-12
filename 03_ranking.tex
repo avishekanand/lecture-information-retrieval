@@ -470,9 +470,9 @@ the & 99{,}000 & $-6.21$ & Actively harmful \\
 \begin{block}{Key Insight}
 IDF difference drives discrimination:
 \begin{itemize}
-    \item Rare terms dominate scoring
+    \item Rare terms dominate scoring (Matches on ``quantum'' worth $\sim$15$\times$ matches on ``system'')
     \item Common terms contribute little or negatively
-    \item Matches on ``quantum'' worth $\sim$15$\times$ matches on ``system''
+    % \item 
 \end{itemize}
 \end{block}
 \end{frame}
@@ -688,13 +688,13 @@ $$P(w|C) = \frac{\sum_{d' \in C} \text{count}(w,d')}{\sum_{d' \in C} |d'|}$$
 
 \vspace{1em}
 
-\textbf{Two Main Approaches:}
-\begin{enumerate}
-    \item \textbf{Jelinek-Mercer:} Fixed linear interpolation
-    \item \textbf{Dirichlet:} Length-adaptive interpolation
-\end{enumerate}
+% \textbf{Two Main Approaches:}
+% \begin{enumerate}
+%     \item \textbf{Jelinek-Mercer:} Fixed linear interpolation
+%     \item \textbf{Dirichlet:} Length-adaptive interpolation
+% \end{enumerate}
 
-\vspace{0.5em}
+% \vspace{0.5em}
 
 \begin{exampleblock}{Effect}
 Even if $\text{count}(w,d) = 0$, we have $P(w|d) > 0$ from collection
@@ -816,16 +816,16 @@ Foundation & Probabilistic relevance & Language modeling \\
 \end{tabular}
 \end{table}
 
-\vspace{0.5em}
+% \vspace{0.5em}
 
-\begin{block}{Practical Comparison}
-\begin{itemize}
-    \item With good parameters, rankings often similar
-    \item BM25: Better understood, more robust defaults
-    \item Dirichlet LM: Better for variable-length collections
-    \item \textbf{Best practice:} Try both!
-\end{itemize}
-\end{block}
+% \begin{block}{Practical Comparison}
+% \begin{itemize}
+%     \item With good parameters, rankings often similar
+%     % \item BM25: Better understood, more robust defaults
+%     \item Dirichlet LM: Better for variable-length collections
+%     \item \textbf{Best practice:} Try both!
+% \end{itemize}
+% \end{block}
 \end{frame}
 
 \begin{frame}{Connection: RM3 Uses Language Modeling}
@@ -842,7 +842,7 @@ $$P(w|R) \propto \sum_{d \in R} P(w|d) \cdot P(d|q)$$
     \item RM3 builds a \textit{language model of relevance}
 \end{itemize}
 
-\vspace{0.5em}
+% \vspace{0.5em}
 
 \begin{exampleblock}{Why This Matters}
 Understanding language models helps you understand query expansion:
@@ -947,58 +947,58 @@ User marks documents as relevant/non-relevant
 \end{enumerate}
 \end{frame}
 
-\begin{frame}[shrink=10]{Rocchio Algorithm}
-\begin{block}{Historical Context}
-Classic PRF method from 1971, vector space approach
-\end{block}
+% \begin{frame}[shrink=10]{Rocchio Algorithm}
+% \begin{block}{Historical Context}
+% Classic PRF method from 1971, vector space approach
+% \end{block}
 
-\begin{block}{Formula}
-$$\vec{q}_{\text{new}} = \alpha \vec{q}_{\text{original}} + \beta \frac{1}{|R|}\sum_{d \in R} \vec{d} - \gamma \frac{1}{|NR|}\sum_{d \in NR} \vec{d}$$
-\end{block}
+% \begin{block}{Formula}
+% $$\vec{q}_{\text{new}} = \alpha \vec{q}_{\text{original}} + \beta \frac{1}{|R|}\sum_{d \in R} \vec{d} - \gamma \frac{1}{|NR|}\sum_{d \in NR} \vec{d}$$
+% \end{block}
 
-\textbf{Parameters:}
-\begin{itemize}
-    \item $\alpha = 1$: Keep original query (always)
-    \item $\beta = 0.75$: Weight toward positive examples
-    \item $\gamma = 0.15$: Weight away from negative examples
-    \item In PRF: $\gamma = 0$ (no negative feedback available)
-\end{itemize}
+% \textbf{Parameters:}
+% \begin{itemize}
+%     \item $\alpha = 1$: Keep original query (always)
+%     \item $\beta = 0.75$: Weight toward positive examples
+%     \item $\gamma = 0.15$: Weight away from negative examples
+%     \item In PRF: $\gamma = 0$ (no negative feedback available)
+% \end{itemize}
 
-\vspace{0.5em}
+% \vspace{0.5em}
 
-\textbf{Geometric Intuition:} Move query vector toward centroid of relevant documents, away from non-relevant.
-\end{frame}
+% \textbf{Geometric Intuition:} Move query vector toward centroid of relevant documents, away from non-relevant.
+% \end{frame}
 
-\begin{frame}{Rocchio: Geometric Intuition}
-\begin{center}
-\input{tikz/rocchio_geometric.tex}
-\end{center}
+% \begin{frame}{Rocchio: Geometric Intuition}
+% \begin{center}
+% \input{tikz/rocchio_geometric.tex}
+% \end{center}
 
-\textbf{Movement:} Original query shifts toward relevant docs, away from non-relevant
-\end{frame}
+% \textbf{Movement:} Original query shifts toward relevant docs, away from non-relevant
+% \end{frame}
 
-\begin{frame}[shrink=5]{Rocchio Limitations}
-\begin{alertblock}{\ding{55} Why Not Standard Anymore?}
-\begin{enumerate}
-    \item \textbf{Requires vector space representation}
-    \begin{itemize}
-        \item All terms contribute (even noisy ones)
-        \item No principled term selection
-    \end{itemize}
-    \item \textbf{No probabilistic foundation}
-    \begin{itemize}
-        \item Weights based on geometry, not probability
-    \end{itemize}
-    \item \textbf{Empirically outperformed} by RM3
-\end{enumerate}
-\end{alertblock}
+% \begin{frame}[shrink=5]{Rocchio Limitations}
+% \begin{alertblock}{\ding{55} Why Not Standard Anymore?}
+% \begin{enumerate}
+%     \item \textbf{Requires vector space representation}
+%     \begin{itemize}
+%         \item All terms contribute (even noisy ones)
+%         \item No principled term selection
+%     \end{itemize}
+%     \item \textbf{No probabilistic foundation}
+%     \begin{itemize}
+%         \item Weights based on geometry, not probability
+%     \end{itemize}
+%     \item \textbf{Empirically outperformed} by RM3
+% \end{enumerate}
+% \end{alertblock}
 
-\vspace{1em}
+% \vspace{1em}
 
-\begin{block}{Modern Usage}
-Mainly historical importance --- RM3 is the standard for classical PRF
-\end{block}
-\end{frame}
+% \begin{block}{Modern Usage}
+% Mainly historical importance --- RM3 is the standard for classical PRF
+% \end{block}
+% \end{frame}
 
 \begin{frame}{RM3: Relevance Model 3}
 \begin{block}{Foundation}
@@ -1280,6 +1280,11 @@ Interpretability & Terms from real docs & Generated terms \\
 
 \vspace{1em}
 
+\end{frame}
+
+
+\begin{frame}{Query Drift}
+
 \begin{exampleblock}{Query Drift Example}
 \textbf{Query:} ``python programming'' \\
 \textbf{Top result:} Article about Python snake species \\
@@ -1499,207 +1504,6 @@ print(final_results)
     \item ``bank'' (river) vs. ``bank'' (financial) treated identically
 \end{itemize}
 \end{alertblock}
-\end{frame}
-
-\begin{frame}{The Modern Retrieval Stack}
-\begin{center}
-\input{tikz/modern_retrieval_stack.tex}
-\end{center}
-\end{frame}
-
-\begin{frame}{Preview: Lecture 4 --- Embeddings \& Transformer Re-rankers}
-\begin{block}{Why Transformers?}
-Sparse methods don't understand semantics:
-\begin{itemize}
-    \item Synonyms not recognized
-    \item Polysemy not resolved
-    \item Context not considered
-\end{itemize}
-\end{block}
-
-\begin{block}{What You'll Learn}
-\begin{itemize}
-    \item Word embeddings (Word2Vec, GloVe): words as dense vectors
-    \item Self-attention and the Transformer architecture
-    \item BERT: contextualized embeddings for relevance
-    \item Cross-encoder re-ranking: joint query-document scoring
-\end{itemize}
-\end{block}
-
-\begin{exampleblock}{Connection}
-Your BM25 pipeline becomes the first-stage retriever. BERT re-ranks on top.
-\end{exampleblock}
-\end{frame}
-
-\begin{frame}{Why Sparse Methods Still Matter}
-\begin{enumerate}
-    \item \textbf{Efficiency:} BM25 in microseconds vs.\ dense in milliseconds
-    
-    \item \textbf{Transparency:} Explainable scores (IDF, TF contributions), debuggable
-    
-    \item \textbf{Hybrid Systems:} Best results combine sparse + dense (complementary)
-    
-    \item \textbf{First-Stage Retrieval:} Neural methods too slow for full corpus --- BM25 narrows candidates
-    
-    \item \textbf{Feature Engineering:} BM25, LM scores become features in Learning to Rank (Lecture 6)
-\end{enumerate}
-
-\vspace{1em}
-
-\begin{alertblock}{Bottom Line}
-BM25 is not going away. It is the \textbf{foundation layer} of every modern retrieval system.
-\end{alertblock}
-\end{frame}
-
-% ====================================================================
-% WRAP-UP
-% ====================================================================
-\section{Summary and Assignment}
-
-\begin{frame}[plain]
-\sectionpage
-\end{frame}
-
-\begin{frame}{Key Takeaways}
-\begin{block}{1. BM25 is the Industry Standard}
-Probabilistic foundation, robust performance. Defaults ($k_1=1.2$, $b=0.75$) work for most collections. BM25F extends to fielded documents.
-\end{block}
-
-\begin{block}{2. Query Expansion Improves Recall}
-RM3 addresses vocabulary mismatch. LLM-based expansion offers zero-shot alternatives (HyDE, Query2Doc, decomposition). Watch for query drift.
-\end{block}
-
-\begin{block}{3. Language Models Provide Principled Alternative}
-Generative probabilistic framework. Smoothing is essential. Dirichlet best for variable-length collections.
-\end{block}
-
-\begin{block}{4. Everything Connects}
-BM25 $\to$ first-stage retriever. LM $\to$ foundation for neural LMs. RM3 $\to$ connects LM theory to expansion practice. All become features in LTR.
-\end{block}
-\end{frame}
-
-\begin{frame}{Assignment: Sparse Ranking Comparison}
-\textbf{Due:} Before Lecture 5
-
-\vspace{0.5em}
-
-\begin{block}{Part 1: Baseline Comparison (30 pts)}
-Implement BM25 and Dirichlet LM. Tune parameters: 3+ values each for $k_1$, $b$, $\mu$. Report MAP, NDCG@10, P@10.
-\end{block}
-
-\begin{block}{Part 2: Query Expansion (30 pts)}
-Add RM3 to your best baseline. Experiment with fb\_docs and fb\_terms. \textbf{Bonus:} Implement LLM-based expansion and compare.
-\end{block}
-
-\begin{block}{Part 3: Analysis (20 pts)}
-For 3 queries, explain ranking differences between BM25 and LM. Show successful expansion and query drift examples. Discuss production trade-offs.
-\end{block}
-
-\begin{block}{Part 4: Looking Ahead (20 pts)}
-Which queries would benefit from semantic matching (dense retrieval)? What features would you extract for learning to rank?
-\end{block}
-\end{frame}
-
-\begin{frame}{Next Class: Embeddings \& Transformer Re-rankers}
-\begin{block}{Preparation}
-\textbf{Read:}
-\begin{itemize}
-    \item Vaswani et al.\ (2017): ``Attention Is All You Need''
-    \item Nogueira \& Cho (2019): ``Passage Re-ranking with BERT''
-\end{itemize}
-
-\textbf{Skim:}
-\begin{itemize}
-    \item Devlin et al.\ (2019): ``BERT: Pre-training of Deep Bidirectional Transformers''
-\end{itemize}
-\end{block}
-
-\vspace{0.5em}
-
-\begin{exampleblock}{What We'll Build}
-\begin{itemize}
-    \item Use your BM25 pipeline as first-stage retriever
-    \item Add BERT re-ranker on top
-    \item Compare sparse vs.\ neural ranking
-\end{itemize}
-\end{exampleblock}
-\end{frame}
-
-\begin{frame}{Questions?}
-\begin{center}
-\Huge Questions?
-
-\vspace{2em}
-
-\Large
-Office Hours: [Your time]
-
-\vspace{1em}
-
-Email: [Your email]
-
-\vspace{2em}
-
-\normalsize
-\textbf{Good luck with the assignment!}
-\end{center}
-\end{frame}
-
-% ====================================================================
-% APPENDIX / BACKUP SLIDES
-% ====================================================================
-\appendix
-
-\begin{frame}{Backup: BM25 Variants}
-\begin{block}{BM25+}
-Adds a lower bound $\delta$ on term contribution:
-$$\text{BM25+}(q,d) = \sum_{t \in q} \text{IDF}(t) \cdot \left(\frac{f(t,d) \cdot (k_1+1)}{f(t,d) + k_1 \cdot \text{norm}} + \delta\right)$$
-\end{block}
-
-\begin{block}{BM25F (Details)}
-Per-field weights and normalization. Common field weights:
-\begin{itemize}
-    \item Title: $w = 5{-}10$, Body: $w = 1$, URL: $w = 2{-}3$, Anchor: $w = 3{-}5$
-\end{itemize}
-\end{block}
-\end{frame}
-
-\begin{frame}{Backup: Other Smoothing Methods}
-\begin{block}{Absolute Discounting}
-$$P(w|d) = \frac{\max(\text{count}(w,d) - \delta, 0)}{|d|} + \frac{\delta \cdot |V_d|}{|d|} \cdot P(w|C)$$
-Subtracts fixed discount $\delta$ from each count; redistributes to unseen words.
-\end{block}
-
-\begin{block}{Two-Stage Smoothing}
-Combine Dirichlet (document-level) + JM (collection-level). Can improve but more complex.
-\end{block}
-\end{frame}
-
-\begin{frame}{Backup: HyDE Full Pipeline}
-\begin{center}
-\input{tikz/hyde_pipeline.tex}
-\end{center}
-\end{frame}
-
-\begin{frame}{Backup: Rocchio vs. RM3 vs. LLM Expansion}
-\begin{table}
-\centering
-\footnotesize
-\begin{tabular}{lccc}
-\toprule
-\textbf{Aspect} & \textbf{Rocchio} & \textbf{RM3} & \textbf{LLM-Based} \\
-\midrule
-Foundation & Geometric & Probabilistic & Neural generative \\
-Term selection & All (weighted) & Top-$k$ by $P(w|R)$ & Prompted generation \\
-Knowledge source & Retrieved docs & Retrieved docs & Parametric \\
-Failure mode & Noisy centroid & Query drift & Hallucination \\
-Cold start & Needs corpus & Needs corpus & Works zero-shot \\
-Cost & Free & Free & API / GPU \\
-Performance & Good & Better & Context-dependent \\
-Era & 1971 & 2001 & 2023+ \\
-\bottomrule
-\end{tabular}
-\end{table}
 \end{frame}
 
 \end{document}

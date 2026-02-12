@@ -1,0 +1,35 @@
+\begin{tikzpicture}[
+    token/.style={rectangle, draw, minimum width=0.9cm, minimum height=0.5cm, font=\tiny, align=center},
+    bertbox/.style={rectangle, draw, fill=blue!15, minimum width=10cm, minimum height=1.2cm, align=center, rounded corners},
+    arrow/.style={->, thick}
+]
+    % Input tokens
+    \node[token, fill=yellow!30] (cls) at (0, 0) {[CLS]};
+    \node[token, fill=red!15] (q1) at (1.2, 0) {car};
+    \node[token, fill=red!15] (q2) at (2.4, 0) {problems};
+    \node[token, fill=gray!20] (sep1) at (3.6, 0) {[SEP]};
+    \node[token, fill=green!15] (d1) at (4.8, 0) {auto};
+    \node[token, fill=green!15] (d2) at (5.8, 0) {\#\#mobile};
+    \node[token, fill=green!15] (d3) at (7.0, 0) {issues};
+    \node[token, fill=green!15] (d4) at (8.1, 0) {and};
+    \node[token, fill=green!15] (d5) at (9.1, 0) {fixes};
+    \node[token, fill=gray!20] (sep2) at (10.2, 0) {[SEP]};
+
+    % BERT block
+    \node[bertbox] (bert) at (5, 1.8) {\textbf{BERT} (12 layers $\times$ 12 heads)\\Full cross-attention between \textcolor{red}{query} and \textcolor{green!60!black}{document}};
+
+    % Output
+    \node[rectangle, draw, fill=yellow!30, minimum width=1.5cm, minimum height=0.5cm, font=\small] (clsout) at (0, 3.3) {$h_{\text{[CLS]}}$};
+    \node[rectangle, draw, fill=purple!20, minimum width=2cm, minimum height=0.5cm, font=\small] (score) at (0, 4.3) {$P(\text{rel}) = \sigma(W \cdot h_{\text{[CLS]}})$};
+
+    % Arrows
+    \foreach \n in {cls, q1, q2, sep1, d1, d2, d3, d4, d5, sep2} {
+        \draw[arrow, thin, gray] (\n.north) -- (\n.north |- bert.south);
+    }
+    \draw[arrow] (bert.north -| clsout) -- (clsout.south);
+    \draw[arrow] (clsout) -- (score);
+
+    % Labels
+    \node[left=0.1cm of cls, font=\tiny\color{red}] {Query};
+    \node[left=0.1cm of d1, font=\tiny\color{green!60!black}] {Document};
+\end{tikzpicture}

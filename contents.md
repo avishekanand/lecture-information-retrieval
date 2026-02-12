@@ -1,6 +1,7 @@
 # Information Retrieval — Concept & Idea Tracker
 
-> A running index of every concept, technique, and key idea introduced across lectures. We will se this to review, cross-reference, and prepare for exams.
+> A running index of every concept, technique, and key idea introduced across lectures.
+> Use this to review, cross-reference, and prepare for exams.
 
 ---
 
@@ -157,25 +158,169 @@
 - **"Compression makes things faster, not just smaller."** Decompression is faster than raw I/O.
 - **"Don't throw away BM25."** Keyword matching remains essential alongside semantic search.
 
+
+---
+
+## Lecture 3: Ranking Models (BM25, Language Models, Query Expansion)
+
+### Probabilistic Foundations
+
+- **Probability Ranking Principle (PRP):** If documents are ranked by decreasing $P(\text{relevant} \mid q, d)$, expected effectiveness is maximized (under independent relevance). *(Robertson, 1977)*
+
+### BM25
+
+- **BM25 Formula:** $\text{BM25}(q,d) = \sum_{t \in q} \text{IDF}(t) \cdot \frac{f(t,d) \cdot (k_1+1)}{f(t,d) + k_1 \cdot (1 - b + b \cdot |d|/\text{avgdl})}$. Three components: IDF, saturating TF, length normalization. *(Robertson & Zaragoza, 2009)*
+- **BM25 IDF:** $\log\frac{N - \text{df}_t + 0.5}{\text{df}_t + 0.5}$. Can be negative for terms appearing in >50% of docs.
+- **Saturating TF:** $\frac{f \cdot (k_1+1)}{f + k_1}$ grows sub-linearly. $k_1 \to 0$: Boolean; $k_1 \to \infty$: linear; standard $k_1 = 1.2$.
+- **Length normalization:** $1 - b + b \cdot |d|/\text{avgdl}$. $b = 0$: none; $b = 1$: full; standard $b = 0.75$.
+- **BM25F (Fielded):** Weighted TF across fields (title, body, URL). Used in Elasticsearch, Solr, Bing.
+- **Parameter tuning:** Verbose collections → higher $k_1$; variable-length docs → higher $b$.
+
+### Query Expansion
+
+- **Vocabulary mismatch problem:** Queries and documents use different words for the same concept. BM25 scores 0.
+- **Pseudo Relevance Feedback (PRF):** Assume top-$k$ results are relevant; extract terms; expand query; re-retrieve.
+- **Rocchio Algorithm:** Move query vector toward centroid of relevant docs, away from non-relevant. Geometric. Historical. *(Rocchio, 1971)*
+- **RM3 (Relevance Model 3):** $P(w|R) \propto \sum_{d \in R} P(w|d) \cdot P(d|q)$. Interpolate with original query. Standard for classical PRF. *(Lavrenko & Croft, 2001)*
+- **RM3 Parameters:** fb_docs (3–10), fb_terms (10–20), $\lambda$ (0.5–0.8).
+- **Query drift:** When PRF assumption fails, expansion terms are wrong.
+
+### LLM-Based Query Expansion
+
+- **LLM Synonym Generation:** Prompt LLM for synonyms/paraphrases. Zero-shot, no retrieval needed.
+- **HyDE:** LLM generates hypothetical relevant document; use for expansion or embedding. *(Gao et al., 2023)*
+- **Query Decomposition:** LLM breaks complex query into sub-queries; retrieve for each; merge.
+- **Query2Doc:** Prepend LLM-generated pseudo-document to query; run BM25. *(Wang et al., 2023)*
+
+### Statistical Language Models for Ranking
+
+- **Query Likelihood Model:** Rank by $P(q|d) = \prod_{w \in q} P(w|d)^{\text{count}(w,q)}$.
+- **Zero probability problem:** Any absent query term zeros out the entire score. Smoothing essential.
+- **Jelinek-Mercer Smoothing:** $P(w|d) = (1-\lambda) P_\text{ML}(w|d) + \lambda P(w|C)$. Fixed; $\lambda$ typically 0.1–0.3.
+- **Dirichlet Smoothing:** $P(w|d) = \frac{\text{count}(w,d) + \mu P(w|C)}{|d| + \mu}$. Length-adaptive; $\mu$ typically 1000–2500. Generally preferred.
+- **LM vs. BM25:** Similar rankings with good parameters. BM25 has explicit saturation/normalization; LMs achieve it via smoothing.
+
+### Key Principles (Lecture 3)
+
+- **"BM25 is the foundation layer."** Every modern system uses it as first-stage retrieval or a feature.
+- **"Not all term matches are equal."** Rare terms dominate scoring (IDF).
+- **"Smoothing is essential, not optional."** Without it, LMs assign zero to partially-relevant documents.
+
+---
+
+## Lecture 4: Embeddings & Transformer Re-rankers
+
+### Word Embeddings (Static)
+
+- **Distributional Hypothesis:** "You shall know a word by the company it keeps." Words in similar contexts → similar vectors. *(Firth, 1957)*
+- **Word2Vec:** Predict context from target (Skip-gram) or target from context (CBOW). Hidden-layer weights = embeddings. $d = 100$–$300$. *(Mikolov et al., 2013)*
+- **GloVe:** Factorize word co-occurrence matrix. $\vec{w}_i \cdot \vec{w}_j \approx \log(\text{co-occurrence})$. Similar quality to Word2Vec. *(Pennington et al., 2014)*
+- **Word analogies:** $\vec{\text{king}} - \vec{\text{man}} + \vec{\text{woman}} \approx \vec{\text{queen}}$. Relational structure as vector directions.
+- **Limitation:** One vector per word type. No polysemy resolution ("bank" = "bank").
+
+### Contextualized Embeddings
+
+- **Static vs. Contextualized:** Static assigns one vector per word type; contextualized assigns a different vector per token depending on context.
+- **Polysemy resolution:** "bank" near "money" ≠ "bank" near "river."
+- **Average word embeddings (naive document representation):** $\vec{d} = \frac{1}{|d|}\sum_{w \in d} \vec{w}$. Loses word order, unresolved polysemy.
+
+### Transformer Architecture
+
+- **Self-attention:** Each token attends to every other token. $\text{Attention}(Q, K, V) = \text{softmax}(QK^T/\sqrt{d_k}) V$. *(Vaswani et al., 2017)*
+- **Query, Key, Value projections:** Q = "what am I looking for?", K = "what do I contain?", V = "what info do I provide?". Attention weights = softmax of Q·K dot products; output = weighted sum of V.
+- **Multi-head attention:** $h$ parallel heads (BERT: $h = 12$); each captures different relationship types. Concat + project.
+- **Positional encoding:** Sinusoidal or learned vectors added to embeddings to inject word-order information (attention is permutation-invariant without it).
+- **Transformer encoder block:** Multi-Head Attention → Add & LayerNorm → FFN → Add & LayerNorm. Residual connections for gradient flow.
+- **BERT-base:** 12 layers, 768 hidden dims, 12 heads, 110M parameters.
+
+### BERT
+
+- **BERT:** Transformer encoder pre-trained bidirectionally on BooksCorpus + Wikipedia. *(Devlin et al., 2019)*
+- **Masked Language Modeling (MLM):** Mask 15% of tokens; predict from bidirectional context.
+- **Next Sentence Prediction (NSP):** Binary classification: is sentence B the actual continuation of A?
+- **Fine-tuning:** Add task-specific head on pre-trained BERT; train on small labeled data with low learning rate ($2 \times 10^{-5}$).
+
+### Cross-Encoder Re-ranking
+
+- **Cross-encoder:** Feed [CLS] query [SEP] document [SEP] through BERT jointly. Full cross-attention. $P(\text{rel}) = \sigma(W \cdot h_\text{[CLS]})$. *(Nogueira & Cho, 2019)*
+- **Why accurate:** Every query token attends to every document token. Captures synonymy, negation, semantic relevance.
+- **Why slow:** Must encode every (q, d) pair. Cannot pre-compute doc representations. ~5ms/pair.
+- **monoBERT:** BERT + classification head. *(Nogueira & Cho, 2019)*
+- **monoT5:** T5 encoder-decoder. Input: "Query: q Document: d Relevant:" → "true"/"false". *(Nogueira et al., 2020)*
+- **RankGPT:** Give LLM a list of documents; ask it to sort by relevance. No fine-tuning. Expensive but effective. *(Sun et al., 2023)*
+
+### ColBERT (Late Interaction, Preview)
+
+- **ColBERT:** Encode query and document separately with BERT, producing per-token embeddings. Compare via MaxSim. *(Khattab & Zaharia, 2020)*
+- **MaxSim scoring:** $\text{score}(q,d) = \sum_i \max_j \vec{q}_i \cdot \vec{d}_j$. For each query token, find best-matching document token.
+- **Trade-off:** Near-cross-encoder accuracy; documents can be pre-encoded (like bi-encoder); but much higher storage (one vector per token).
+
+### Training Cross-Encoders in Practice
+
+- **MS MARCO Passage Ranking:** 8.8M passages, 530K training queries, ~1 relevant passage per query, 6,980 dev queries. Standard training dataset. *(Nguyen et al., 2016)*
+- **Sparse labels challenge:** Only ~1 positive per query; many relevant passages are unlabeled (false negatives). Negative sampling strategy is critical.
+- **Negative sampling:** Random negatives (easy, weak signal) < BM25 hard negatives (topically related but non-relevant, strong signal) < Cross-encoder mined negatives (iterative, best but expensive). Start with BM25 negatives.
+- **Batching:** Max sequence length 512; batch size 16–32; gradient accumulation to simulate larger batches; mixed precision (fp16) halves memory.
+- **Hyperparameters:** LR $1$–$3 \times 10^{-5}$; AdamW; 10% warmup; linear decay; 2–3 epochs max (overfits quickly).
+- **Common mistakes:** Too many epochs (overfitting); LR too high (catastrophic forgetting); only random negatives; ignoring document truncation at 512 tokens.
+
+### Evaluation
+
+- **MRR@k (Mean Reciprocal Rank):** $\frac{1}{|Q|}\sum_q \frac{1}{\text{rank of first relevant doc}}$. Best for QA / navigational queries.
+- **NDCG@k (Normalized Discounted Cumulative Gain):** $\text{DCG@}k / \text{Ideal DCG@}k$ where $\text{DCG@}k = \sum_{i=1}^k (2^{\text{rel}_i}-1)/\log_2(i+1)$. Handles graded relevance; position-weighted. Primary metric for web search.
+- **MAP (Mean Average Precision):** Average precision at each relevant doc, averaged over queries. Standard for binary relevance.
+- **TREC Deep Learning Track:** Annual NIST evaluation (since 2019) using MS MARCO corpus with dense expert judgments (graded 0–3). 43–76 queries per year. Gold standard for neural ranking evaluation. Primary metric: NDCG@10.
+- **Evaluation best practice:** Train on MS MARCO, evaluate on TREC DL. Report both MRR@10 (MS MARCO dev) and NDCG@10 (TREC DL). Always include BM25 and BM25+RM3 baselines. Test statistical significance (paired $t$-test).
+
+### Two-Stage Pipeline
+
+- **Retrieve-then-rerank:** BM25 retrieves top-1000 (fast, recall) → Cross-encoder re-ranks top-100 (slow, precision). The standard architecture of modern search.
+- **Recall ceiling:** Re-ranker can only reorder what Stage 1 retrieves. Missed documents are irrecoverable.
+- **Latency:** 100 candidates × 5ms = 0.5s (feasible); 1M × 5ms = 5000s (impossible).
+- **Best pipeline:** BM25 + RM3 + cross-encoder.
+
+### Key Principles (Lecture 4)
+
+- **"Contextualized embeddings solve both synonymy and polysemy."**
+- **"Cross-encoders are the most accurate rankers but cannot retrieve."**
+- **"The two-stage pipeline is the standard."** BM25 (recall) → Cross-encoder (precision).
+- **"Train on MS MARCO, evaluate on TREC DL."** Sparse labels for training; dense expert judgments for reliable evaluation.
+- **"Negative sampling is critical."** BM25 hard negatives should be the default.
+
 ---
 
 ## References
 
 | Tag | Full Reference |
 |-----|---------------|
+| Firth, 1957 | J.R. Firth. "A Synopsis of Linguistic Theory 1930–1955." *Studies in Linguistic Analysis*, 1957. |
+| Rocchio, 1971 | J.J. Rocchio. "Relevance Feedback in Information Retrieval." *The SMART Retrieval System*, 1971. |
 | Salton et al., 1975 | G. Salton, A. Wong, C.S. Yang. "A Vector Space Model for Automatic Indexing." *CACM* 18(11), 1975. |
+| Robertson, 1977 | S.E. Robertson. "The Probability Ranking Principle in IR." *Journal of Documentation* 33(4), 1977. |
 | Porter, 1980 | M.F. Porter. "An Algorithm for Suffix Stripping." *Program* 14(3), 1980. |
-| Indyk & Motwani, 1998 | P. Indyk, R. Motwani. "Approximate Nearest Neighbors: Towards Removing the Curse of Dimensionality." *STOC*, 1998. |
-| Manning et al., 2008 | C.D. Manning, P. Raghavan, H. Schütze. *Introduction to Information Retrieval.* Cambridge University Press, 2008. |
-| Robertson & Zaragoza, 2009 | S. Robertson, H. Zaragoza. "The Probabilistic Relevance Framework: BM25 and Beyond." *FnTIR* 3(4), 2009. |
-| Jégou et al., 2011 | H. Jégou, M. Douze, C. Schmid. "Product Quantization for Nearest Neighbor Search." *IEEE TPAMI* 33(1), 2011. |
+| Indyk & Motwani, 1998 | P. Indyk, R. Motwani. "Approximate Nearest Neighbors." *STOC*, 1998. |
+| Lavrenko & Croft, 2001 | V. Lavrenko, W.B. Croft. "Relevance-Based Language Models." *SIGIR*, 2001. |
+| Manning et al., 2008 | C.D. Manning, P. Raghavan, H. Schütze. *Introduction to Information Retrieval.* Cambridge, 2008. |
+| Robertson & Zaragoza, 2009 | S. Robertson, H. Zaragoza. "BM25 and Beyond." *FnTIR* 3(4), 2009. |
+| Jégou et al., 2011 | H. Jégou, M. Douze, C. Schmid. "Product Quantization for NN Search." *IEEE TPAMI* 33(1), 2011. |
+| Mikolov et al., 2013 | T. Mikolov et al. "Efficient Estimation of Word Representations in Vector Space." *arXiv:1301.3781*, 2013. |
+| Pennington et al., 2014 | J. Pennington, R. Socher, C.D. Manning. "GloVe: Global Vectors for Word Representation." *EMNLP*, 2014. |
+| Nguyen et al., 2016 | T. Nguyen et al. "MS MARCO: A Human Generated MAchine Reading COmprehension Dataset." *arXiv:1611.09268*, 2016. |
+| Vaswani et al., 2017 | A. Vaswani et al. "Attention Is All You Need." *NeurIPS*, 2017. |
+| Devlin et al., 2019 | J. Devlin et al. "BERT: Pre-training of Deep Bidirectional Transformers." *NAACL*, 2019. |
+| Nogueira & Cho, 2019 | R. Nogueira, K. Cho. "Passage Re-ranking with BERT." *arXiv:1901.04085*, 2019. |
 | Reimers & Gurevych, 2019 | N. Reimers, I. Gurevych. "Sentence-BERT." *EMNLP-IJCNLP*, 2019. |
-| Lewis et al., 2020 | P. Lewis et al. "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks." *NeurIPS*, 2020. |
-| Malkov & Yashunin, 2020 | Y.A. Malkov, D.A. Yashunin. "Efficient and Robust ANN Search Using HNSW Graphs." *IEEE TPAMI* 42(4), 2020. |
-| Macdonald et al., 2021 | C. Macdonald et al. "PyTerrier: Declarative Experimentation in Python." *CIKM*, 2021. |
+| Khattab & Zaharia, 2020 | O. Khattab, M. Zaharia. "ColBERT: Efficient and Effective Passage Search." *SIGIR*, 2020. |
+| Lewis et al., 2020 | P. Lewis et al. "Retrieval-Augmented Generation." *NeurIPS*, 2020. |
+| Malkov & Yashunin, 2020 | Y.A. Malkov, D.A. Yashunin. "HNSW Graphs." *IEEE TPAMI* 42(4), 2020. |
+| Nogueira et al., 2020 | R. Nogueira et al. "Document Ranking with a Pretrained Sequence-to-Sequence Model." *EMNLP Findings*, 2020. |
 | Johnson et al., 2021 | J. Johnson, M. Douze, H. Jégou. "Billion-Scale Similarity Search with GPUs." *IEEE TBD* 7(3), 2021. |
-| Lin et al., 2021 | J. Lin et al. "A Few Brief Notes on DeepImpact, COIL, and a Conceptual Framework for IR Techniques." *arXiv:2106.14807*, 2021. |
+| Lin et al., 2021 | J. Lin et al. "DeepImpact, COIL, and a Conceptual Framework." *arXiv:2106.14807*, 2021. |
+| Macdonald et al., 2021 | C. Macdonald et al. "PyTerrier." *CIKM*, 2021. |
+| Gao et al., 2023 | L. Gao et al. "Precise Zero-Shot Dense Retrieval without Relevance Labels (HyDE)." *ACL*, 2023. |
+| Sun et al., 2023 | W. Sun et al. "Is ChatGPT Good at Search? (RankGPT)." *arXiv:2304.09542*, 2023. |
+| Wang et al., 2023 | L. Wang et al. "Query2Doc: Query Expansion with Large Language Models." *EMNLP*, 2023. |
 
 ---
 
-*Last updated: \today*
+*Last updated: February 2026*

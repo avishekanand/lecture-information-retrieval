@@ -1,0 +1,35 @@
+\begin{tikzpicture}[
+    block/.style={rectangle, draw, rounded corners, minimum width=4.5cm, minimum height=0.7cm, align=center, font=\small},
+    arrow/.style={->, thick}
+]
+    \node[block, fill=blue!10] (input) at (0, 0) {Input Embeddings + Position};
+    \node[block, fill=orange!15] (attn) at (0, 1.2) {Multi-Head Self-Attention};
+    \node[block, fill=gray!10] (add1) at (0, 2.2) {Add \& Layer Norm};
+    \node[block, fill=green!15] (ffn) at (0, 3.2) {Feed-Forward Network};
+    \node[block, fill=gray!10] (add2) at (0, 4.2) {Add \& Layer Norm};
+    \node[block, fill=purple!10] (out) at (0, 5.2) {Output Embeddings};
+
+    \draw[arrow] (input) -- (attn);
+    \draw[arrow] (attn) -- (add1);
+    \draw[arrow] (add1) -- (ffn);
+    \draw[arrow] (ffn) -- (add2);
+    \draw[arrow] (add2) -- (out);
+
+    % Residual connections
+    \draw[->, dashed, gray] (input.east) -- ++(1.5,0) |- (add1.east);
+    \draw[->, dashed, gray] (add1.east) -- ++(1.8,0) |- (add2.east);
+
+    \node[right=2.5cm of attn, text width=3.5cm, font=\footnotesize] {
+        \textbf{Residual connections}\\
+        allow gradients to flow\\
+        and stabilize training
+    };
+
+    \node[left=1.2cm of attn, font=\footnotesize, text width=2.5cm, align=right] {
+        \textbf{BERT:}\\
+        12 layers stacked\\
+        768 dims\\
+        12 attention heads\\
+        110M parameters
+    };
+\end{tikzpicture}

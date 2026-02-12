@@ -1,0 +1,9 @@
+\begin{tikzpicture}[scale=0.9]
+    \foreach \i/\word in {0/The, 1/animal, 2/didn't, 3/cross, 4/the, 5/street, 6/because, 7/\textbf{it}, 8/was, 9/too, 10/tired} {
+        \node[font=\footnotesize] (w\i) at (\i*1.1, 0) {\word};
+    }
+    \draw[->, thick, blue, opacity=0.8] (w7.north) to[bend left=40] (w1.north);
+    \draw[->, thin, gray, opacity=0.3] (w7.north) to[bend left=30] (w0.north);
+    \draw[->, thin, gray, opacity=0.3] (w7.north) to[bend left=20] (w5.north);
+    \node[above=0.8cm of w4, font=\footnotesize\color{blue}] {high attention};
+\end{tikzpicture}
