@@ -1,0 +1,11 @@
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners, thick, align=left, font=\scriptsize, minimum width=4.9cm},
+  lab/.style={font=\scriptsize, text=gray}
+]
+\node[box, fill=irSparse!12] (a) {1) \textbf{Retrieval}: top-$k$ misses $e^\star$};
+\node[box, fill=irHybrid!12, below=0.25cm of a] (b) {2) \textbf{Selection}: dedup/truncation removes $e^\star$};
+\node[box, fill=irRerank!12, below=0.25cm of b] (c) {3) \textbf{Reasoning}: wrong inference from $e^\star$};
+\node[box, fill=irDense!18, below=0.25cm of c] (d) {4--6) \textbf{Grounding}: unsupported claims/citations};
+
+\node[lab, below=0.25cm of d, align=center] {Instrument logs at every boundary.\\No logs = no debugging.};
+\end{tikzpicture}

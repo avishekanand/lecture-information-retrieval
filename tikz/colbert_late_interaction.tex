@@ -1,35 +1,34 @@
-\begin{tikzpicture}[
-    box/.style={rectangle, draw, rounded corners, fill=blue!10, minimum height=0.7cm, align=center, font=\small},
-    arrow/.style={->, thick}
-]
-    \node[box, minimum width=2.5cm] (bq) at (0, 1.5) {BERT$_q$};
-    \node[box, minimum width=2.5cm] (bd) at (6, 1.5) {BERT$_d$};
+\begin{tikzpicture}
+    % Encoders
+    \node[dense] (bq) at (0, 1.5) {\textbf{BERT$_q$}};
+    \node[dense] (bd) at (6, 1.5) {\textbf{BERT$_d$}};
 
-    \node[font=\footnotesize, red] at (0, 0.3) {``car problems''};
-    \node[font=\footnotesize, green!60!black] at (6, 0.3) {``automobile issues and fixes''};
+    % Inputs
+    \node[font=\footnotesize, irInfra] at (0, 0.4) {``Query tokens''};
+    \node[font=\footnotesize, irInfra] at (6, 0.4) {``Document tokens''};
 
-    \node[font=\tiny] (e1) at (-0.8, 2.6) {$\vec{q}_1$};
-    \node[font=\tiny] (e2) at (0.8, 2.6) {$\vec{q}_2$};
+    % Token Embeddings (Simplified)
+    \node[dense, minimum width=0.6cm, inner sep=2pt, font=\tiny] (e1) at (-0.6, 2.8) {$\vec{q}_1$};
+    \node[dense, minimum width=0.6cm, inner sep=2pt, font=\tiny, fill=white] (e2) at (0.2, 2.8) {$\vdots$};
+    \node[dense, minimum width=0.6cm, inner sep=2pt, font=\tiny] (e3) at (1, 2.8) {$\vec{q}_n$};
 
-    \node[font=\tiny] (d1) at (4.5, 2.6) {$\vec{d}_1$};
-    \node[font=\tiny] (d2) at (5.5, 2.6) {$\vec{d}_2$};
-    \node[font=\tiny] (d3) at (6.5, 2.6) {$\vec{d}_3$};
-    \node[font=\tiny] (d4) at (7.5, 2.6) {$\vec{d}_4$};
+    \node[dense, minimum width=0.6cm, inner sep=2pt, font=\tiny] (d1) at (4.5, 2.8) {$\vec{d}_1$};
+    \node[dense, minimum width=0.6cm, inner sep=2pt, font=\tiny, fill=white] (d2) at (6, 2.8) {$\ldots$};
+    \node[dense, minimum width=0.6cm, inner sep=2pt, font=\tiny] (d3) at (7.5, 2.8) {$\vec{d}_m$};
 
-    \draw[arrow, thin] (0, 0.6) -- (bq);
-    \draw[arrow, thin] (6, 0.6) -- (bd);
+    % Arrows to Embeddings
+    \draw[irArrowBase] (bq) -- (e1);
+    \draw[irArrowBase] (bq) -- (e3);
+    \draw[irArrowBase] (bd) -- (d1);
+    \draw[irArrowBase] (bd) -- (d3);
 
-    \draw[arrow, thin] (bq) -- (e1);
-    \draw[arrow, thin] (bq) -- (e2);
-    \draw[arrow, thin] (bd) -- (d1);
-    \draw[arrow, thin] (bd) -- (d2);
-    \draw[arrow, thin] (bd) -- (d3);
-    \draw[arrow, thin] (bd) -- (d4);
+    % Late Interaction
+    \node[hybrid, minimum width=3.5cm] (maxsim) at (3, 4.5) {\textbf{MaxSim Interaction}\\$\sum_i \max_j \vec{q}_i \cdot \vec{d}_j$};
 
-    \node[rectangle, draw, fill=orange!15, rounded corners, font=\small] (maxsim) at (3, 3.6) {$\text{score} = \sum_i \max_j \vec{q}_i \cdot \vec{d}_j$ \quad (MaxSim)};
+    \draw[irArrowBase, dashed, irInfra!40] (e1) -- (maxsim);
+    \draw[irArrowBase, dashed, irInfra!40] (e3) -- (maxsim);
+    \draw[irArrowBase, dashed, irInfra!40] (d1) -- (maxsim);
+    \draw[irArrowBase, dashed, irInfra!40] (d3) -- (maxsim);
 
-    \draw[arrow, dashed] (e1) -- (maxsim);
-    \draw[arrow, dashed] (e2) -- (maxsim);
-    \draw[arrow, dashed] (d1) -- (maxsim);
-    \draw[arrow, dashed] (d4) -- (maxsim);
+    \node[above=0.2cm of maxsim, irLabel] {All-to-all alignment};
 \end{tikzpicture}

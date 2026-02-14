@@ -1,0 +1,18 @@
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners, thick, align=center, font=\small, minimum width=3.8cm, minimum height=0.8cm},
+  arr/.style={-{Stealth[length=2.5mm]}, thick}
+]
+\node[box, fill=irSparse!15] (r1) {Retrieve $R_k(q)$};
+\node[box, fill=irRerank!15, below=1.2cm of r1] (think) {Reason / plan};
+\node[box, fill=irHybrid!15, below=1.2cm of think] (rq) {Rewrite query $q'$/subqueries};
+\node[box, fill=irSparse!15, below=1.2cm of rq] (r2) {Retrieve $R_k(q')$};
+\node[box, fill=irRerank!15, right=2.2cm of think] (ans) {Answer};
+
+\draw[arr] (r1) -- (think);
+\draw[arr] (think) -- (rq);
+\draw[arr] (rq) -- (r2);
+\draw[arr] (r2) -| (ans);
+\draw[arr] (think) -- (ans);
+
+\draw[arr] (ans) |- (think) node[pos=0.25, font=\scriptsize, left] {stop?};
+\end{tikzpicture}

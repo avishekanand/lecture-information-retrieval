@@ -1,0 +1,14 @@
+\begin{tikzpicture}[
+    doc/.style={irBoxBase, minimum height=0.7cm, minimum width=1.5cm},
+    arr/.style={irArrowBase, thick}
+]
+\node[hybrid] (d1) {$d_i$\\ \tiny (rel=3)};
+\node[rerank, right=3cm of d1] (d2) {$d_j$\\ \tiny (rel=1)};
+\node[below=1.2cm of $(d1)!0.5!(d2)$, info] (pred) {$f(\vx_i) > f(\vx_j)$ ?};
+
+\draw[arr, irHybrid] (d1) -- node[above, irLabel, pos=0.5] {should rank higher} (d2);
+\draw[arr, dashed, irInfra] (d1) |- (pred);
+\draw[arr, dashed, irInfra] (d2) |- (pred);
+
+\node[below=0.1cm of pred, irLabel, text width=4cm] {Goal: Maximize agreement with labels};
+\end{tikzpicture}

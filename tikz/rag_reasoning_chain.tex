@@ -1,0 +1,18 @@
+\begin{tikzpicture}[
+  n/.style={draw, circle, thick, minimum size=0.65cm, font=\scriptsize},
+  arr/.style={-{Stealth[length=2mm]}, thick}
+]
+\node[n, fill=irSparse!12] (q) at (0,0) {$q$};
+\node[n, fill=irMuted!20] (e1) at (2,1.2) {$e_1$};
+\node[n, fill=irMuted!20] (e2) at (2,-1.2) {$e_2$};
+\node[n, fill=irMuted!20] (e3) at (4,0.0) {$e_3$};
+\node[n, fill=irRerank!12] (a) at (6,0) {Ans};
+
+\draw[arr] (q) -- (e1);
+\draw[arr] (q) -- (e2);
+\draw[arr] (e1) -- (e3);
+\draw[arr] (e2) -- (e3);
+\draw[arr] (e3) -- (a);
+
+\node[font=\scriptsize, text=gray] at (3,-2.2) {multi-hop: bridge intermediate evidence};
+\end{tikzpicture}

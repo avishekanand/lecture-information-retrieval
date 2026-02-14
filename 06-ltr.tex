@@ -1,0 +1,653 @@
+\documentclass[aspectratio=169]{beamer}
+\usetheme{TUDelft}
+
+% ====================================================================
+% ANIMATION TOGGLE
+% ====================================================================
+\newif\ifanimated
+\animatedtrue
+\ifdefined\staticmode
+  \animatedfalse
+\fi
+\newcommand{\cpause}{\ifanimated\pause\fi}
+
+% Import theme macros (includes TikZ libraries and semantic colors)
+\input{theme/macros.tex}
+
+% Math definitions
+\newcommand{\vq}{\mathbf{q}}
+\newcommand{\vp}{\mathbf{p}}
+\newcommand{\vd}{\mathbf{d}}
+\newcommand{\vk}{\mathbf{k}}
+\newcommand{\vv}{\mathbf{v}}
+\newcommand{\vx}{\mathbf{x}}
+\newcommand{\vw}{\mathbf{w}}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+% LTR Semantic Colors
+\definecolor{irPointwise}{RGB}{155,89,182}
+\definecolor{irPairwise}{RGB}{243,156,18}
+\definecolor{irListwise}{RGB}{26,188,156}
+
+% LTR TikZ Styles
+\tikzset{
+    pointwise/.style={irBoxBase, fill=irPointwise!10, draw=irPointwise},
+    pairwise/.style={irBoxBase, fill=irPairwise!10, draw=irPairwise},
+    listwise/.style={irBoxBase, fill=irListwise!10, draw=irListwise},
+    info/.style={draw, rounded corners, fill=irMuted!20, font=\small, inner sep=5pt}
+}
+
+% Title information
+\title[Learning to Rank]{Representation Learning for Rankings}
+\subtitle{Lecture 6: Learning to Rank --- From Pointwise to Listwise}
+\author{Avishek Anand}
+\institute{Information Retrieval}
+\date{\today}
+
+\begin{document}
+
+% Title slide
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}{Outline}
+\tableofcontents
+\end{frame}
+
+% ====================================================================
+\section{Recap \& Motivation --- Why Learn a Ranker?}
+% ====================================================================
+
+\begin{frame}[plain]
+\sectionpage
+\end{frame}
+
+\begin{frame}{Relevance is Multi-faceted}
+\irStage{BACKGROUND}
+\textbf{Industrial search engines must optimize for more than just "topical" relevance.}
+
+\vspace{0.8em}
+\begin{columns}
+\begin{column}{0.45\textwidth}
+\begin{itemize}
+    \item \textbf{Textual}: BM25, semantic match.
+    \item \textbf{Quality}: Ratings, reviews.
+    \item \textbf{Business}: Price, Prime shipping, revenue per click.
+\end{itemize}
+\end{column}
+\begin{column}{0.5\textwidth}
+\begin{center}
+\includegraphics[width=\textwidth]{figures/search_amazon.png}
+\end{center}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{The Scale of Industrial Ranking}
+\irStage{BACKGROUND}
+\textbf{Modern search giants handle a massive explosion of signals.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Scope}: Amazon, eBay, and Google use **1000+ features** per document.
+    \item \textbf{The Wall}: No human can manually tune $1000$ weights $\mathbf{w}$ to optimize a metric like NDCG.
+    \item \textbf{Heterogeneity}: Combining BM25 (float) with "Is Fresh" (binary) and "Price" (currency).
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{alertblock}{The LTR Necessity}
+We need a principled, automated way to learn the optimal "recipe" for combining these signals.
+\end{alertblock}
+\end{frame}
+
+\begin{frame}{A Document as a Feature Vector}
+\irStage{BACKGROUND}
+\textbf{Learning to Rank represents each query-document pair as a vector $\vx$.}
+
+\vspace{1em}
+\begin{center}
+\begin{tikzpicture}[
+    cell/.style={draw, minimum width=1.5cm, minimum height=0.8cm, font=\small},
+    label/.style={font=\tiny, gray, align=center}
+]
+\node[cell, fill=irSparse!20] (c1) {$x_1$};
+\node[cell, fill=irSparse!20, right=0cm of c1] (c2) {$x_2$};
+\node[cell, fill=irSparse!20, right=0cm of c2] (c3) {$x_3$};
+\node[cell, fill=irSparse!20, right=0cm of c3] (c4) {$\dots$};
+\node[cell, fill=irSparse!20, right=0cm of c4] (c5) {$x_n$};
+
+\node[below=0.1cm of c1, label] {BM25\\Score};
+\node[below=0.1cm of c2, label] {PageRank};
+\node[below=0.1cm of c3, label] {Click\\Count};
+\node[below=0.1cm of c5, label] {Freshness};
+
+\node[left=0.5cm of c1, font=\normalsize] {$\Phi(q, d) = $};
+\draw[decorate, decoration={brace, amplitude=10pt, mirror}, thick] ($(c1.south west)+(0,-0.6)$) -- ($(c5.south east)+(0,-0.6)$) node[midway, below=12pt] {$\mathbf{x}_{q,d} \in \mathbb{R}^{1000+}$};
+\end{tikzpicture}
+\end{center}
+
+\vspace{1em}
+\cpause
+\begin{center}
+\begin{tikzpicture}
+    \IRBox{goal}{(0,0)}{The LTR Goal}{Learn $f(\vx) \to \text{score}$ for optimal ranking}{hybrid}
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}{Where LTR Fits: The Multi-Stage Pipeline}
+\irStage{SYSTEM ARCHITECTURE}
+\textbf{LTR is usually the final "re-ranking" stage in a complete stack.}
+
+\vspace{0.5em}
+\begin{center}
+\resizebox{0.85\textwidth}{!}{
+\input{tikz/complete_retrieval_stack.tex}
+}
+\end{center}
+
+\cpause
+\vspace{0.5em}
+\begin{exampleblock}{The Funnel}
+Sparse/Dense retrieval retrieves thousands; LTR perfectly orders the top 100.
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}{Recap: Why LTR is Necessary}
+\irStage{BACKGROUND}
+\textbf{Our journey moved from hand-crafted matchers to complex neural-classical ensembles.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{L3--L4}: BM25 and BERT Cross-Encoders (Standard 2-stage pipeline).
+    \item \textbf{L5}: Dense retrieval with Bi-Encoders and Late Interaction (ColBERT).
+    \item \textbf{L5 (cont)}: Generative retrieval (DSI, SEAL).
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{block}{The Unasked Question}
+How do we \textbf{train} these components together to optimize for the final ranking metrics we actually care about (NDCG, MAP)?
+\end{block}
+\end{frame}
+
+\begin{frame}{Today's Goal: Directly Optimizing Rankings}
+\irStage{OBJECTIVE}
+\textbf{The core problem is learning a scoring function that respects document ordering.}
+
+\vspace{0.8em}
+\begin{enumerate}
+    \item \textbf{Pointwise}: Treat relevance as independent regression/classification.
+    \item \textbf{Pairwise}: Learn relative preferences between pairs of documents.
+    \item \textbf{Listwise}: Optimize the entire ranked permutation at once.
+\end{enumerate}
+
+\vspace{1em}
+\cpause
+\begin{block}{The Non-Differentiable Barrier}
+Ranking metrics depend on \textbf{sorting}, which is discrete. We must find differentiable surrogates or smooth approximations to use Gradient Descent.
+\end{block}
+\end{frame}
+
+\begin{frame}{The Learning to Rank Pipeline}
+\irStage{SYSTEM ARCHITECTURE}
+\textbf{LTR separates feature extraction from the learned scoring and optimization logic.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Traditional}: Hand-crafted features (BM25, PageRank) + LambdaMART.
+    \item \textbf{Neural}: End-to-end representation learning + Ranking loss.
+    \item \textbf{Cycle}: Feedback loop via gradients from ranking loss $\to$ model parameters.
+\end{itemize}
+
+\vspace{0.5em}
+\begin{center}
+\input{tikz/ltr_pipeline.tex}
+\end{center}
+\end{frame}
+
+% ====================================================================
+\section{Evaluation Metrics --- What Are We Optimising?}
+% ====================================================================
+
+\begin{frame}[plain]
+\sectionpage
+\end{frame}
+
+\begin{frame}{Recap: Binary Metrics}
+\irStage{EVALUATION}
+\textbf{Traditional metrics focus on whether a document is "relevant" or not.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{P@$k$ / R@$k$}: Good for broad recall but position-blind within top-$k$.
+    \item \textbf{MRR}: Excellent for navigational/QA tasks (cares about first result).
+    \item \textbf{MAP}: Averages precision across all relevant docs; sensitive to rank.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{alertblock}{The Limitation}
+Binary metrics ignore the \textbf{intensity} of relevance. In modern search, we often have graded labels (e.g., Perfect, Good, Fair, Bad).
+\end{alertblock}
+\end{frame}
+
+\begin{frame}{NDCG: The Gold Standard for LTR}
+\irStage{EVALUATION}
+\textbf{NDCG handles graded relevance and prioritizes top-heavy rankings.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Grades}: Cumulative Gain (CG) sums relevance scores: $\sum \text{rel}_i$.
+    \item \textbf{Discount}: DCG applies a logarithmic decay: $\sum \frac{\text{rel}_i}{\log_2(i+1)}$.
+    \item \textbf{Normalization}: NDCG scales DCG to $[0, 1]$ relative to the ideal sort.
+\end{itemize}
+
+\vspace{0.5em}
+\cpause
+\begin{center}
+\mathhl{\text{NDCG@}k = \frac{\sum_{i=1}^{k} \frac{2^{\text{rel}_i}-1}{\log_2(i+1)}}{\text{IDCG@}k}}
+\end{center}
+\end{frame}
+
+\begin{frame}{Worked Example: Computing NDCG@5}
+\irStage{EVALUATION}
+\textbf{Let's calculate the cost of a "miss" in the top positions.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Current}: Grades $[2, 3, 1, 0, 0] \to \text{DCG} \approx 4.39$.
+    \item \textbf{Ideal}: Grades $[3, 2, 1, 0, 0] \to \text{DCG} \approx 4.76$.
+    \item \textbf{Result}: $\text{NDCG} = 4.39 / 4.76 \approx \mathbf{0.92}$.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{exampleblock}{The Logarithmic Effect}
+Notice that moving the "3" from position 1 to 2 caused an 8\% drop in score. NDCG is extremely sensitive to errors at the very top.
+\end{exampleblock}
+\end{frame}
+
+% ====================================================================
+\section{Pointwise Approaches}
+% ====================================================================
+
+\begin{frame}[plain]
+\sectionpage
+\end{frame}
+
+\begin{frame}{Pointwise: Ranking as Classification/Regression}
+\irStage{PARADIGMS}
+\textbf{The simplest approach treats each document-query pair as an isolated task.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Regression}: Predict the exact relevance grade $y$ (e.g., MSE loss).
+    \item \textbf{Classification}: Predict relevance class (e.g., Binary Cross-Entropy).
+    \item \textbf{Scalability}: $O(N)$ complexity makes it fast for massive candidate sets.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{alertblock}{The Fatal Flaw}
+Pointwise models ignore the \textbf{relative order} between documents. They don't know that ranking $d_1 > d_2$ is what actually matters, not the exact score values.
+\end{alertblock}
+\end{frame}
+
+\begin{frame}{Pointwise in Disguise: Standard Cross-Encoders}
+\irStage{RE-RANKING}
+\textbf{Recall monoBERT from Lecture 4 is technically a pointwise ranker.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Input}: Joint query-document sequence \texttt{[CLS] Q [SEP] D}.
+    \item \textbf{Loss}: Binary Cross-Entropy on the \texttt{[CLS]} representation.
+    \item \textbf{Success}: Works well because BERT captures deep semantics, but \textbf{not} because the loss is optimal for ranking.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{exampleblock}{The Capacity Paradox}
+With enough data and model capacity (like LLMs), simplistic pointwise losses often reach surprisingly high performance.
+\end{exampleblock}
+\end{frame}
+
+% ====================================================================
+\section{Pairwise Approaches}
+% ====================================================================
+
+\begin{frame}[plain]
+\sectionpage
+\end{frame}
+
+\begin{frame}{Pairwise: Relative Preferences}
+\irStage{PARADIGMS}
+\textbf{Instead of absolute scores, we learn which document is "better" in a pair.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Intuition}: For each pair $(d_i, d_j)$, if $y_i > y_j$, the model should score $s_i > s_j$.
+    \item \textbf{Strength}: Transforms ranking into binary classification of pairs.
+    \item \textbf{Feedback}: Errors are symmetric --- push one up, the other down.
+\end{itemize}
+
+\vspace{0.5em}
+\begin{center}
+\input{tikz/pairwise_concept.tex}
+\end{center}
+\end{frame}
+
+\begin{frame}{RankNet: Learning from Pairs}
+\irStage{MODELS}
+\textbf{RankNet models the preference probability between two documents.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Probability}: $P(d_i \succ d_j) = \sigma(s_i - s_j)$.
+    \item \textbf{Loss}: Binary Cross-Entropy on pairs where $d_i$ is more relevant.
+    \item \textbf{Update}: Gradient pushes $s_i$ up and $s_j$ down proportional to error.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{center}
+\mathhl{\mathcal{L}_{ij} = \log\left(1 + e^{-(s_i - s_j)}\right)}
+\end{center}
+\end{frame}
+
+\begin{frame}{Worked Example: RankNet Misstep}
+\irStage{MODELS}
+\textbf{Suppose a Blog (rel=1) is scored at 2.5, while a Tier-1 list (rel=3) is at 2.1.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Conflict}: $P(\text{Tier-1} \succ \text{Blog}) \approx 0.40$ (Model is wrong).
+    \item \textbf{Gradient}: Pushes Tier-1 score up ($+0.60$) and Blog down ($-0.60$).
+    \item \textbf{Observation}: RankNet weights all swaps equally, regardless of position.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{alertblock}{The Position Blindness}
+Swapping docs at positions 1--2 should be "more important" than positions 99--100. RankNet's loss doesn't know about positions.
+\end{alertblock}
+\end{frame}
+
+\begin{frame}{RankSVM: Margin-Based Ranking}
+\irStage{MODELS}
+\textbf{Historical significance: First to use implicit feedback (clicks) for LTR.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Margin}: Force $\vw^\top (\vx_i - \vx_j) \geq 1$ for correctly ordered pairs.
+    \item \textbf{Feed}: Users clicking result $i$ after skipping $j \implies d_i \succ d_j$.
+    \item \textbf{Legacy}: Solid theory (max-margin) but less scalable than boosting.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{exampleblock}{Key Contribution}
+Joachims (2002) showed that even noisy implicit signals (clicks) can train a competitive ranker when framed as a pairwise problem.
+\end{exampleblock}
+\end{frame}
+
+% ====================================================================
+\section{LambdaRank \& LambdaMART}
+% ====================================================================
+
+\begin{frame}[plain]
+\sectionpage
+\end{frame}
+
+\begin{frame}{LambdaRank: Metric-Aware Gradients}
+\irStage{MODELS}
+\textbf{The breakthrough: Weighting pair updates by their impact on NDCG.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Weight}: Multiply the pairwise gradient by $|\Delta\text{NDCG}|$ of the swap.
+    \item \textbf{Focus}: Errors at the top (pos 1--2) get massive gradients.
+    \item \textbf{Result}: Errors at the bottom (pos 99--100) are almost ignored.
+\end{itemize}
+
+\vspace{0.5em}
+\cpause
+\begin{center}
+\mathhl{\lambda_{ij} = -\frac{1}{1 + e^{s_i - s_j}} \cdot |\Delta\text{NDCG}(i, j)|}
+\end{center}
+\end{frame}
+
+\begin{frame}{The Lambda Insight}
+\irStage{THEORY}
+\textbf{LambdaRank defines gradients directly, without an explicit loss function.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Problem}: NDCG is non-differentiable (jumpy).
+    \item \textbf{Solution}: Specify the physical "force" ($\lambda$) acting on each doc.
+    \item \textbf{Analogy}: "Pull" relevant docs up, "push" irrelevant ones down.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{alertblock}{A Theory Mystery}
+Surprisingly, optimizing these gradients leads to a local optimum for the target ranking metric (Burges et al., 2006).
+\end{alertblock}
+\end{frame}
+
+\begin{frame}{Worked Example: Lambda Power}
+\irStage{THEORY}
+\textbf{Correcting errors at the top yields much higher "gravitational" force.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Top Swap} (Pos 1--2): Resulting $|\Delta\text{NDCG}| = \mathbf{0.154}$.
+    \item \textbf{Bottom Swap} (Pos 3--4): Resulting $|\Delta\text{NDCG}| = \mathbf{0.030}$.
+    \item \textbf{Impact}: The top swap exerts 5$\times$ more gradient force on the model than the bottom swap.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{exampleblock}{Convergence}
+This weighting causes the model to "give up" on tail documents and focus exclusively on perfecting the top-10 results.
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}{LambdaMART: Industry Workhorse}
+\irStage{MODELS}
+\textbf{Combines Lambda gradients with Gradient Boosted Regression Trees.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{MART}: Multiple Additive Regression Trees (Boosting).
+    \item \textbf{Process}: Compute current $\lambda$ for all docs $\to$ Fit a tree to predict those $\lambda$ values $\to$ Add tree to ensemble.
+    \item \textbf{Standard}: Powering Bing, Yahoo, and specialized e-commerce search for years.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{exampleblock}{Why Trees?}
+Non-neural trees handle \textbf{heterogeneous features} (BM25 score + PageRank + Category ID) much better than MLPs without massive feature engineering.
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}{LTR Features: What the Model "Sees"}
+\irStage{DATA}
+\textbf{Traditional LTR models use a large bank of query-document features.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Lexical}: BM25, TF-IDF, Language Model scores.
+    \item \textbf{Structural}: In-link count (PageRank), URL length, title matches.
+    \item \textbf{Modern}: Dense similarity (L5), Cross-encoder scores (L4).
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{alertblock}{The Ensemble Effect}
+LambdaMART doesn't replace BM25; it uses BM25 as \textbf{one of many inputs}. It learns the optimal "mixture" of classical and semantic signals.
+\end{alertblock}
+\end{frame}
+
+% ====================================================================
+\section{Listwise Approaches}
+% ====================================================================
+
+\begin{frame}[plain]
+\sectionpage
+\end{frame}
+
+\begin{frame}{Listwise: Optimising the Distribution}
+\irStage{PARADIGMS}
+\textbf{Listwise models treat the entire set of documents as a single unit.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Philosophy}: Don't look at doc pairs; look at the \textit{permutation}.
+    \item \textbf{Models}: $P(\text{ranking} \mid \text{scores})$ is modelled as a probability distribution.
+    \item \textbf{Loss}: Minimize KL-divergence between predicted and ideal distributions.
+\end{itemize}
+
+\vspace{0.5em}
+\begin{center}
+\input{tikz/listwise_visualization.tex}
+\end{center}
+\end{frame}
+
+\begin{frame}{ListNet: Top-One Probabilities}
+\irStage{MODELS}
+\textbf{ListNet models the probability that document $i$ is ranked at position 1.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Probabilistic}: $P_s(d_i) = \frac{\exp(s_i)}{\sum_j \exp(s_j)}$ (Standard Softmax).
+    \item \textbf{Loss}: Cross-Entropy between predicted and target softmaxes.
+    \item \textbf{Benefit}: Naturally handles the interaction between all documents.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{exampleblock}{Intuition}
+Pushing one document to position 1 automatically lowers the "Top-1" probability of all other documents in the candidate set.
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}{Connection: Knowledge Distillation as LTR}
+\irStage{RE-RANKING}
+\textbf{Teaching a Bi-Encoder (Student) to mimic a Cross-Encoder (Teacher) is a ranking task.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Teacher}: Provides graded relevance scores for top-$k$ documents.
+    \item \textbf{Student}: Must learn to reproduce the relative ordering, not just absolute scores.
+    \item \textbf{Losses}: Listwise KL-divergence over softmaxes works best.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{exampleblock}{TAS-B Result}
+Using pairwise/listwise distillation significantly outperforms simple MSE on the MS MARCO benchmark.
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}{The Modern Retrieve-Then-Rerank Stack}
+\irStage{SYSTEM ARCHITECTURE}
+\textbf{Modern search engines are multi-stage ensembles of different LTR paradigms.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Stage 1}: Dense/Sparse Retrieval (Recall optimized, Pointwise InfoNCE).
+    \item \textbf{Stage 2}: Neural Re-ranker (High interaction, Pairwise BERT).
+    \item \textbf{Stage 3}: LambdaMART (Aggregates all signals + metadata).
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{center}
+\begin{tikzpicture}[node distance=3cm]
+    \IRBox{s1}{(0,0)}{Lexical}{Recall}{sparse}
+    \IRBox{s2}{(4,0)}{Neural}{Precision}{dense}
+    \IRBox{s3}{(8,0)}{Ensemble}{Ranking}{hybrid}
+    \draw[irArrowBase] (s1) -- (s2);
+    \draw[irArrowBase] (s2) -- (s3);
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Practical LTR: LightGBM & PyTerrier}
+\irStage{HANDS-ON}
+\textbf{Standardized libraries make it easy to train metric-aware rankers.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{LightGBM}: The primary engine for LambdaMART in industrial search.
+    \item \textbf{PyTerrier}: Orchestrates the pipeline from indexing to ensemble training.
+    \item \textbf{Objective}: Simply set \texttt{"objective": "lambdarank"} to start.
+\end{itemize}
+
+\vspace{0.5em}
+\cpause
+\begin{exampleblock}{Feature BANK}
+The power of LambdaMART comes from its ability to use \textbf{50+ features}: BM25, PageRank, BERT scores, and URL statistics.
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}{Summary: Choosing Your Paradigm}
+\irStage{SUMMARY}
+\textbf{The trade-off is between ranking awareness and computational complexity.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Pointwise}: Fast, scalable, but position-blind. Best for 1st stage.
+    \item \textbf{Pairwise}: The standard for re-ranking. LambdaMART is the workhorse.
+    \item \textbf{Listwise}: Use for deep semantic interaction or small top-$k$ re-ranking.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{alertblock}{The Recall Ceiling}
+Remember: A perfect re-ranker cannot fix what the first stage missed. LTR is most effective when the retrieval stage has high recall.
+\end{alertblock}
+\end{frame}
+
+\begin{frame}{Next Class: Evaluation & Large Scale Systems}
+\irStage{SUMMARY}
+\textbf{Next week, we move into the "wild" --- how to evaluate systems with real users.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Offline}: Benchmarks like TREC and the limits of static labels.
+    \item \textbf{Online}: A/B testing, Interleaving, and Click-through analysis.
+    \item \textbf{Deployment}: Building low-latency production pipelines.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{block}{Preparation}
+Review the PyTerrier documentation for the Learning to Rank module.
+\end{block}
+\end{frame}
+
+\appendix
+\begin{frame}{Backup: Smooth Ranks (ApproxNDCG)}
+\irStage{MODELS}
+\textbf{ApproxNDCG makes sorting differentiable by using sigmoids.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Problem}: Hard ranks are discrete (zero gradient).
+    \item \textbf{Sigmoid}: Replace $\mathbb{1}[s_j > s_i]$ with $\sigma(\alpha(s_j - s_i))$.
+    \item \textbf{Result}: A differentiable surrogate for the NDCG metric.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{center}
+\mathhl{\hat{\text{rank}}(d_i) = 1 + \sum_{j \neq i} \sigma\bigl(\alpha \cdot (s_j - s_i)\bigr)}
+\end{center}
+\end{frame}
+
+\end{document}

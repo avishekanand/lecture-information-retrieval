@@ -1,0 +1,21 @@
+\begin{tikzpicture}
+    % Components
+    \node[infra] (query) at (0, 0) {User Query};
+    \node[dense, right=1.2cm of query] (encoder) {Query\\Encoder};
+    \node[ann, right=1.2cm of encoder] (ann) {ANN Index\\(FAISS / HNSW)};
+    \node[dense, right=1.2cm of ann] (results) {Top-$k$\\Candidates};
+
+    % Arrows
+    \draw[irArrowBase] (query) -- (encoder) node[midway, above, irLabel] {Text};
+    \draw[irArrowBase] (encoder) -- (ann) node[midway, above, irLabel] {Vector $q$};
+    \draw[irArrowBase] (ann) -- (results) node[midway, above, irLabel] {Search};
+
+    % Annotations
+    \node[below=0.5cm of ann, irLabel, text width=4cm] (ann_note) {
+        \textbf{ANN Operation:}\\
+        Uses $q$ to find most similar document vectors $\{d_1..d_k\}$ in sub-ms time.
+    };
+
+    \node[infra, dotted, draw, inner sep=10pt, fit=(ann) (ann_note)] (ann_box) {};
+    \node[above=0.1cm of ann_box, irLabel] {Efficient Retrieval};
+\end{tikzpicture}

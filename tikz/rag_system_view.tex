@@ -1,0 +1,25 @@
+\begin{tikzpicture}[
+  node distance=1.1cm and 1.2cm,
+  box/.style={draw, rounded corners, thick, align=center, minimum height=0.9cm, minimum width=2.6cm, font=\small},
+  arr/.style={-{Stealth[length=2.5mm]}, thick}
+]
+\node[box, fill=gray!12] (user) {User query};
+\node[box, fill=irSparse!15, right=2.1cm of user] (retr) {Retrieve\\(sparse/dense/hybrid)};
+\node[box, fill=irHybrid!15, right=2.1cm of retr] (cond) {Condition\\(prompt/context)};
+\node[box, fill=irRerank!15, right=2.1cm of cond] (gen) {Generate\\(LLM reasoning)};
+\node[box, fill=irInfra!15, below=1.2cm of cond] (fb) {Feedback \& Ops\\(eval/monitor/cost)};
+
+\draw[arr] (user) -- (retr);
+\draw[arr] (retr) -- node[above, font=\scriptsize] {top-$k$ chunks} (cond);
+\draw[arr] (cond) -- node[above, font=\scriptsize] {budgeted context} (gen);
+\draw[arr] (gen) -- ++(1.2,0) node[right, font=\small] {Answer + citations};
+
+\draw[arr] (gen) -- (fb);
+\draw[arr] (retr) -- (fb);
+\draw[arr] (cond) -- (fb);
+\draw[arr] (fb) -| (retr) node[pos=0.25, font=\scriptsize, above] {tuning / refresh};
+
+\node[font=\scriptsize, text=gray] at ($(retr)+(0,-0.75)$) {Index refresh, drift, caching};
+\node[font=\scriptsize, text=gray] at ($(cond)+(0,-0.75)$) {formatting, dedup, compression};
+\node[font=\scriptsize, text=gray] at ($(gen)+(0,-0.75)$) {tool calls, stop criteria};
+\end{tikzpicture}

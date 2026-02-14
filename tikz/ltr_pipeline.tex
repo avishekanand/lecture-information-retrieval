@@ -1,0 +1,16 @@
+\begin{tikzpicture}[
+    box/.style={irBoxBase, minimum height=1cm, minimum width=2.5cm},
+    arr/.style={irArrowBase, thick}
+]
+\node[sparse] (feat) {Feature\\Extraction};
+\node[pairwise, right=2cm of feat] (model) {Learned\\Ranker $f(\vx)$};
+\node[hybrid, right=2cm of model] (rank) {Ranked\\List};
+\node[rerank, below=1.5cm of model] (loss) {Ranking\\Loss $\mathcal{L}$};
+
+\draw[arr] (feat) -- node[above, irLabel, pos=0.5] {$\vx_{q,d}$} (model);
+\draw[arr] (model) -- node[above, irLabel, pos=0.5] {scores} (rank);
+\draw[arr] (rank) |- (loss);
+\draw[arr, dashed, irArrowBase] (loss) -- node[right, irLabel, pos=0.5] {$\nabla_\theta \mathcal{L}$} (model);
+
+\node[above=0.2cm of feat, irLabel] {BM25, BERT, \\ TF-IDF, \ldots};
+\end{tikzpicture}

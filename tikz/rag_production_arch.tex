@@ -1,0 +1,22 @@
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners, thick, align=center, font=\small, minimum width=3.9cm, minimum height=0.8cm},
+  arr/.style={-{Stealth[length=2.5mm]}, thick}
+]
+\node[box, fill=gray!12] (api) {RAG API / UI};
+\node[box, fill=irSparse!12, below=0.85cm of api] (idx) {Retriever service\\(hybrid + rerank)};
+\node[box, fill=irRerank!12, below=0.85cm of idx] (llm) {LLM service};
+
+\node[box, fill=irInfra!12, right=2.1cm of idx] (obs) {Observability\\logs + metrics};
+\node[box, fill=irInfra!12, right=2.1cm of llm] (eval) {Offline eval\\+ A/B tests};
+\node[box, fill=irInfra!12, right=2.1cm of api] (cache) {Cache\\(queries/chunks)};
+
+\draw[arr] (api) -- (idx);
+\draw[arr] (idx) -- (llm);
+
+\draw[arr] (api) -- (cache);
+\draw[arr] (idx) -- (obs);
+\draw[arr] (llm) -- (obs);
+\draw[arr] (obs) -- (eval);
+
+\draw[arr] (eval) |- (idx) node[pos=0.25, font=\scriptsize, above] {tuning};
+\end{tikzpicture}

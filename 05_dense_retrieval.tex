@@ -705,7 +705,7 @@ ColBERT gives near-cross-encoder accuracy at bi-encoder-like speed. Trade-off: \
 \end{frame}
 
 % ====================================================================
-\section{ANCE: Dynamic Hard Negatives}
+\section{Hard Negatives Mining}
 % ====================================================================
 
 \begin{frame}[plain]
@@ -989,123 +989,6 @@ model.fit(
 \end{frame}
 
 % ====================================================================
-\section{Theoretical Foundations}
-% ====================================================================
-
-\begin{frame}[plain]
-\sectionpage
-\end{frame}
-
-\begin{frame}{Why Does Contrastive Learning Work?}
-\begin{block}{InfoNCE as Mutual Information Lower Bound (Oord et al., 2018)}
-$$I(\vq; \vd^+) \;\geq\; \log(B) - \mathcal{L}_{\text{InfoNCE}}$$
-\end{block}
-
-\vspace{0.5em}
-
-\textbf{Interpretation:} Minimizing InfoNCE \textbf{maximizes} a lower bound on mutual information between query and positive document embeddings.
-
-\cpause
-\vspace{0.5em}
-
-\begin{exampleblock}{Why This Matters for Retrieval}
-\begin{itemize}
-    \item High $I(\vq; \vd^+)$: query embedding is \textbf{predictive} of relevant documents
-    \item The bound is tighter with more negatives (larger $B$)
-    \item This explains why \textbf{large batch sizes help}: tighter MI bound
-\end{itemize}
-\end{exampleblock}
-\end{frame}
-
-\begin{frame}[fragile]{The Information Bottleneck Perspective}
-\begin{block}{IB Objective (Tishby et al., 2000)}
-$$\min_T \;\bigl[\beta \cdot I(T; X) - I(T; Y)\bigr]$$
-\end{block}
-
-\vspace{0.5em}
-
-\begin{center}
-\begin{tikzpicture}[
-    box/.style={draw, rounded corners, fill=#1, minimum width=2cm, minimum height=0.7cm, align=center, font=\small},
-    arr/.style={-{Stealth[length=2.5mm]}, thick}
-]
-\node[box=sparse!15] (x) {Input text $X$};
-\node[box=dense!15, right=2cm of x] (t) {Embedding $T$};
-\node[box=hybrid!15, right=2cm of t] (y) {Relevance $Y$};
-
-\draw[arr] (x) -- (t) node[midway, above, font=\footnotesize] {compress};
-\draw[arr] (t) -- (y) node[midway, above, font=\footnotesize] {predict};
-\end{tikzpicture}
-\end{center}
-
-\cpause
-\vspace{0.5em}
-
-\begin{itemize}
-    \item $I(T; Y)$ \textbf{high}: Embedding retains what's needed for relevance
-    \item $I(T; X)$ \textbf{low}: Embedding discards noise and irrelevant features
-\end{itemize}
-
-\vspace{0.5em}
-
-\begin{exampleblock}{Implication}
-Dense retrieval generalizes because the bottleneck forces the model to learn \textbf{essential semantic features}, not surface patterns.
-\end{exampleblock}
-\end{frame}
-
-\begin{frame}{Representation Collapse}
-\begin{alertblock}{Definition}
-All embeddings converge to a single point (or low-rank subspace):
-$$\forall\, i,j: \;\; \|\vd_i - \vd_j\| \to 0 \quad\Rightarrow\quad \text{score}(\vq, \vd_i) \approx \text{score}(\vq, \vd_j)$$
-\end{alertblock}
-
-\cpause
-\vspace{0.5em}
-
-\textbf{Two collapse modes:}
-\begin{enumerate}
-    \item \textbf{Complete collapse:} All embeddings map to $\mathbf{0}$\\
-    {\small Cause: no negatives $\Rightarrow$ trivial zero-loss solution}
-
-    \item \textbf{Dimensional collapse:} Embeddings use only a few dimensions\\
-    {\small Cause: easy negatives $\Rightarrow$ only coarse features needed}
-\end{enumerate}
-
-\cpause
-\vspace{0.5em}
-
-\begin{exampleblock}{Prevention}
-\textbf{Hard negatives} + $\ell_2$ normalization + proper temperature. Hard negatives force the model to use all dimensions $\to$ prevents collapse.
-\end{exampleblock}
-\end{frame}
-
-\begin{frame}{Neural Collapse \& Optimal Geometry (Papyan et al., 2020)}
-\begin{block}{Equiangular Tight Frame (ETF)}
-In the terminal phase of training, class means $\{\boldsymbol{\mu}_c\}$ form a maximally symmetric structure:
-$$\boldsymbol{\mu}_i^\top \boldsymbol{\mu}_j = \begin{cases}
-1 & i = j \\
--\frac{1}{C-1} & i \neq j
-\end{cases}$$
-\end{block}
-
-\vspace{0.5em}
-
-\textbf{Properties:}
-\begin{itemize}
-    \item All class centers are \textbf{equidistant} (maximally separated)
-    \item Points collapse to their class mean (minimal within-class variance)
-    \item \textbf{Maximum margin} between all classes
-\end{itemize}
-
-\cpause
-\vspace{0.5em}
-
-\begin{exampleblock}{Relevance to Retrieval}
-Hard negatives push representations toward ETF geometry. Without them, dimensional collapse prevents this optimal structure from forming.
-\end{exampleblock}
-\end{frame}
-
-% ====================================================================
 \section{Evaluation \& The Zero-Shot Challenge}
 % ====================================================================
 
@@ -1205,113 +1088,6 @@ Sparse captures \textbf{exact matches} (named entities, rare terms). Dense captu
 \end{exampleblock}
 \end{frame}
 
-% ====================================================================
-\section{Hands-On with PyTerrier}
-% ====================================================================
-
-\begin{frame}[plain]
-\sectionpage
-\end{frame}
-
-\begin{frame}[fragile]{Setup: Dense Retrieval with PyTerrier}
-\begin{lstlisting}[language=Python]
-import pyterrier as pt
-if not pt.started():
-    pt.init()
-
-dataset = pt.get_dataset('irds:msmarco-passage/dev/small')
-topics = dataset.get_topics().head(50)
-qrels = dataset.get_qrels()
-
-# BM25 baseline
-index = pt.IndexFactory.of("./msmarco_index")
-bm25 = pt.BatchRetrieve(index, wmodel="BM25")
-
-# Dense retrieval with ANCE
-from pyterrier_dr import FlexIndex, TctColBert
-
-# Load pre-trained dense encoder
-encoder = TctColBert()  # or ANCE, DPR, etc.
-flex_index = FlexIndex("./dense_index")
-
-# Dense retriever
-dense = encoder >> flex_index
-\end{lstlisting}
-\end{frame}
-
-\begin{frame}[fragile]{Exercise 1: BM25 vs.\ Dense Retrieval}
-\begin{lstlisting}[language=Python]
-# Compare BM25 vs. Dense vs. Hybrid
-hybrid = (bm25 % 1000) | (dense % 1000)  # union
-
-comparison = pt.Experiment(
-    [bm25, dense, hybrid],
-    topics, qrels,
-    eval_metrics=["map", "ndcg_cut_10", "recall_100"],
-    names=["BM25", "Dense (ANCE)", "Hybrid"]
-)
-print(comparison)
-\end{lstlisting}
-
-\vspace{0.5em}
-
-\textbf{Questions to explore:}
-\begin{itemize}
-    \item Which queries does dense retrieval improve on?
-    \item Which queries does BM25 still win?
-    \item How much does hybrid add over each individual method?
-\end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]{Exercise 2: Dense + Cross-Encoder Pipeline}
-\begin{lstlisting}[language=Python]
-from pyterrier_t5 import MonoT5ReRanker
-
-monoT5 = MonoT5ReRanker(model='castorini/monot5-base-msmarco')
-
-# Three-stage pipeline: Dense -> Cross-Encoder
-pipeline_dense_ce = (dense % 100) >> monoT5
-
-# Compare all variants
-results = pt.Experiment(
-    [bm25,
-     (bm25 % 100) >> monoT5,       # L4 pipeline
-     dense,
-     pipeline_dense_ce,              # New: dense + CE
-     (hybrid % 100) >> monoT5],     # Best of all worlds
-    topics, qrels,
-    eval_metrics=["ndcg_cut_10", "recall_100"],
-    names=["BM25", "BM25+monoT5", "Dense",
-           "Dense+monoT5", "Hybrid+monoT5"]
-)
-\end{lstlisting}
-\end{frame}
-
-\begin{frame}{Student Exercises}
-\begin{block}{Exercise A: Semantic vs.\ Lexical Analysis (10 min)}
-\begin{itemize}
-    \item Find a query where dense retrieval finds relevant docs that BM25 missed
-    \item Inspect: is it vocabulary mismatch? Paraphrase? Different phrasing?
-    \item Compare the top-5 results from each
-\end{itemize}
-\end{block}
-
-\begin{block}{Exercise B: When Dense Fails (10 min)}
-\begin{itemize}
-    \item Find a query where BM25 beats dense retrieval
-    \item Check: is it an entity name? Rare technical term? Exact match needed?
-    \item Would hybrid retrieval fix it?
-\end{itemize}
-\end{block}
-
-\begin{block}{Exercise C: Recall Ceiling (5 min)}
-\begin{itemize}
-    \item Compare Recall@1000 of BM25 vs.\ dense vs.\ hybrid
-    \item Which gives the best ceiling for the cross-encoder re-ranker?
-    \item Connect back to Lecture 4: the recall ceiling determines the pipeline's upper bound
-\end{itemize}
-\end{block}
-\end{frame}
 
 % ====================================================================
 \section{Connections and Summary}
@@ -1350,29 +1126,6 @@ results = pt.Experiment(
 \vspace{0.3em}
 
 Each lecture adds a component. Dense retrieval (today) gives us semantic first-stage retrieval --- the missing piece from Lecture 4.
-\end{frame}
-
-\begin{frame}{Preview: Lecture 6 --- Generative Retrieval}
-\begin{block}{A Completely Different Paradigm}
-What if the model \textbf{generates} the document identifier directly from the query? No index, no embeddings --- just a seq2seq model.
-\end{block}
-
-\vspace{0.5em}
-
-\begin{exampleblock}{What You'll Learn}
-\begin{itemize}
-    \item DSI: Differentiable Search Index (Tay et al., 2022)
-    \item GENRE: Autoregressive Entity Retrieval (De Cao et al., 2021)
-    \item SEAL: N-gram based document identifiers
-    \item How to design document IDs: atomic, hierarchical, text-based
-    \item When generative retrieval beats dense retrieval (and when it doesn't)
-\end{itemize}
-\end{exampleblock}
-
-\begin{alertblock}{Preparation}
-\textbf{Read:} Tay et al.\ (2022), ``Transformer Memory as a Differentiable Search Index''\\
-\textbf{Skim:} De Cao et al.\ (2021), ``Autoregressive Entity Retrieval''
-\end{alertblock}
 \end{frame}
 
 % ====================================================================
@@ -1432,17 +1185,6 @@ Extended Jupyter notebook. Bring your best pipeline to Lecture 6.
 \begin{frame}{Questions?}
 \begin{center}
 \Huge Questions?
-
-\vspace{2em}
-
-\Large
-Office Hours: TBD
-
-\vspace{1em}
-
-Email: avishekanand@gmail.com
-
-\vspace{2em}
 
 \normalsize
 \textbf{Key formula to remember:}
@@ -1580,6 +1322,114 @@ $I(\vq; \vd^+) \geq \log(B) - \mathcal{L}$. Larger $B$ gives a tighter bound on 
     \item Tishby et al.\ (2000). The Information Bottleneck Method. \textit{Allerton}.
     \item Hofst\"atter et al.\ (2021). Efficiently Teaching an Effective Dense Retriever. \textit{SIGIR}.
 \end{itemize}
+\end{frame}
+
+% ====================================================================
+\section{Hands-On with PyTerrier}
+% ====================================================================
+
+\begin{frame}[plain]
+\sectionpage
+\end{frame}
+
+\begin{frame}[fragile]{Setup: Dense Retrieval with PyTerrier}
+\begin{lstlisting}[language=Python]
+import pyterrier as pt
+if not pt.started():
+    pt.init()
+
+dataset = pt.get_dataset('irds:msmarco-passage/dev/small')
+topics = dataset.get_topics().head(50)
+qrels = dataset.get_qrels()
+
+# BM25 baseline
+index = pt.IndexFactory.of("./msmarco_index")
+bm25 = pt.BatchRetrieve(index, wmodel="BM25")
+
+# Dense retrieval with ANCE
+from pyterrier_dr import FlexIndex, TctColBert
+
+# Load pre-trained dense encoder
+encoder = TctColBert()  # or ANCE, DPR, etc.
+flex_index = FlexIndex("./dense_index")
+
+# Dense retriever
+dense = encoder >> flex_index
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Exercise 1: BM25 vs.\ Dense Retrieval}
+\begin{lstlisting}[language=Python]
+# Compare BM25 vs. Dense vs. Hybrid
+hybrid = (bm25 % 1000) | (dense % 1000)  # union
+
+comparison = pt.Experiment(
+    [bm25, dense, hybrid],
+    topics, qrels,
+    eval_metrics=["map", "ndcg_cut_10", "recall_100"],
+    names=["BM25", "Dense (ANCE)", "Hybrid"]
+)
+print(comparison)
+\end{lstlisting}
+
+\vspace{0.5em}
+
+\textbf{Questions to explore:}
+\begin{itemize}
+    \item Which queries does dense retrieval improve on?
+    \item Which queries does BM25 still win?
+    \item How much does hybrid add over each individual method?
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Exercise 2: Dense + Cross-Encoder Pipeline}
+\begin{lstlisting}[language=Python]
+from pyterrier_t5 import MonoT5ReRanker
+
+monoT5 = MonoT5ReRanker(model='castorini/monot5-base-msmarco')
+
+# Three-stage pipeline: Dense -> Cross-Encoder
+pipeline_dense_ce = (dense % 100) >> monoT5
+
+# Compare all variants
+results = pt.Experiment(
+    [bm25,
+     (bm25 % 100) >> monoT5,       # L4 pipeline
+     dense,
+     pipeline_dense_ce,              # New: dense + CE
+     (hybrid % 100) >> monoT5],     # Best of all worlds
+    topics, qrels,
+    eval_metrics=["ndcg_cut_10", "recall_100"],
+    names=["BM25", "BM25+monoT5", "Dense",
+           "Dense+monoT5", "Hybrid+monoT5"]
+)
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}{Fun Exercises}
+\begin{block}{Exercise A: Semantic vs.\ Lexical Analysis (10 min)}
+\begin{itemize}
+    \item Find a query where dense retrieval finds relevant docs that BM25 missed
+    \item Inspect: is it vocabulary mismatch? Paraphrase? Different phrasing?
+    \item Compare the top-5 results from each
+\end{itemize}
+\end{block}
+
+\begin{block}{Fun Exercise B: When Dense Fails (10 min)}
+\begin{itemize}
+    \item Find a query where BM25 beats dense retrieval
+    \item Check: is it an entity name? Rare technical term? Exact match needed?
+    \item Would hybrid retrieval fix it?
+\end{itemize}
+\end{block}
+
+\begin{block}{Fun Exercise C: Recall Ceiling (5 min)}
+\begin{itemize}
+    \item Compare Recall@1000 of BM25 vs.\ dense vs.\ hybrid
+    \item Which gives the best ceiling for the cross-encoder re-ranker?
+    \item Connect back to Lecture 4: the recall ceiling determines the pipeline's upper bound
+\end{itemize}
+\end{block}
 \end{frame}
 
 \end{document}

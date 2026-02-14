@@ -1,5 +1,26 @@
 \input{theme/tikz-styles.tex}
 
+% Stage Badge System
+% \irStage{StageName} - renders a small badge in the top-right corner
+\newcommand{\irStage}[1]{
+    \begin{tikzpicture}[remember picture, overlay]
+        \node[anchor=north east, 
+              fill=irInfra!10, 
+              text=irInfra, 
+              font=\tiny\bfseries, 
+              inner sep=3pt, 
+              rounded corners=1pt,
+              yshift=-0.5cm, 
+              xshift=-0.5cm] at (current page.north east) {#1};
+    \end{tikzpicture}
+}
+
+% Math Highlighting
+% \mathhl[color]{content} - highlights math content
+\newcommand{\mathhl}[2][irDense!30]{
+    \colorbox{#1}{$\displaystyle #2$}
+}
+
 % Primitives
 % \IRBox{id}{at}{title}{subtitle}{variant}
 \newcommand{\IRBox}[5]{

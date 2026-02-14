@@ -1,19 +1,16 @@
-\begin{tikzpicture}[
-    box/.style={rectangle, draw, rounded corners, minimum height=1.2cm, text width=4.5cm, align=center, font=\small},
-    arrow/.style={->, thick, >=stealth}
-]
-    \node[box, fill=red!15] (sparse) at (0,0) {\textbf{Sparse Representation}\\
+\begin{tikzpicture}
+    \node[sparse, text width=4.5cm] (sparse) at (0,0) {\textbf{Sparse Representation}\\
     $[0, 0, \ldots, 3, \ldots, 0, 2, \ldots, 0]$\\
-    $\in \mathbb{R}^{|V|}$ \quad ($|V| \approx 30{,}000$)\\
+    $\in \mathbb{R}^{|V|}$ \quad ($|V| \approx 30k$)\\
     $>$99.9\% zeros};
 
-    \node[box, fill=green!15] (dense) at (8,0) {\textbf{Dense Representation}\\
+    \node[dense, text width=4.5cm] (dense) at (8,0) {\textbf{Dense Representation}\\
     $[0.21, -0.05, 0.83, \ldots]$\\
     $\in \mathbb{R}^{d}$ \quad ($d = 768$)\\
     100\% non-zero};
 
-    \draw[arrow, very thick] (sparse) -- (dense) node[midway, above, font=\small] {This lecture};
+    \draw[irArrowBase] (sparse) -- (dense) node[midway, above, font=\small, text=irInfra] {This lecture};
 
-    \node[below=0.3cm of sparse, font=\footnotesize, text width=4.5cm, align=center] {Each dimension = one word\\Lexical matching only};
-    \node[below=0.3cm of dense, font=\footnotesize, text width=4.5cm, align=center] {Each dimension = latent feature\\Semantic matching};
+    \node[below=0.3cm of sparse, irLabel] {Each dimension = one word\\Lexical matching only};
+    \node[below=0.3cm of dense, irLabel] {Each dimension = latent feature\\Semantic matching};
 \end{tikzpicture}

@@ -1,0 +1,14 @@
+\begin{tikzpicture}[
+    box/.style={irBoxBase, minimum height=0.7cm, minimum width=2cm},
+    arr/.style={irArrowBase, thick}
+]
+\node[listwise] (perm) {Permutation\\$\pi \in \mathcal{S}_n$};
+\node[rerank, right=2cm of perm] (loss) {Listwise Loss\\$P(\pi_y \mid \vs)$};
+\node[below=1.2cm of $(perm)!0.5!(loss)$, info] (prob) {Score all docs jointly};
+
+\draw[arr, irListwise] (perm) -- node[above, irLabel] {calculate} (loss);
+\draw[arr, dashed, irInfra] (prob) -- (perm);
+\draw[arr, dashed, irInfra] (prob) -- (loss);
+
+\node[below=0.1cm of prob, irLabel, text width=5cm] {Goal: Minimize distance between predicted and ideal permutations};
+\end{tikzpicture}

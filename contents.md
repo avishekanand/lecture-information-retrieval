@@ -170,11 +170,11 @@
 ### BM25
 
 - **BM25 Formula:** $\text{BM25}(q,d) = \sum_{t \in q} \text{IDF}(t) \cdot \frac{f(t,d) \cdot (k_1+1)}{f(t,d) + k_1 \cdot (1 - b + b \cdot |d|/\text{avgdl})}$. Three components: IDF, saturating TF, length normalization. *(Robertson & Zaragoza, 2009)*
+- **BM25 Parameters:** 
+  - $k_1$: Controls TF saturation (usually 1.2). $k_1=0$ is Boolean; large $k_1$ is linear.
+  - $b$: Controls length normalization (usually 0.75). $b=1$ is full; $b=0$ is none.
 - **BM25 IDF:** $\log\frac{N - \text{df}_t + 0.5}{\text{df}_t + 0.5}$. Can be negative for terms appearing in >50% of docs.
-- **Saturating TF:** $\frac{f \cdot (k_1+1)}{f + k_1}$ grows sub-linearly. $k_1 \to 0$: Boolean; $k_1 \to \infty$: linear; standard $k_1 = 1.2$.
-- **Length normalization:** $1 - b + b \cdot |d|/\text{avgdl}$. $b = 0$: none; $b = 1$: full; standard $b = 0.75$.
-- **BM25F (Fielded):** Weighted TF across fields (title, body, URL). Used in Elasticsearch, Solr, Bing.
-- **Parameter tuning:** Verbose collections → higher $k_1$; variable-length docs → higher $b$.
+- **BM25F (Fielded):** Weighted TF across fields (title, body, URL). Standard in production.
 
 ### Query Expansion
 
@@ -238,16 +238,10 @@
 - **BERT:** Transformer encoder pre-trained bidirectionally on BooksCorpus + Wikipedia. *(Devlin et al., 2019)*
 - **Masked Language Modeling (MLM):** Mask 15% of tokens; predict from bidirectional context.
 - **Next Sentence Prediction (NSP):** Binary classification: is sentence B the actual continuation of A?
-- **Fine-tuning:** Add task-specific head on pre-trained BERT; train on small labeled data with low learning rate ($2 \times 10^{-5}$).
-
-### Cross-Encoder Re-ranking
-
-- **Cross-encoder:** Feed [CLS] query [SEP] document [SEP] through BERT jointly. Full cross-attention. $P(\text{rel}) = \sigma(W \cdot h_\text{[CLS]})$. *(Nogueira & Cho, 2019)*
-- **Why accurate:** Every query token attends to every document token. Captures synonymy, negation, semantic relevance.
-- **Why slow:** Must encode every (q, d) pair. Cannot pre-compute doc representations. ~5ms/pair.
-- **monoBERT:** BERT + classification head. *(Nogueira & Cho, 2019)*
-- **monoT5:** T5 encoder-decoder. Input: "Query: q Document: d Relevant:" → "true"/"false". *(Nogueira et al., 2020)*
-- **RankGPT:** Give LLM a list of documents; ask it to sort by relevance. No fine-tuning. Expensive but effective. *(Sun et al., 2023)*
+- **Fine-tuning:** Add task-specific head on pre-trained BERT; train on MS MARCO with low learning rate ($2 \times 10^{-5}$).
+- **monoBERT:** Encoder-only; uses [CLS] token for binary classification. *(Nogueira & Cho, 2019)*
+- **monoT5:** Encoder-Decoder; uses generative prompts (``Is document relevant?'') $\to$ ``true/false''. More flexible and often more accurate. *(Nogueira et al., 2020)*
+- **RankGPT:** Multi-document listwise ranking via LLM prompts. No fine-tuning. *(Sun et al., 2023)*
 
 ### ColBERT (Late Interaction, Preview)
 
@@ -284,8 +278,112 @@
 - **"Contextualized embeddings solve both synonymy and polysemy."**
 - **"Cross-encoders are the most accurate rankers but cannot retrieve."**
 - **"The two-stage pipeline is the standard."** BM25 (recall) → Cross-encoder (precision).
-- **"Train on MS MARCO, evaluate on TREC DL."** Sparse labels for training; dense expert judgments for reliable evaluation.
-- **"Negative sampling is critical."** BM25 hard negatives should be the default.
+- **"The Recall Ceiling."** Re-ranking can only sort what retrieval finds; a missed document is lost forever.
+- **"Negative sampling is critical."** BM25 hard negatives are essential to force the model to learn beyond surface term matching.
+- **"Train on MS MARCO, Evaluate on TREC DL."** 
+
+---
+
+## Lecture 5: Dense Retrieval --- From Bi-Encoders to Late Interaction
+
+### Core Concepts
+
+- **Bi-Encoder (Dual Encoder):** Query and Doc are encoded independently. Representations can be pre-computed and stored in an ANN index.
+- **Information Bottleneck:** The limitation of compressing an entire document into a single 768-dim vector.
+- **Contrastive Learning:** Training by maximizing the similarity of positive pairs relative to negative pairs.
+- **InfoNCE Loss:** A multiclass cross-entropy loss that treats positive identification as a classification task among many negatives.
+- **In-batch Negatives:** Using other positive documents in the same training batch as free negatives for each query.
+- **Temperature ($\tau$):** A hyperparameter that controls the sharpness of the probability distribution in contrastive loss. Small $\tau$ = sharp gradients.
+
+### Key Models & Techniques
+
+- **DPR (Dense Passage Retrieval):** Standard bi-encoder using [CLS] tokens and BM25 hard negatives. *(Karpukhin et al., 2020)*
+- **ColBERT (Late Interaction):** Keeps all token embeddings; computes similarity via **MaxSim** (sum of max token-level dot products). Pairs CE accuracy with retrieval speed. *(Khattab & Zaharia, 2020)*
+- **ANCE:** Asymmetric negative contrastive learning; dynamically mines "hard" negatives by refreshing the ANN index during training. *(Xiong et al., 2021)*
+- **Contriever:** Unsupervised contrastive pre-training tailored for retrieval. *(Izacard et al., 2022)*
+
+### Evaluation & Hybrid Systems
+
+- **BEIR Benchmark:** A collection of 18 diverse IR tasks used to evaluate **zero-shot** generalization of retrieval models. *(Thakur et al., 2021)*
+- **Zero-Shot Gap:** The phenomenon where dense models excel on training data (MS MARCO) but struggle against BM25 on unseen domains.
+- **Hybrid Retrieval:** Linear fusion of sparse (BM25) and dense scores. Captures both exact entity matches and deep semantic similarity.
+- **Reciprocal Rank Fusion (RRF):** A robust method for combining ranked lists without needing score normalization.
+
+### Key Principles (Lecture 5)
+
+- **"Negative sampling is a first-order concern."** The quality of the negatives often matters more than the model architecture.
+- **"Dense and Sparse are complementary."** Hybrid systems consistently outperform single-modality retrievers.
+- **"Batch size is a hyperparameter for quality."** Larger batch = more negatives = better representations.
+
+---
+
+## Lecture 6: Learning to Rank — From Pointwise to Listwise
+
+### Core Concepts
+
+- **Learning to Rank (LTR):** An automated, data-driven approach to learning the optimal scoring function $f(\mathbf{x})$ that combines multiple relevance signals (BM25, PageRank, click-through data) into a single ranking model.
+- **Relevance Signals:** Multiple dimensions of relevance including Textual (BM25), Quality (Ratings), and Business metrics (Price, Revenue).
+- **Feature Vector ($\mathbf{x}$):** A vector representation of a query-document pair $\Phi(q, d)$ containing $1000+$ features.
+- **Non-Differentiable Barrier:** The challenge that ranking metrics (like NDCG) depend on sorting, which is discrete and lacks gradients, necessitating differentiable surrogates.
+
+### Evaluation Metrics for LTR
+
+- **NDCG (Normalized Discounted Cumulative Gain):** The primary metric for LTR. Uses graded relevance labels and applies a logarithmic discount to prioritize accuracy at the top of the list. *(Järvelin & Kekäläinen, 2002)*
+- **Logarithmic Discounting:** A decay factor $\frac{1}{\log_2(i+1)}$ that makes errors at the very top (e.g., position 1 vs 2) much more costly than errors at the tail.
+
+### LTR Paradigms
+
+- **Pointwise Approach:** Treats each document independently as a regression (predict grade) or classification (is relevant?) task. High scalability but ignores relative order. (e.g., monoBERT).
+- **Pairwise Approach:** Learns relative preferences ($d_i \succ d_j$) between document pairs. Transforms ranking into a binary classification of "which doc is better?".
+- **Listwise Approach:** Optimizes the entire ranked permutation jointly. Often uses KL-divergence between predicted and ideal probability distributions.
+
+### Key Models & Algorithms
+
+- **RankSVM:** A margin-based pairwise ranker that was among the first to successfully leverage implicit feedback (clicks) for learning. *(Joachims, 2002)*
+- **RankNet:** A pairwise model using sigmoid-based probabilities and cross-entropy loss. Position-blind (weights all swaps equally). *(Burges et al., 2005)*
+- **LambdaRank:** A metric-aware refinement that weights pairwise gradients by the $|\Delta\text{NDCG}|$ of a swap, forcing the model to focus on the top of the ranking. *(Burges et al., 2006)*
+- **LambdaMART:** The combination of Lambda gradients with Gradient Boosted Regression Trees (MART). The industrial standard for many large-scale search engines. *(Burges, 2010)*
+- **ListNet:** A listwise model that optimizes the cross-entropy of "Top-One" probabilities using a Softmax distribution over the document set. *(Cao et al., 2007)*
+
+### Practical LTR Systems
+
+- **Multi-Stage Pipeline:** LTR typically serves as the final re-ranking stage, aggregating signals from Sparse/Dense retrieval and metadata.
+- **LightGBM:** A high-performance gradient boosting framework commonly used for training LambdaMART models in production.
+- **PyTerrier LTR:** A framework for feature extraction and orchestrating LTR experiments within a unified pipeline.
+
+### Key Principles (Lecture 6)
+
+- **"Position matters more than absolute score."** A ranker's success is defined by the relative ordering of documents, not the calibrated probability of relevance.
+- **"LambdaMART is the industrial workhorse."** It handles heterogeneous signals (BM25 score + PageRank + Price) far better than raw neural networks.
+- **"LTR sets the ceiling for precision."** While indexing sets the recall ceiling, LTR determines how effectively that recall is presented to the user.
+
+---
+
+## Lecture 7: Retrieval-Augmented Generation (RAG)
+
+### Core Concepts
+
+- **Compound AI System:** RAG is defined as a system of Retrieval + Conditioning + Generation, where retrieval defines the reasoning substrate.
+- **Evidence Ceiling:** The principle that a grounded answer is bounded by the quality and coverage of retrieved evidence.
+- **Provenance & Attribution:** The requirement that every claim in a RAG system must be traceable back to a specific source/chunk.
+
+### RAG Components & Decisions
+
+- **Retrieval Foundations:** The choice between Sparse (BM25), Dense, and Hybrid retrieval techniques.
+- **Chunking Strategy:** The modeling decision of selecting the retrieval unit (fixed-size vs. semantic) and its impact on recall vs. coherence.
+- **Conditioning (Prompting):** Evidence-bounded prompt construction using tags (e.g., `[E1]`) and strict citation contracts.
+
+### Advanced RAG Reasoning
+
+- **Multi-step RAG:** Iterative retrieve-reason-rewrite loops for resolving multi-hop dependencies.
+- **Search-in-the-loop:** Dynamic retrieval triggered by model uncertainty (e.g., Search-R1).
+- **ReasonIR:** The conceptual objective of maximizing the probability of an evidence chain supporting an answer.
+
+### Evaluation and Failure Taxonomy
+
+- **The RAG Triad:** Evaluating Correctness, Faithfulness (grounding), and Attribution (citation accuracy).
+- **Failure Modes:** Systematic classification of failures into Retrieval, Selection, Reasoning, and Grounding categories.
+- **Latency & Cost:** Token budgeting and p95 management through caching and re-ranking.
 
 ---
 
@@ -295,6 +393,12 @@
 |-----|---------------|
 | Firth, 1957 | J.R. Firth. "A Synopsis of Linguistic Theory 1930–1955." *Studies in Linguistic Analysis*, 1957. |
 | Rocchio, 1971 | J.J. Rocchio. "Relevance Feedback in Information Retrieval." *The SMART Retrieval System*, 1971. |
+| Joachims, 2002 | T. Joachims. "Optimizing Search Engines using Clickthrough Data." *KDD*, 2002. |
+| Järvelin & Kekäläinen, 2002 | K. Järvelin, J. Kekäläinen. "Cumulated Gain-Based Evaluation of IR Systems." *ACM TOIS* 20(4), 2002. |
+| Burges et al., 2005 | C. Burges et al. "Learning to Rank using Gradient Descent." *ICML*, 2005. |
+| Burges et al., 2006 | C. Burges, R. Ragno, Q. Le. "Learning to Rank with Non-Smooth Cost Functions." *NeurIPS*, 2006. |
+| Cao et al., 2007 | Z. Cao et al. "Learning to Rank: From Pairwise Approach to Listwise Approach." *ICML*, 2007. |
+| Burges, 2010 | C. Burges. "From RankNet to LambdaRank to LambdaMART: An Overview." *Microsoft Research Technical Report*, 2010. |
 | Salton et al., 1975 | G. Salton, A. Wong, C.S. Yang. "A Vector Space Model for Automatic Indexing." *CACM* 18(11), 1975. |
 | Robertson, 1977 | S.E. Robertson. "The Probability Ranking Principle in IR." *Journal of Documentation* 33(4), 1977. |
 | Porter, 1980 | M.F. Porter. "An Algorithm for Suffix Stripping." *Program* 14(3), 1980. |
@@ -307,6 +411,7 @@
 | Pennington et al., 2014 | J. Pennington, R. Socher, C.D. Manning. "GloVe: Global Vectors for Word Representation." *EMNLP*, 2014. |
 | Nguyen et al., 2016 | T. Nguyen et al. "MS MARCO: A Human Generated MAchine Reading COmprehension Dataset." *arXiv:1611.09268*, 2016. |
 | Vaswani et al., 2017 | A. Vaswani et al. "Attention Is All You Need." *NeurIPS*, 2017. |
+| Oord et al., 2018 | A. van den Oord et al. "Representation Learning with Contrastive Predictive Coding (InfoNCE)." *arXiv:1807.03748*, 2018. |
 | Devlin et al., 2019 | J. Devlin et al. "BERT: Pre-training of Deep Bidirectional Transformers." *NAACL*, 2019. |
 | Nogueira & Cho, 2019 | R. Nogueira, K. Cho. "Passage Re-ranking with BERT." *arXiv:1901.04085*, 2019. |
 | Reimers & Gurevych, 2019 | N. Reimers, I. Gurevych. "Sentence-BERT." *EMNLP-IJCNLP*, 2019. |
@@ -317,6 +422,9 @@
 | Johnson et al., 2021 | J. Johnson, M. Douze, H. Jégou. "Billion-Scale Similarity Search with GPUs." *IEEE TBD* 7(3), 2021. |
 | Lin et al., 2021 | J. Lin et al. "DeepImpact, COIL, and a Conceptual Framework." *arXiv:2106.14807*, 2021. |
 | Macdonald et al., 2021 | C. Macdonald et al. "PyTerrier." *CIKM*, 2021. |
+| Thakur et al., 2021 | N. Thakur et al. "BEIR: A Heterogeneous Benchmark for Zero-shot IR." *NeurIPS Datasets*, 2021. |
+| Xiong et al., 2021 | L. Xiong et al. "Approximate Nearest Neighbor Negative Contrastive Learning (ANCE)." *ICLR*, 2021. |
+| Izacard et al., 2022 | G. Izacard et al. "Unsupervised Dense Information Retrieval with Contrastive Learning (Contriever)." *TMLR*, 2022. |
 | Gao et al., 2023 | L. Gao et al. "Precise Zero-Shot Dense Retrieval without Relevance Labels (HyDE)." *ACL*, 2023. |
 | Sun et al., 2023 | W. Sun et al. "Is ChatGPT Good at Search? (RankGPT)." *arXiv:2304.09542*, 2023. |
 | Wang et al., 2023 | L. Wang et al. "Query2Doc: Query Expansion with Large Language Models." *EMNLP*, 2023. |

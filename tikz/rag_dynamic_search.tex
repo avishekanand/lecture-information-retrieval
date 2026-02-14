@@ -1,0 +1,14 @@
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners, thick, align=center, font=\small, minimum width=3.8cm, minimum height=0.8cm},
+  arr/.style={-{Stealth[length=2.5mm]}, thick}
+]
+\node[box, fill=irRerank!12] (llm) {LLM reasoning};
+\node[box, fill=irSparse!15, below=0.9cm of llm] (tool) {Search tool\\(retriever)};
+\node[box, fill=irHybrid!12, right=2.2cm of llm] (mem) {Working context\\(evidence store)};
+
+\draw[arr] (llm) -- node[right, font=\scriptsize] {tool call} (tool);
+\draw[arr] (tool) -| node[pos=0.25, font=\scriptsize, above] {evidence} (mem);
+\draw[arr] (mem) -- (llm);
+
+\node[font=\scriptsize, text=gray] at ($(tool)+(0,-1.0)$) {budgeted: max calls, max tokens};
+\end{tikzpicture}

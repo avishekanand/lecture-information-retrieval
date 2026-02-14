@@ -42,17 +42,12 @@
 % TikZ libraries
 \usetikzlibrary{shapes,arrows,positioning,calc,decorations.pathreplacing,fit,backgrounds,matrix}
 
-% Custom colors
-\definecolor{sparse}{RGB}{52,152,219}    % Blue
-\definecolor{dense}{RGB}{231,76,60}      % Red
-\definecolor{hybrid}{RGB}{46,204,113}    % Green
-
 % Import theme macros
 \input{theme/macros.tex}
 
 % Title information
-\title[Representation Learning for rankings]{Representation Learning for rankings}
-\subtitle{Lecture 4: From Bag-of-Words to Contextualized Representations}
+\title[Lecture 4: Embeddings \& Re-ranking]{Representation Learning for Rankings}
+\subtitle{From Bag-of-Words to Contextualized Representations}
 \author{Avishek Anand}
 \institute{Information Retrieval}
 \date{\today}
@@ -78,114 +73,113 @@
 \end{frame}
 
 \begin{frame}{Recap: Where We Are}
-\begin{block}{What We've Built So Far}
+\irStage{BACKGROUND}
+\textbf{The Bag-of-Words Legacy enables web-scale retrieval but lacks semantic depth.}
+
+\vspace{0.8em}
 \begin{itemize}
-    \item \textbf{Lecture 2:} Inverted indexes and ANN indexes for efficient retrieval
-    \item \textbf{Lecture 3:} BM25, Language Models, RM3 for scoring and expansion
+    \item \textbf{Efficiency}: Inverted indexes enable sub-second search.
+    \item \textbf{Scoring}: BM25 provides a robust lexical baseline.
+    \item \textbf{Expansion}: RM3 bridges some lexical gaps via feedback.
 \end{itemize}
-\end{block}
 
 \vspace{1em}
-
+\cpause
 \begin{alertblock}{The Persistent Problem}
-All our methods are \textbf{bag-of-words}:
+Methods rely on \textbf{exact term matches}:
 \begin{itemize}
-    \item ``car problems'' and ``automobile issues'' --- BM25 score = 0
-    \item ``bank'' (financial) vs.\ ``bank'' (river) --- same representation
-    \item Word order ignored: ``dog bites man'' = ``man bites dog''
+    \item No semantics: \textit{car problems} $\neq$ \textit{automobile issues}.
+    \item Polysemy: \textit{bank} (financial) = \textit{bank} (river).
 \end{itemize}
 \end{alertblock}
-
-\vspace{0.5em}
-
-\begin{exampleblock}{Today's Goal}
-Represent words, queries, and documents as \textbf{dense vectors} that capture meaning.
-\end{exampleblock}
 \end{frame}
 
 \begin{frame}{The Representation Gap}
+\irStage{BACKGROUND}
+\textbf{Lexical matching requires exact term overlap to estimate relevance.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Sparse}: Each dimension corresponds to a vocabulary word.
+    \item \textbf{Dense}: Dimensions represent latent semantic features.
+    \item \textbf{Goal}: Learn embeddings where closeness $\approx$ same meaning.
+\end{itemize}
+
+\vspace{0.5em}
 \begin{center}
 \input{tikz/sparse_vs_dense_representation.tex}
 \end{center}
-
-\vspace{1em}
-
-\begin{block}{Key Question}
-How do we learn dense representations that capture word meaning?
-\end{block}
 \end{frame}
 
 \begin{frame}{The Distributional Hypothesis}
+\irStage{BACKGROUND}
 \begin{block}{Core Principle (Firth, 1957)}
 ``You shall know a word by the company it keeps.''
 \end{block}
 
 \vspace{1em}
-
-\textbf{Example:} What do we know about the word ``\textit{tezguino}''?
-
-\vspace{0.5em}
-
+\cpause
+\textbf{Example:} What is a ``\textit{tezguino}''?
 \begin{itemize}
     \item ``A bottle of \textit{tezguino} is on the table.''
     \item ``Everybody enjoys \textit{tezguino}.''
-    % \item ``\textit{Tezguino} makes you drunk.''
     \item ``We brew \textit{tezguino} from corn.''
 \end{itemize}
 
-% \vspace{0.5em}
 \cpause
-Without ever seeing a definition, we infer: \textit{tezguino} is an alcoholic beverage.
-% \vspace{1em}
-\begin{exampleblock}{Implication for IR}
-Words that appear in similar contexts should have similar vector representations. If we achieve this, ``car'' and ``automobile'' will be close in vector space.
-\end{exampleblock}
+\vspace{0.5em}
+\textbf{Inference:} It's an alcoholic drink. Context reveals meaning!
 \end{frame}
 
 \begin{frame}{Word2Vec: Words as Vectors}
-\begin{block}{Key Idea (Mikolov et al., 2013)}
-Train a neural network to predict context words from a target word (Skip-gram) or a target word from context (CBOW). The learned weight matrix \textit{is} the word embedding.
-\end{block}
+\irStage{BACKGROUND}
+\textbf{The Skip-gram model learns word meaning from local context windows.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Hypothesis}: Words in similar contexts have similar meanings.
+    \item \textbf{Task}: Predict surrounding context tokens from a target word.
+    \item \textbf{Objective}: Weights in the hidden layer become the embeddings.
+\end{itemize}
 
 \vspace{0.5em}
-
 \begin{center}
 \input{tikz/word2vec_skipgram.tex}
 \end{center}
 \end{frame}
 
+\begin{frame}{Word2Vec: Semantic Properties}
+\irStage{BACKGROUND}
+$\vec{\text{king}} - \vec{\text{man}} + \vec{\text{woman}} \approx \vec{\text{queen}}$
 
-\begin{frame}{Word2Vec: Famous Properties}
-\begin{block}{Linear Analogies}
-$$\vec{\text{king}} - \vec{\text{man}} + \vec{\text{woman}} \approx \vec{\text{queen}}$$
-\end{block}
-
-\vspace{0.5em}
-
-\textbf{What this tells us:}
+\vspace{1em}
+\cpause
+\textbf{Why this matters for IR:}
 \begin{itemize}
-    \item Word vectors capture \textbf{relational structure}
-    \item Gender, tense, plurality encoded as directions in vector space
-    \item Semantic similarity $\approx$ vector proximity (cosine similarity)
+    \item Vectors capture \textbf{relational structure}.
+    \item Semantic similarity $\approx$ vector proximity (cosine similarity).
 \end{itemize}
-
 \end{frame}
 
 
 \begin{frame}{Word2Vec: Relevance to IR}
-\vspace{0.5em}
+\irStage{BACKGROUND}
+\textbf{Vector proximity enables matching beyond exact keywords.}
 
+\vspace{0.8em}
 \begin{itemize}
-    \item $\cos(\vec{\text{car}}, \vec{\text{automobile}}) \approx 0.7$ --- high similarity!
-    \item $\cos(\vec{\text{car}}, \vec{\text{banana}}) \approx 0.1$ --- low similarity
-    \item Could we use these for retrieval? \textit{Yes, but\ldots}
+    \item \textbf{High Sim}: $\cos(\vec{\text{car}}, \vec{\text{automobile}}) \approx 0.7$.
+    \item \textbf{Low Sim}: $\cos(\vec{\text{car}}, \vec{\text{banana}}) \approx 0.1$.
+    \item \textbf{Recall}: Enables finding relevant docs with zero term overlap.
 \end{itemize}
 
-\vspace{0.5em}
-
-\begin{alertblock}{Limitation}
-Each word has \textbf{exactly one} vector, regardless of context.\\
-``bank'' (river) = ``bank'' (financial) --- same vector!
+\vspace{1em}
+\cpause
+\begin{alertblock}{The Static Vector Bottleneck}
+Each word has \textbf{exactly one} vector regardless of its context.
+\begin{itemize}
+    \item \textit{bank} (river) = \textit{bank} (financial).
+\end{itemize}
 \end{alertblock}
 \end{frame}
 
@@ -221,63 +215,42 @@ Each word has \textbf{exactly one} vector, regardless of context.\\
 % \end{columns}
 % \end{frame}
 
-\begin{frame}{From Words to Documents: The Naive Approach}
-\begin{block}{Average Word Embeddings}
-$$\vec{d} = \frac{1}{|d|}\sum_{w \in d} \vec{w}$$
-\end{block}
+\begin{frame}{From Words to Documents: Averaging}
+\irStage{BACKGROUND}
+\textbf{The Naive Approach:} $\vec{d} = \frac{1}{|d|}\sum_{w \in d} \vec{w}$
 
-\vspace{0.5em}
-
-\textbf{Example:} ``the cat sat on the mat''
-$$\vec{d} = \frac{\vec{\text{the}} + \vec{\text{cat}} + \vec{\text{sat}} + \vec{\text{on}} + \vec{\text{the}} + \vec{\text{mat}}}{6}$$
-
-\vspace{0.5em}
-
-\begin{columns}
-\begin{column}{0.48\textwidth}
-\textbf{\textcolor{green}{\checkmark} Advantages:}
+\vspace{1em}
+\cpause
 \begin{itemize}
-    \item Simple and fast
-    \item Captures some semantics
-    \item Fixed-size output for any doc
+    \item \textbf{Mechanism:} ``the cat sat on the mat'' $\to \text{Avg}(\vec{\text{the}}, \vec{\text{cat}}, \ldots)$
+    \item \textbf{Pros:} Simple, fast, significantly better than BoW for vocabulary mismatch.
 \end{itemize}
-\end{column}
-\begin{column}{0.48\textwidth}
-\textbf{\textcolor{red}{\ding{55}} Problems:}
+
+\vspace{1em}
+\cpause
+\begin{alertblock}{Critical Failures}
 \begin{itemize}
-    \item Loses word order completely (``dog bites man'' = ``man bites dog'')
-    \item Polysemy unresolved
-    \item Rare/important words drowned out
+    \item Loses word order (``dog bites man'' = ``man bites dog'').
+    \item Polysemy unresolved.
 \end{itemize}
-\end{column}
-\end{columns}
-
-\vspace{0.5em}
-
-\begin{alertblock}{We Need}
-Representations where the \textbf{meaning of each word depends on its context}.
 \end{alertblock}
 \end{frame}
 
 \begin{frame}{Static vs. Contextualized Embeddings}
-\begin{center}
-\input{tikz/static_vs_contextualized.tex}
-\end{center}
+\irStage{BACKGROUND}
+\textbf{The 2018 evolution moved IR from fixed word vectors to dynamic, context-aware representations.}
 
-\vspace{1em}
-
-\textbf{Example:}
+\vspace{0.8em}
 \begin{itemize}
-    \item ``I deposited money at the \textbf{bank}.'' $\to$ $\vec{v}_{\text{bank}}^{(1)}$ (financial)
-    \item ``We had a picnic by the river \textbf{bank}.'' $\to$ $\vec{v}_{\text{bank}}^{(2)}$ (riverside)
-    \item $\vec{v}_{\text{bank}}^{(1)} \neq \vec{v}_{\text{bank}}^{(2)}$ --- polysemy resolved!
+    \item \textbf{Static}: Word2Vec/GloVe assignment is fixed (ignores neighbors).
+    \item \textbf{Contextualized}: BERT embeddings adapt to local word usage.
+    \item \textbf{Polysemy}: Distinguishes between ``\textbf{bank}'' (finance) and ``\textbf{bank}'' (river).
 \end{itemize}
 
 \vspace{0.5em}
-
-\begin{exampleblock}{Key Insight}
-Contextualized embeddings solve both synonymy \textit{and} polysemy.
-\end{exampleblock}
+\begin{center}
+\input{tikz/static_vs_contextualized.tex}
+\end{center}
 \end{frame}
 
 % ====================================================================
@@ -290,25 +263,21 @@ Contextualized embeddings solve both synonymy \textit{and} polysemy.
 \end{frame}
 
 \begin{frame}{Why Transformers?}
-\begin{block}{Before Transformers (pre-2017)}
-Sequential models (RNNs, LSTMs):
+\irStage{TRANSFORMERS}
+\textbf{Attention mechanisms enable models to process entire sequences in parallel with global context.}
+
+\vspace{0.8em}
 \begin{itemize}
-    \item Process words one at a time, left to right
-    \item Long-range dependencies are hard (vanishing gradients)
-    \item Cannot parallelize training (each step depends on previous)
+    \item \textbf{Parallelism}: Processes all tokens simultaneously (unlike sequential RNNs).
+    \item \textbf{Recency}: Overcomes "forgetting" in long documents.
+    \item \textbf{Scale}: Efficiently trained on massive web-scale corpora.
 \end{itemize}
-\end{block}
 
 \vspace{1em}
-
-\begin{block}{The Transformer Insight (Vaswani et al., 2017) in ``Attention Is All You Need''}
-\begin{itemize}
-    \item Process all words \textbf{simultaneously} (parallel)
-    \item Each word attends to \textbf{every other word} directly
-    \item No sequential bottleneck $\to$ massively faster training
-    \item Result: the foundation of BERT, GPT, and all modern NLP
-\end{itemize}
-\end{block}
+\cpause
+\begin{exampleblock}{The SOTA Shift}
+Transformers provide the foundation for every modern high-accuracy retrieval and re-ranking system today.
+\end{exampleblock}
 \end{frame}
 
 \begin{frame}{Encoder Model Architecture}
@@ -318,179 +287,125 @@ Sequential models (RNNs, LSTMs):
 \end{frame}
 
 
-\begin{frame}{Self-Attention: The Core Mechanism}
-\begin{block}{Intuition}
-For each word in the input, self-attention asks: ``Which other words should I pay attention to in order to understand the meaning of \textit{this} word?''
-\end{block}
+\begin{frame}{Self-Attention: The Core Idea}
+\irStage{TRANSFORMERS}
+\textbf{Token representations are updated by "attending" to the most relevant neighbors.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Bidirectional}: Words look left and right simultaneously.
+    \item \textbf{Dynamic}: Attention weight depends on query--key similarity.
+    \item \textbf{Context}: Resolves reference (e.g., \textit{it} $\to$ \textit{animal}).
+\end{itemize}
 
 \vspace{0.5em}
-
-\textbf{Example:} ``The animal didn't cross the street because \textbf{it} was too tired.''
-
-\vspace{0.3em}
-
-What does ``it'' refer to? \textbf{The animal.}
-
-\vspace{0.3em}
-
-Self-attention learns to connect ``it'' $\to$ ``animal'' by assigning a high attention weight between them.
-
-\vspace{1em}
-
 \begin{center}
 \input{tikz/self_attention_example.tex}
 \end{center}
 \end{frame}
 
-\begin{frame}{Self-Attention: Query, Key, Value}
-\begin{block}{Formal Mechanism}
-Each word $w_i$ is projected into three vectors:
+\begin{frame}{Self-Attention: The Mechanism}
+\irStage{TRANSFORMERS}
+\textbf{Interaction is computed via dot-products in Query, Key, and Value spaces.}
+
+\vspace{0.8em}
 \begin{itemize}
-    \item \textbf{Query} $\vec{q}_i$: ``What am I looking for?''
-    \item \textbf{Key} $\vec{k}_i$: ``What do I contain?''
-    \item \textbf{Value} $\vec{v}_i$: ``What information do I provide?''
+    \item \textbf{Query} ($\vec{q}$): ``What am I looking for in other tokens?''
+    \item \textbf{Key} ($\vec{k}$): ``What information do I offer to others?''
+    \item \textbf{Value} ($\vec{v}$): The actual information content to be aggregated.
 \end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{block}{The Attention Formula}
+\[
+\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{\mathhl{QK^T}}{\sqrt{d_k}}\right) V
+\]
 \end{block}
+\end{frame}
+
+\begin{frame}{Breaking Down the Formula}
+\irStage{TRANSFORMERS}
+\[
+\text{Attention} = \text{softmax}\left(\frac{\mathhl{QK^T}}{\sqrt{d_k}}\right) V
+\]
+\begin{itemize}
+    \item \textbf{Dot Product} ($QK^T$): Measures raw similarity between tokens.
+    \item \textbf{Scaling} ($\sqrt{d_k}$): Stabilizes gradients for deep training.
+    \item \textbf{Processing}: Softmax converts scores to weighting factors (sum to 1).
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Worked Example: Information Flow}
+\irStage{TRANSFORMERS}
+\textbf{Sentence:} ``\texttt{retrieval models}'' ($d_k = 2$)
 
 \vspace{0.5em}
-
-\textbf{Attention computation:}
-$$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right) V$$
-
-% \vspace{0.5em}
-
-\textbf{Step by step:}
 \begin{enumerate}
-    \item Compute similarity: $\vec{q}_i \cdot \vec{k}_j$ for all pairs $(i, j)$
-    \item Scale by $\sqrt{d_k}$ to prevent extreme values, 
-    \item apply softmax $\to$ attention weights (sum to 1)
-    \item compute weighted sum of value vectors $\to$ new representation for word $i$
+    \item \textbf{Similarity}: $\vec{q}_{\text{retr}} \cdot \vec{k}_{\text{retr}} = 0.9$ (Self) \quad $\vec{q}_{\text{retr}} \cdot \vec{k}_{\text{mod}} = 0.6$ (Neighbor)
+    \cpause
+    \item \textbf{Weights}: $\text{softmax}([0.9, 0.6]) \approx [\,\mathhl{0.57},\; \mathhl{0.43}\,]$
+    \cpause
+    \item \textbf{Output}: $\vec{h}_{\text{retr}} = 0.57 \vec{v}_{\text{retr}} + 0.43 \vec{v}_{\text{mod}}$
 \end{enumerate}
 
-\vspace{0.5em}
-
-\begin{exampleblock}{Key Point}
-Every word's output is a \textbf{weighted combination of all words' values}, where weights are learned based on content similarity.
+\vspace{1em}
+\cpause
+\begin{exampleblock}{Interpretation}
+The representation of ``retrieval'' is now updated with 43\% of the information from ``models''. Context is integrated!
 \end{exampleblock}
 \end{frame}
 
-\begin{frame}{Self-Attention: Worked Example (1/2)}
-\textbf{Sentence:} ``\texttt{retrieval models}'' (2 tokens for simplicity, $d_k = 2$)
+\begin{frame}{Multi-Head Attention}
+\irStage{TRANSFORMERS}
+\textbf{Parallel attention heads learn different linguistic and semantic relationships.}
 
-\vspace{0.5em}
-
-\textbf{Projections} (learned weight matrices):
-\begin{columns}
-\begin{column}{0.5\textwidth}
-\begin{align*}
-\vec{q}_{\text{retrieval}} &= [1.0, 0.5] \\
-\vec{k}_{\text{retrieval}} &= [0.8, 0.2] \\
-\vec{v}_{\text{retrieval}} &= [0.3, 0.9]
-\end{align*}
-\end{column}
-\begin{column}{0.5\textwidth}
-\begin{align*}
-\vec{q}_{\text{models}} &= [0.3, 1.2] \\
-\vec{k}_{\text{models}} &= [0.1, 1.0] \\
-\vec{v}_{\text{models}} &= [0.7, 0.4]
-\end{align*}
-\end{column}
-\end{columns}
-
-\vspace{1em}
-
-\textbf{Step 1: Dot products} ($\vec{q}_i \cdot \vec{k}_j$):
-\begin{align*}
-\text{retrieval} \to \text{retrieval}: &\quad 1.0 \times 0.8 + 0.5 \times 0.2 = 0.9 \\
-\text{retrieval} \to \text{models}: &\quad 1.0 \times 0.1 + 0.5 \times 1.0 = 0.6
-\end{align*}
-
-\vspace{0.5em}
-
-\textbf{Step 2: Scale by $\sqrt{d_k} = \sqrt{2} \approx 1.41$}: \quad $[0.64, 0.43]$
-\end{frame}
-
-\begin{frame}{Self-Attention: Worked Example (2/2)}
-\textbf{Recall:} Computing attention for ``retrieval'' in ``retrieval models''
-
-\vspace{0.5em}
-
-\textbf{After scaling:} $[0.64, 0.43]$
-
-\vspace{1em}
-
-\textbf{Step 3: Softmax} (normalize to probabilities):
-$$\text{softmax}([0.64, 0.43]) = [\,0.55,\; 0.45\,]$$
-
-These are the \textbf{attention weights}: how much ``retrieval'' attends to each token.
-
-\vspace{1em}
-
-\textbf{Step 4: Weighted sum of values}:
-\begin{align*}
-\vec{h}_{\text{retrieval}} &= 0.55 \times \vec{v}_{\text{retrieval}} + 0.45 \times \vec{v}_{\text{models}} \\
-% &= 0.55 \times [0.3, 0.9] + 0.45 \times [0.7, 0.4] \\
-&= [0.48, 0.68]
-\end{align*}
-
-% \vspace{0.5em}
-
-\begin{exampleblock}{Result}
-The output for ``retrieval'' now incorporates information from ``models''!
-\end{exampleblock}
-\end{frame}
-
-\begin{frame}[shrink=5]{Multi-Head Attention}
-\begin{block}{Problem}
-A single attention head can only capture one type of relationship. But words relate to each other in multiple ways (syntactic, semantic, positional).
-\end{block}
-\cpause
-\vspace{0.5em}
-
-\begin{block}{Solution: Multiple Heads}
-Run $h$ separate attention computations in parallel, each with its own $Q$, $K$, $V$ projections. Concatenate and project:
-$$\text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \ldots, \text{head}_h) \cdot W^O$$
-\end{block}
-\cpause
-\vspace{0.5em}
-
-\textbf{BERT uses $h = 12$ heads.} Each head can learn different patterns:
+\vspace{0.8em}
 \begin{itemize}
-    \item Head 1: subject-verb relationships
-    \item Head 2: adjective-noun relationships
-    \item Head 3: coreference (``it'' $\to$ ``animal'')
-    \item Head 4: positional/sequential patterns
+    \item \textbf{Heads}: BERT uses 12 heads per layer in parallel.
+    \item \textbf{Variety}: Heads learn distinct features (Syntax, Entities, etc.).
+    \item \textbf{Robustness}: Aggregating heads provides a richer representation.
 \end{itemize}
-\end{frame}
-
-\begin{frame}[shrink=5]{Positional Encoding}
-\begin{alertblock}{Problem}
-Self-attention is permutation-invariant --- ``dog bites man'' and ``man bites dog'' produce the same attention weights! Word order is lost.
-\end{alertblock}
 
 \vspace{1em}
-
-\begin{block}{Solution: Add Position Information}
-Before feeding tokens to the transformer, add a \textbf{positional encoding} vector to each word embedding:
-$$\vec{x}_i = \vec{e}_{\text{word}_i} + \vec{p}_i$$
-\end{block}
 \cpause
-\vspace{0.5em}
+\begin{exampleblock}{Feature Extraction}
+Calculates 12 different embeddings per token, then concatenates them.
+\end{exampleblock}
+\end{frame}
 
-% \textbf{Sinusoidal encoding} (Vaswani et al.):
-% \begin{align*}
-% PE_{(pos, 2i)} &= \sin(pos / 10000^{2i/d}) \\
-% PE_{(pos, 2i+1)} &= \cos(pos / 10000^{2i/d})
-% \end{align*}
+\begin{frame}{Positional Encoding}
+\irStage{TRANSFORMERS}
+\textbf{Since attention is permutation-invariant, we must inject word order manually.}
 
-Each position gets a unique pattern. Nearby positions have similar encodings.
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Problem}: Without positions, \textit{dog bites man} = \textit{man bites dog}.
+    \item \textbf{Solution}: Add a unique position vector $\vec{p}_i$ to each token $\vec{e}_i$.
+    \item \textbf{Result}: Model learns both identity and relative location.
+\end{itemize}
 
-\vspace{0.5em}
-
-\textit{BERT uses learned positional embeddings instead (up to 512 positions).}
+\vspace{1em}
+\cpause
+\begin{block}{Combined Input Representation}
+\[
+\vec{x}_i = \vec{e}_{\text{word}_i} + \vec{p}_i
+\]
+\end{block}
 \end{frame}
 
 \begin{frame}{The Transformer Encoder Block}
+\irStage{TRANSFORMERS}
+\textbf{Each encoder block combines parallel attention with per-token feed-forward processing.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Attention}: Token interaction via Query, Key, and Value projections.
+    \item \textbf{Residuals}: Add connections prevent gradient signal decay.
+    \item \textbf{Normalization}: LayerNorm stabilizes signal flow through deep layers.
+\end{itemize}
+
+\vspace{0.5em}
 \begin{center}
 \input{tikz/transformer_encoder_block.tex}
 \end{center}
@@ -507,89 +422,53 @@ Each position gets a unique pattern. Nearby positions have similar encodings.
 \end{frame}
 
 \begin{frame}{BERT: Pre-training}
-\begin{block}{Bidirectional Encoder Representations from Transformers (Devlin et al., 2019)}
-A transformer encoder pre-trained on massive text with two objectives:
-\end{block}
+\irStage{TRANSFORMERS}
+\textbf{BERT is a Transformer Encoder trained on two self-supervised tasks.}
 
-\vspace{0.5em}
-
-\begin{columns}
-\begin{column}{0.48\textwidth}
-\textbf{1. Masked Language Modeling (MLM)}
+\vspace{0.8em}
 \begin{itemize}
-    \item Randomly mask 15\% of tokens
-    \item Predict masked tokens from context
-    \item Bidirectional (sees left \textit{and} right)
+    \item \textbf{Masked LM}: Predict hidden tokens to learn context.
+    \item \textbf{NSP}: Predict sentence order to learn coherence.
+    \item \textbf{Result}: Deeply contextualized sub-word embeddings.
 \end{itemize}
-
-\vspace{0.3em}
-
-\textbf{Input:} ``The [MASK] sat on the mat''\\
-\textbf{Predict:} ``cat'' (from context)
-\end{column}
-
-\begin{column}{0.48\textwidth}
-\textbf{2. Next Sentence Prediction (NSP)}
-\begin{itemize}
-    \item Given sentence A, is sentence B the actual next sentence?
-    \item Binary classification
-    \item Learns inter-sentence relationships
-\end{itemize}
-
-\vspace{0.3em}
-
-\textbf{A:} ``The cat sat on the mat.''\\
-\textbf{B:} ``It was very comfortable.'' \checkmark
-\end{column}
-\end{columns}
 
 \vspace{1em}
-
-\begin{exampleblock}{Pre-training Data}
-BooksCorpus (800M words) + English Wikipedia (2.5B words). Trained for 4 days on 16 TPUs.
+\cpause
+\begin{exampleblock}{The IR Foundation}
+Pre-trained representations model the semantics of query--document matching.
 \end{exampleblock}
 \end{frame}
 
-\begin{frame}{BERT: Why It Matters for IR (1/2)}
-\begin{block}{Key Properties}
-\begin{enumerate}
-    \item \textbf{Bidirectional context:} Every token sees all other tokens (not just left-to-right like GPT)
-    \item \textbf{Deep:} 12 layers of attention $\to$ rich, hierarchical representations
-    \item \textbf{Pre-trained:} Learned from billions of words $\to$ knows language
-    \item \textbf{Fine-tunable:} Adapt to specific tasks with small labeled data
-\end{enumerate}
-\end{block}
+\begin{frame}{Why BERT for IR?}
+\irStage{BERT}
+\textbf{Contextualized representations solve the core limitations of lexical matching.}
 
-\vspace{1em}
-
-\begin{exampleblock}{Transfer Learning}
-BERT brings the power of transfer learning to NLP: pre-train once on massive data, fine-tune for specific tasks with minimal labeled data.
-\end{exampleblock}
-\end{frame}
-
-\begin{frame}{BERT: Why It Matters for IR (2/2)}
-\textbf{For IR, BERT can:}
+\vspace{0.8em}
 \begin{itemize}
-    \item Understand that ``automobile issues'' is related to ``car problems''
-    \item Disambiguate ``bank'' based on surrounding context
-    \item Capture negation: ``not relevant'' $\neq$ ``relevant''
-    \item Handle word order: ``python eats mouse'' $\neq$ ``mouse eats python''
+    \item \textbf{Semantics}: Maps synonyms (e.g., \textit{car}, \textit{automobile}) to similar spaces.
+    \item \textbf{Disambiguation}: Distinguishes word meaning based on local context.
+    \item \textbf{Syntax}: Models dependencies and negations that BM25 ignores.
 \end{itemize}
 
 \vspace{1em}
-
-\begin{alertblock}{Recall}
-None of this was possible with BM25 or static embeddings.
+\cpause
+\begin{alertblock}{The Challenge}
+BERT is computationally expensive. We cannot score the full corpus in real-time.
 \end{alertblock}
 \end{frame}
 
 \begin{frame}{Cross-Encoder: BERT for Re-ranking}
-\begin{block}{Architecture (Nogueira \& Cho, 2019)}
-Feed the query and document \textbf{together} through BERT. Use the \texttt{[CLS]} token output as a relevance score.
-\end{block}
+\irStage{RE-RANKING}
+\textbf{Cross-Encoders enable deep token-level interaction between query and document.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Input}: Feed query $q$ and document $d$ together as one sequence.
+    \item \textbf{Interaction}: Every query token attends to every document token.
+    \item \textbf{Scoring}: The final [CLS] token output serves as the relevance score.
+\end{itemize}
 
 \vspace{0.5em}
-
 \begin{center}
 \input{tikz/cross_encoder_architecture.tex}
 \end{center}
@@ -602,264 +481,221 @@ Feed the query and document \textbf{together} through BERT. Use the \texttt{[CLS
 \end{frame}
 
 
-\begin{frame}{Cross-Encoder: Why It Works}
-\begin{block}{Full Cross-Attention}
-Every query token attends to every document token (and vice versa) through all 12 layers. This enables:
-\end{block}
+\begin{frame}{Why Cross-Encoders are Accurate}
+\irStage{RE-RANKING}
+\textbf{Cross-Encoders enable all-to-all interaction between query and document tokens.}
 
-\vspace{0.5em}
-
-\begin{enumerate}
-    \item \textbf{Soft matching:} ``car'' attends to ``automobile'' $\to$ learns they're related
-    \item \textbf{Context understanding:} ``not working'' is different from ``working''
-    \item \textbf{Relevance patterns:} The model learns what makes a document relevant to a query, not just topical overlap
-\end{enumerate}
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Full Interaction}: Every query token attends to every document token.
+    \item \textbf{Soft-Matching}: Learned at all 12 layers of the Transformer.
+    \item \textbf{Recall}: Finds relevant docs that share zero terms with the query.
+\end{itemize}
 
 \vspace{1em}
-
-\begin{columns}
-\begin{column}{0.48\textwidth}
-\textbf{\textcolor{green}{\checkmark} Strengths:}
-\begin{itemize}
-    \item Most accurate neural ranking
-    \item Rich query-document interaction
-    \item Pre-trained knowledge
-\end{itemize}
-\end{column}
-\begin{column}{0.48\textwidth}
-\textbf{\textcolor{red}{\ding{55}} Limitations:}
-\begin{itemize}
-    \item Must encode \textit{every} (q, d) pair
-    \item Cannot pre-compute doc embeddings
-    \item Too slow for full-corpus retrieval
-\end{itemize}
-\end{column}
-\end{columns}
+\cpause
+\begin{exampleblock}{Efficiency Trade-off}
+Maximum accuracy comes at the cost of high latency (~500ms scale).
+\end{exampleblock}
 \end{frame}
 
-\begin{frame}{Cross-Encoder: Latency Analysis}
-\textbf{How slow is ``too slow''?}
+\begin{frame}{The Latency Bottleneck}
+\irStage{RE-RANKING}
+\textbf{Full token interaction makes Cross-Encoders slow for large-scale retrieval.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Constraint}: We cannot pre-compute $P(\text{rel}|q, d)$ offline.
+    \item \textbf{Inference}: Requires running BERT for every query--doc pair at runtime.
+    \item \textbf{Scale}: Feasible only for ~100--200 candidates per query.
+\end{itemize}
 
 \vspace{1em}
-
+\cpause
 \begin{table}
 \centering
-\begin{tabular}{lccl}
+\small
+\begin{tabular}{lcc}
 \toprule
-\textbf{Candidates} & \textbf{Time/pair} & \textbf{Total} & \textbf{Feasible?} \\
+\textbf{Candidates} & \textbf{Total Time} & \textbf{Feasible?} \\
 \midrule
-1{,}000{,}000 (full corpus) & 5 ms & 5{,}000 s & \textcolor{red}{\ding{55} No} \\
-10{,}000 & 5 ms & 50 s & \textcolor{red}{\ding{55} No} \\
-1{,}000 & 5 ms & 5 s & \textcolor{orange}{Borderline} \\
-\textbf{100} & \textbf{5 ms} & \textbf{0.5 s} & \textcolor{green}{\checkmark Yes} \\
-20 & 5 ms & 0.1 s & \textcolor{green}{\checkmark Yes} \\
+1,000,000 (Full corpus) & ~80 hours & \textcolor{irRerank}{\texttimes} No \\
+\textbf{100 (Top-rank)} & \textbf{~500 ms Scale} & \textbf{\textcolor{irHybrid}{\checkmark} Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
-
-\vspace{1em}
-
-\begin{exampleblock}{Conclusion}
-Cross-encoders can realistically re-rank the \textbf{top 100--1000} documents from a first-stage retriever. They \textbf{cannot} replace the retriever itself.
-\end{exampleblock}
-
-\vspace{0.5em}
-
-This is why we need \textbf{the two-stage pipeline}.
 \end{frame}
 
-\begin{frame}{Worked Example: Cross-Encoder Scoring (1/2)}
-\textbf{Query:} ``side effects of aspirin''
+\begin{frame}{Worked Example: Cross-Encoder (1/2)}
+\irStage{RE-RANKING}
+\textbf{The model processes query and candidate documents as a single concatenated input sequence.}
 
-\vspace{1em}
-
-\textbf{Doc A:} ``Aspirin may cause stomach bleeding and ringing in the ears as common adverse reactions.''
-
-\vspace{0.5em}
-
-\textbf{Doc B:} ``The company's stock price went up after the aspirin sales report.''
-
-\vspace{1em}
-
-\textbf{Step 1: Tokenization} (WordPiece):
-{\small
+\vspace{0.8em}
 \begin{itemize}
-    \item \texttt{[CLS] side effects of aspirin [SEP] aspirin may cause stomach bleeding and ringing in the ears as common adverse reactions . [SEP]}
-    \item \texttt{[CLS] side effects of aspirin [SEP] the company ' s stock price went up after the aspirin sales report . [SEP]}
-\end{itemize}
-}
-
-\vspace{0.5em}
-
-\textbf{Step 2: BERT processes each pair} (full cross-attention between query and document tokens)
-\end{frame}
-
-\begin{frame}{Worked Example: Cross-Encoder Scoring (2/2)}
-\textbf{Query:} ``side effects of aspirin''
-
-\vspace{0.5em}
-
-\textbf{Step 3: Classification head on [CLS]}:
-\begin{itemize}
-    \item \textbf{Doc A:} ``adverse reactions'', ``bleeding'', ``stomach'' $\to$ high attention to ``side effects''
-    \begin{itemize}
-        \item $P(\text{rel}) = \mathbf{0.94}$ \textcolor{green}{\checkmark}
-    \end{itemize}
-
-    \vspace{0.5em}
-
-    \item \textbf{Doc B:} ``stock price'', ``sales report'' $\to$ low attention to ``side effects''
-    \begin{itemize}
-        \item $P(\text{rel}) = \mathbf{0.12}$ \textcolor{red}{\ding{55}}
-    \end{itemize}
+    \item \textbf{Query}: ``side effects of aspirin''
+    \item \textbf{Doc A}: Mentions ``stomach bleeding'' and ``adverse reactions''.
+    \item \textbf{Doc B}: Mentions ``stock price'' and ``sales report''.
 \end{itemize}
 
 \vspace{1em}
-
-\begin{exampleblock}{Why This Works}
-BM25 might rank Doc B highly too (it contains ``aspirin''). The cross-encoder understands that the \textit{topic} doesn't match the query intent.
-\end{exampleblock}
-\end{frame}
-
-\begin{frame}{Fine-Tuning BERT for Ranking (1/2)}
-\begin{block}{Training Data}
-Pairs of (query, document) with relevance labels:
+\cpause
+\begin{block}{Sequence Tokenization}
 \begin{itemize}
-    \item \textbf{MS MARCO:} 530K queries with sparse judgments (1 relevant passage per query)
-    \item \textbf{TREC:} Dense judgments (multiple levels: 0, 1, 2, 3)
+    \item \texttt{[\mathhl{CLS}] q [\mathhl{SEP}] doc A [\mathhl{SEP}]}
+    \item \texttt{[\mathhl{CLS}] q [\mathhl{SEP}] doc B [\mathhl{SEP}]}
 \end{itemize}
 \end{block}
-
-\vspace{1em}
-
-\textbf{Training objective:}
-\begin{itemize}
-    \item \textbf{Pointwise:} Binary cross-entropy on $P(\text{rel})$ for each (q, d)
-    \begin{itemize}
-        \item Simpler, treats each pair independently
-    \end{itemize}
-
-    \vspace{0.5em}
-
-    \item \textbf{Pairwise:} Given $(q, d^+, d^-)$, train so $\text{score}(q, d^+) > \text{score}(q, d^-)$
-    \begin{itemize}
-        \item Better ranking performance
-    \end{itemize}
-\end{itemize}
 \end{frame}
 
-\begin{frame}{Fine-Tuning BERT for Ranking (2/2)}
-\textbf{Practical fine-tuning setup:}
+\begin{frame}{Worked Example: Cross-Encoder (2/2)}
+\irStage{RE-RANKING}
+\textbf{The Transformer models deep interactions to produce a final relevance probability.}
+
+\vspace{0.8em}
 \begin{itemize}
-    \item Start from pre-trained BERT checkpoint (e.g., \texttt{bert-base-uncased})
-    \item Fine-tune on IR data for 2--3 epochs
-    \item Learning rate: $2 \times 10^{-5}$ (small, to preserve pre-trained knowledge)
-    \item Max sequence length: 512 tokens
-    \begin{itemize}
-        \item Query $\approx$ 10 tokens + Document $\approx$ 500 tokens
-    \end{itemize}
+    \item \textbf{High Sim}: Doc A matches the intent (medical effects) via soft-matching.
+    \item \textbf{Low Sim}: Doc B repeats the keyword ``aspirin'' but intent (finance) is wrong.
+    \item \textbf{Output}: $P(\text{rel})$ is calculated from the [CLS] embedding.
 \end{itemize}
 
 \vspace{1em}
-
-\begin{exampleblock}{Training Time}
-Fine-tuning BERT-base on MS MARCO: $\sim$12--24 hours on a single GPU.
+\cpause
+\begin{exampleblock}{Interpretation}
+\textbf{Doc A}: $P(\text{rel}) = \mathbf{0.94}$ \quad vs. \quad \textbf{Doc B}: $P(\text{rel}) = \mathbf{0.12}$.\\
+The cross-encoder correctly identifies the semantic match.
 \end{exampleblock}
+\end{frame}
 
-\vspace{0.5em}
+\begin{frame}{Fine-Tuning BERT for Ranking}
+\irStage{TRAINING}
+\textbf{Supervised fine-tuning adapts the pre-trained model to specific ranking data.}
 
-\begin{alertblock}{Key Point}
-We're \textbf{fine-tuning}, not training from scratch. This leverages BERT's pre-trained language understanding.
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Pointwise}: Classify each pair (query, doc) as relevant or not.
+    \item \textbf{Pairwise}: Train so $\text{score}(q, d^+) > \text{score}(q, d^-)$.
+    \item \textbf{Data}: Usually requires large benchmarks like MS MARCO.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{block}{Common Benchmarks}
+\begin{itemize}
+    \item \textbf{MS MARCO}: 530k queries with sparse (1 passage) labels.
+    \item \textbf{TREC}: Smaller collections with dense, multi-level labels.
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}{Practice: Training BERT-base}
+\irStage{TRAINING}
+\textbf{Fine-tuning requires careful initialization and small learning rates.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Init}: Start from pre-trained weights (e.g., \texttt{bert-base-uncased}).
+    \item \textbf{Length}: Must truncate query + doc to 512 sub-word tokens.
+    \item \textbf{Schedule}: Learning rate $\approx 2 \times 10^{-5}$ for ~24 hours on one GPU.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{alertblock}{Production Tip}
+We are \textbf{refining} existing knowledge, not training from scratch!
 \end{alertblock}
 \end{frame}
 
-\begin{frame}{monoBERT and monoT5}
-\begin{columns}
-\begin{column}{0.48\textwidth}
-\begin{block}{monoBERT}
+\begin{frame}{Standard Models: monoBERT \& monoT5}
+\irStage{RE-RANKING}
+\textbf{Two dominant architectures define the standard for neural re-ranking pipelines.}
+
+\vspace{0.8em}
 \begin{itemize}
-    \item BERT-base or BERT-large
-    \item Classification head on [CLS]
-    \item Input: [CLS] q [SEP] d [SEP]
-    \item Output: $P(\text{relevant})$
-    \item \textbf{110M--340M parameters}
+    \item \textbf{monoBERT}: Encoder-only; uses the [CLS] token for classification.
+    \item \textbf{monoT5}: Encoder-Decoder; uses generative prompts (``Is document relevant?'').
+    \item \textbf{Choice}: monoT5 is often favored for its flexibility and accuracy.
 \end{itemize}
-
-\vspace{0.3em}
-
-Nogueira \& Cho (2019)
-\end{block}
-\end{column}
-
-\begin{column}{0.48\textwidth}
-\begin{block}{monoT5}
-\begin{itemize}
-    \item T5 (encoder-decoder)
-    \item Input: ``Query: q Document: d Relevant:''
-    \item Output: ``true'' or ``false''
-    \item Score = $P(\text{``true''})$
-    \item \textbf{220M--3B parameters}
-\end{itemize}
-
-\vspace{0.3em}
-
-Nogueira et al.\ (2020)
-\end{block}
-\end{column}
-\end{columns}
 
 \vspace{1em}
-
-\begin{exampleblock}{Comparison}
-\begin{itemize}
-    \item monoT5 (3B) slightly outperforms monoBERT on most benchmarks
-    \item Both are cross-encoders (same speed limitation)
-    \item monoBERT more popular due to simplicity and availability
-\end{itemize}
+\cpause
+\begin{exampleblock}{The SOTA Baseline}
+Both models consistently outperform lexical methods by a large margin on TREC and MS MARCO.
 \end{exampleblock}
 \end{frame}
 
-\begin{frame}{ColBERT: Late Interaction (Preview)}
-\begin{block}{Key Idea (Khattab \& Zaharia, 2020)}
-A middle ground between cross-encoders and bi-encoders: encode query and document \textbf{separately}, but compare at the \textbf{token level} using MaxSim.
-\end{block}
+
+\begin{frame}{Comparison: monoBERT vs. monoT5}
+\irStage{RE-RANKING}
+\textbf{While both are effective, they differ in architecture and training objectives.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{monoBERT}: Faster inference; trained via classification.
+    \item \textbf{monoT5}: More flexible; trained via sequence-to-sequence generation.
+    \item \textbf{Trade-off}: T5's generative approach often yields slightly higher accuracy.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{table}
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Feature} & \textbf{monoBERT} & \textbf{monoT5} \\
+\midrule
+Architecture & Encoder-only & Encoder-Decoder \\
+Objective & Classification & Text Generation \\
+Inference & Slightly faster & Slightly slower \\
+\bottomrule
+\end{tabular}
+\end{table}
+\end{frame}
+
+
+\begin{frame}{ColBERT: Late Interaction}
+\irStage{REPRESENTATION}
+\textbf{ColBERT enables token-level matching while maintaining high search efficiency.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Independence}: Query and Doc tokens are encoded separately.
+    \item \textbf{Interaction}: Deep matching occurs only at the final MaxSim layer.
+    \item \textbf{Scalability}: Enables sub-millisecond search over full corpora.
+\end{itemize}
 
 \vspace{0.5em}
-
 \begin{center}
 \input{tikz/colbert_late_interaction.tex}
 \end{center}
 \end{frame}
 
 \begin{frame}{ColBERT: Why It Matters}
-\begin{block}{MaxSim Scoring}
-For each query token $q_i$, find the document token $d_j$ with highest cosine similarity. Sum across all query tokens:
-$$\text{score}(q, d) = \sum_{i=1}^{|q|} \max_{j=1}^{|d|}\; \vec{q}_i \cdot \vec{d}_j$$
-\end{block}
+\irStage{REPRESENTATION}
+\textbf{Late interaction provides near-optimal accuracy with retrieval-time speed.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{MaxSim}: Aggregates token-level cosine similarities across the query.
+    \item \textbf{Speed}: ~20ms scale vs ~500ms for Cross-Encoders.
+    \item \textbf{Efficiency}: Pre-computes and stores document token embeddings.
+\end{itemize}
 
 \vspace{0.5em}
-
 \begin{table}
 \centering
-\footnotesize
+\scriptsize
 \begin{tabular}{lccc}
 \toprule
-& \textbf{Cross-Encoder} & \textbf{ColBERT} & \textbf{Bi-Encoder} \\
+ & \textbf{Cross-Encoder} & \textbf{ColBERT} & \textbf{Bi-Encoder} \\
 \midrule
-Interaction & Full (all layers) & Late (token-level) & None (single vector) \\
-Pre-compute docs & \textcolor{red}{\ding{55}} No & \textcolor{green}{\checkmark} Yes (per-token) & \textcolor{green}{\checkmark} Yes (single vec) \\
-Use for retrieval & \textcolor{red}{\ding{55}} No & \textcolor{green}{\checkmark} With ANN & \textcolor{green}{\checkmark} With ANN \\
-Accuracy & Highest & Near cross-encoder & Lower \\
-Storage per doc & N/A & $|d| \times 128$ floats & $1 \times 768$ floats \\
+Interaction & Full (all layers) & Late (token-level) & Dot product only \\
+Pre-computation & \textcolor{irRerank}{\texttimes} No & \textcolor{irHybrid}{\checkmark} Yes (token) & \textcolor{irHybrid}{\checkmark} Yes (single) \\
+Latency & ~500ms & ~20ms & ~10ms \\
+Storage & N/A & ~10--50 KB/doc & ~3 KB/doc \\
 \bottomrule
 \end{tabular}
 \end{table}
-
-\vspace{0.5em}
-
-\begin{exampleblock}{Takeaway}
-ColBERT gives near-cross-encoder accuracy with bi-encoder-like speed. Trade-off: \textbf{much higher storage} (one vector per token, not per document). We'll revisit ColBERT in detail in Lecture 5.
-\end{exampleblock}
 \end{frame}
 
 % ====================================================================
@@ -871,173 +707,130 @@ ColBERT gives near-cross-encoder accuracy with bi-encoder-like speed. Trade-off:
 \sectionpage
 \end{frame}
 
-\begin{frame}{MS MARCO: The Standard Training Dataset}
-\begin{block}{MS MARCO Passage Ranking (Nguyen et al., 2016)}
+\begin{frame}{The training data: MS MARCO}
+\irStage{TRAINING}
+\textbf{Neural IR models are typically fine-tuned on the massive MS MARCO benchmark.}
+
+\vspace{0.8em}
 \begin{itemize}
-    \item \textbf{8.8M passages} from web documents
-    \item \textbf{530K training queries} with sparse relevance labels
-    \item Each query has $\sim$1 relevant passage (sometimes 2--3)
-    \item \textbf{6,980 dev queries} for validation
+    \item \textbf{Scale}: 8.8M web passages and ~530k search queries.
+    \item \textbf{Labels}: Sparse; usually only one relevant passage per query.
+    \item \textbf{Dataset}: Collected from real Bing search logs and human editors.
 \end{itemize}
-\end{block}
 
 \vspace{1em}
+\cpause
+\begin{alertblock}{The Neural Catalyst}
+This benchmark enabled the transition from lexical scoring to deep semantic ranking.
+\end{alertblock}
+\end{frame}
 
-\begin{exampleblock}{Scale}
-This is the largest publicly available passage ranking dataset, widely used for training neural rankers.
+\begin{frame}{MS MARCO: Sparse Labels Challenge}
+\irStage{TRAINING}
+\textbf{Since labels are sparse, models must navigate a sea of unlabeled documents.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{False Negatives}: Many relevant documents are not labeled.
+    \item \textbf{Bias}: We cannot treat all unlabeled docs as truly non-relevant.
+    \item \textbf{Sampling}: How we choose the non-relevant pairs defines model quality.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{exampleblock}{Implication}
+Training on random negatives is insufficient. Models need challenging, "hard" negatives.
 \end{exampleblock}
 \end{frame}
 
-\begin{frame}{MS MARCO: The Sparse Labels Challenge}
-\begin{alertblock}{Key Challenge: Sparse Labels}
-For each query, only $\sim$1 passage is labeled relevant out of 8.8M. That means:
-\begin{itemize}
-    \item Many relevant passages are \textbf{unlabeled} (false negatives)
-    \item We can't treat all unlabeled passages as truly non-relevant
-    \item Negative sampling strategy matters enormously
-\end{itemize}
-\end{alertblock}
-
-\vspace{1em}
-
-\textbf{Implication for training:}
-\begin{itemize}
-    \item Random negatives are too easy
-    \item Need \textbf{hard negatives} from BM25 top-$k$
-    \item This forces the model to learn beyond lexical matching
-\end{itemize}
-\end{frame}
-
 \begin{frame}[shrink=5]{Training Pipeline: Step by Step}
+\irStage{TRAINING}
+\textbf{The training process iteratively refines the model's ability to rank relevant passages higher.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Triples}: Train on $(q, d^+, d^-)$ tuples to learn relative relevance.
+    \item \textbf{Loss}: Optimize Contrastive or Cross-Entropy loss functions.
+    \item \textbf{Setup}: Typical training takes ~12--24 hours on one consumer GPU.
+\end{itemize}
+
+\vspace{0.5em}
 \begin{center}
 \input{tikz/training_pipeline.tex}
 \end{center}
-
-\vspace{0.5em}
-
-\textbf{Typical training:} 2--3 epochs over MS MARCO triples, $\sim$12--24 hours on a single GPU.
 \end{frame}
 
 \begin{frame}{Negative Sampling Strategies}
-\begin{block}{The Core Question}
-Query has 1 labeled positive. Where do the negatives come from?
-\end{block}
+\irStage{TRAINING}
+\textbf{The choice of negative examples defines the "difficulty" and quality of the model.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Random}: Sample any document. Easy for model $\to$ weak signal.
+    \item \textbf{Hard}: Use BM25 top results that aren't relevant $\to$ strong signal.
+    \item \textbf{Mining}: Dynamic mining of "harder" negatives during training.
+\end{itemize}
 
 \vspace{1em}
-
-\begin{enumerate}
-    \item \textbf{Random negatives}
-    \begin{itemize}
-        \item Sample random passage from corpus
-        \item Easy for model to distinguish $\to$ weak training signal
-        \item \textcolor{red}{\ding{55}} Not recommended for production
-    \end{itemize}
-
-    \vspace{0.5em}
-
-    \item \textbf{BM25 hard negatives} \textcolor{green}{\checkmark} \textit{Recommended}
-    \begin{itemize}
-        \item Run BM25, take top-$k$ \textit{non-relevant} passages
-        \item These are topically related but not relevant $\to$ strong signal
-        \item Forces model to learn beyond term overlap
-    \end{itemize}
-\end{enumerate}
+\cpause
+\begin{block}{Best Practice}
+For production-grade models, always use \textbf{Hard Negatives} (BM25 or ANCE) to force the model to learn subtle semantic differences.
+\end{block}
 \end{frame}
 
 \begin{frame}{Training Hyperparameters}
+\irStage{TRAINING}
 \begin{columns}
 \begin{column}{0.48\textwidth}
-\textbf{Batching \& Memory}
+\textbf{Efficiency}
 \begin{itemize}
-    \item Max seq length 512 tokens
-    \item Batch size 16--32 (limited by GPU)
-    \item \textbf{Gradient accumulation:} simulate larger batches (e.g., 4 steps $\times$ batch 8 = effective 32)
-    \item Mixed precision (fp16) cuts memory $\sim$50\%
-    \item A single 24GB GPU can train BERT-base comfortably
+    \item Batch: 16--32.
+    \item Gradient Accumulation.
+    \item Mixed Precision (fp16).
 \end{itemize}
 \end{column}
-
 \begin{column}{0.48\textwidth}
 \textbf{Optimization}
 \begin{itemize}
-    \item Learning rate: $1$--$3 \times 10^{-5}$
-    \item Warmup: 10\% of steps
-    \item Scheduler: linear decay
-    \item Optimizer: AdamW ($\epsilon = 10^{-6}$)
-    \item Epochs: 2--3 (more $\to$ overfitting)
-    \item Evaluate every 5--10K steps
+    \item LR: $2 \times 10^{-5}$.
+    \item 10\% Linear Warmup.
+    \item 2--3 Epochs (Max).
 \end{itemize}
 \end{column}
 \end{columns}
 
 \vspace{1em}
-
-\begin{exampleblock}{Typical Training Time}
-2--3 epochs over MS MARCO triples: $\sim$12--24 hours on a single GPU.
-\end{exampleblock}
-\end{frame}
-
-\begin{frame}{Common Training Mistakes}
-\begin{alertblock}{Avoid These Pitfalls}
-\begin{enumerate}
-    \item \textbf{Too many epochs}
-    \begin{itemize}
-        \item Cross-encoders overfit quickly on MS MARCO
-        \item 3 epochs is usually the max
-        \item Watch dev set performance carefully
-    \end{itemize}
-
-    \item \textbf{Learning rate too high}
-    \begin{itemize}
-        \item Catastrophic forgetting of pre-trained knowledge
-        \item Stay $\leq 3 \times 10^{-5}$
-        \item Use warmup to stabilize early training
-    \end{itemize}
-
-    \item \textbf{Only random negatives}
-    \begin{itemize}
-        \item Model never sees hard cases
-        \item Always use BM25 hard negatives
-    \end{itemize}
-
-    \item \textbf{Ignoring document truncation}
-    \begin{itemize}
-        \item Long passages get cut at 512 tokens
-        \item Consider first-$p$ or sliding-window strategies
-    \end{itemize}
-\end{enumerate}
+\cpause
+\begin{alertblock}{Single GPU Training}
+BERT-base fits comfortably on a 24GB GPU. Time: ~12--24 hours.
 \end{alertblock}
 \end{frame}
 
-\begin{frame}[fragile,shrink=5]{Training Code Sketch (Hugging Face)}
-\begin{lstlisting}[language=Python]
-from transformers import AutoModelForSequenceClassification
-from transformers import AutoTokenizer, Trainer, TrainingArguments
 
-model = AutoModelForSequenceClassification.from_pretrained(
-    "bert-base-uncased", num_labels=2)
+\begin{frame}{Common Training Pitfalls}
+\irStage{TRAINING}
+\begin{itemize}
+    \item \textbf{Overfitting:} Neural rankers overfit MS MARCO quickly. Stop at 2--3 epochs.
+    \item \textbf{Catastrophic Forgetting:} Use small learning rates ($< 3 \times 10^{-5}$) and warmup.
+    \item \textbf{Weak Negatives:} Random samples are too easy. Use BM25 hard negatives.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile,shrink=10]{Implementation (Hugging Face)}
+\irStage{TRAINING}
+\begin{lstlisting}[language=Python]
+model = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased")
 tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
 
-def tokenize_pair(example):
-    return tokenizer(
-        example["query"], example["passage"],
-        truncation=True, max_length=512, padding="max_length")
-
-# training_args controls batching, lr, schedule
+# Training args
 args = TrainingArguments(
-    output_dir="./cross-encoder",
     per_device_train_batch_size=16,
-    gradient_accumulation_steps=2,  # effective batch 32
     learning_rate=2e-5,
     num_train_epochs=3,
-    warmup_ratio=0.1,
-    fp16=True,
-    evaluation_strategy="steps",
-    eval_steps=10000,
+    fp16=True
 )
-
-trainer = Trainer(model=model, args=args,
-    train_dataset=train_ds, eval_dataset=dev_ds)
+# Trainer handles batching, eval, and optimization
+trainer = Trainer(model=model, args=args, train_dataset=ds)
 trainer.train()
 \end{lstlisting}
 \end{frame}
@@ -1052,243 +845,146 @@ trainer.train()
 \end{frame}
 
 \begin{frame}{The Two-Stage Pipeline}
+\irStage{SYSTEM ARCHITECTURE}
+\textbf{Efficient neural search requires a multi-stage approach to balance cost and accuracy.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Recall}: Sparse methods (BM25) find $\sim$1000 candidates quickly.
+    \item \textbf{Precision}: Dense methods (Cross-Encoders) re-rank the top candidates.
+    \item \textbf{Scaling}: Enables web-scale search at sub-second latencies.
+\end{itemize}
+
+\vspace{0.5em}
 \begin{center}
 \input{tikz/two_stage_pipeline.tex}
 \end{center}
 \end{frame}
 
 \begin{frame}{Why Two Stages?}
-\begin{columns}
-\begin{column}{0.48\textwidth}
-\textbf{Stage 1: BM25 (Recall-Oriented)}
-\begin{itemize}
-    \item \textbf{Speed:} microseconds per query
-    \item \textbf{Role:} cast a wide net
-    \item Catch as many relevant docs as possible
-    \item Some irrelevant docs are fine
-    \item Metric: \textbf{Recall@1000}
-\end{itemize}
-\end{column}
+\irStage{SYSTEM ARCHITECTURE}
+\textbf{The pipeline separates the "wide net" retrieval from the "deep focus" ranking.}
 
-\begin{column}{0.48\textwidth}
-\textbf{Stage 2: BERT (Precision-Oriented)}
+\vspace{0.8em}
 \begin{itemize}
-    \item \textbf{Speed:} $\sim$5 ms per doc
-    \item \textbf{Role:} sort precisely
-    \item Push truly relevant docs to top
-    \item Remove false positives from BM25
-    \item Metric: \textbf{NDCG@10}
+    \item \textbf{Sparse (Recall)}: Microseconds per query. Metric: Recall@1000.
+    \item \textbf{Neural (Precision)}: ~5ms scale per doc. Metric: NDCG@10.
+    \item \textbf{Combined}: High precision search over an infinite corpus.
 \end{itemize}
-\end{column}
-\end{columns}
 
 \vspace{1em}
-
-\begin{alertblock}{Critical Dependency}
-The re-ranker can only re-order what Stage 1 retrieves. If BM25 misses a relevant document, the cross-encoder can \textbf{never} recover it.
-
-\vspace{0.3em}
-
-\textbf{Recall ceiling from Lecture 2:} Stage 1 determines the ceiling for the entire pipeline.
+\cpause
+\begin{alertblock}{The Recall Ceiling}
+If the sparse stage misses a document, the BERT stage can \textbf{never} score it. The first stage determines your performance upper-bound.
 \end{alertblock}
 \end{frame}
 
-\begin{frame}{Pipeline Variants}
+\begin{frame}{Comparing Pipeline Variants}
+\irStage{EVALUATION}
 \begin{table}
 \centering
-\small
-\begin{tabular}{lccl}
+\begin{tabular}{lcl}
 \toprule
-\textbf{Pipeline} & \textbf{NDCG@10} & \textbf{Latency} & \textbf{Notes} \\
+\textbf{Pipeline} & \textbf{NDCG@10} & \textbf{Latency} \\
 \midrule
-BM25 only & 0.45 & 5 ms & Baseline \\
-BM25 + RM3 & 0.49 & 15 ms & Query expansion \\
-BM25 + monoBERT & 0.55 & 500 ms & Neural re-rank \\
-BM25 + RM3 + monoBERT & \textbf{0.57} & 520 ms & Best sparse+neural \\
-BM25 + monoT5-3B & \textbf{0.58} & 2 s & Larger model \\
+BM25 Only & 0.45 & 5 ms \\
+BM25 + monoBERT & 0.55 & 500 ms \\
+BM25 + RM3 + monoBERT & \textbf{0.57} & 520 ms \\
+BM25 + monoT5-3B & \textbf{0.58} & 2 s \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\small \textit{(Approximate figures on MS MARCO passage ranking)}
-
 \vspace{1em}
-
-\begin{block}{Observations}
-\begin{itemize}
-    \item Cross-encoder adds $\sim$10 NDCG points over BM25 --- large improvement!
-    \item RM3 still helps even with BERT (better Stage 1 recall)
-    \item Larger models help but with diminishing returns and higher latency
-\end{itemize}
-\end{block}
+\cpause
+\textbf{Insight:} Neural re-ranking provides the single largest gain in modern IR (~10 NDCG points).
 \end{frame}
 
-\begin{frame}{What the Cross-Encoder Fixes}
-\textbf{Three categories where BERT improves over BM25:}
+\begin{frame}{What Neural Reranking Fixes}
+\irStage{SYSTEM ARCHITECTURE}
+\begin{itemize}
+    \item \textbf{Vocabulary Mismatch:} \textit{heart attack} matches \textit{myocardial infarction}.
+    \item \textbf{Semantic Intent:} Understands \textit{how to...} vs \textit{definitions of...}
+    \item \textbf{Negation:} Understands \textit{countries \textbf{without} death penalty}.
+\end{itemize}
 
 \vspace{1em}
-
-\textbf{1. Vocabulary Mismatch}
-\begin{itemize}
-    \item Query: ``heart attack'' $\to$ BM25 misses ``myocardial infarction''
-    \item BERT: cross-attention connects ``heart attack'' to ``myocardial infarction'' {\checkmark}
-\end{itemize}
-
-\vspace{0.5em}
-
-\textbf{2. Semantic Relevance vs.\ Topical Overlap}
-\begin{itemize}
-    \item Query: ``is coffee bad for you'' $\to$ BM25 ranks doc about coffee brands highly
-    \item BERT: understands the \textit{health} intent {\checkmark}
-\end{itemize}
-
-\vspace{0.5em}
-
-\textbf{3. Negation and Nuance}
-\begin{itemize}
-    \item Query: ``countries without death penalty'' $\to$ BM25 matches ``death penalty''
-    \item BERT: understands ``without'' changes the intent {\checkmark}
-\end{itemize}
-
-\vspace{0.5em}
-
-\begin{alertblock}{But Still Fails When\ldots}
-BM25 doesn't retrieve the relevant document in top-1000 at all (recall ceiling!).
+\cpause
+\begin{alertblock}{When It Still Fails}
+If S1 recall is poor. If the document is longer than 512 tokens (truncation).
 \end{alertblock}
 \end{frame}
 
 % ====================================================================
 % SECTION 5: HANDS-ON
 % ====================================================================
-\section{Hands-On with PyTerrier}
+\section{Hands-On: Neural Pipelines}
 
-\begin{frame}[plain]
-\sectionpage
-\end{frame}
-
-\begin{frame}[fragile]{Setup: Loading Index and Models}
-\begin{lstlisting}[language=Python]
+\begin{frame}[fragile]{Setup: Loading Models}
+\irStage{PRACTICE}
+\begin{lstlisting}[language=Python, basicstyle=\small\ttfamily]
 import pyterrier as pt
-if not pt.started():
-    pt.init()
-
-dataset = pt.get_dataset('irds:vaswani')
-index = pt.IndexFactory.of("./vaswani_index")
-topics = dataset.get_topics().head(10)
-qrels = dataset.get_qrels()
-
-# BM25 baseline (from Lecture 3)
-bm25 = pt.BatchRetrieve(index, wmodel="BM25")
-
-# For neural re-ranking, we use PyTerrier's 
-# integration with Hugging Face models
 from pyterrier_t5 import MonoT5ReRanker
 
-# Load monoT5 re-ranker (small version for demo)
-monoT5 = MonoT5ReRanker(model='castorini/monot5-base-msmarco')
+# BM25 baseline (Lecture 3)
+bm25 = pt.BatchRetrieve(index, wmodel="BM25")
+
+# Load monoT5 re-ranker
+monoT5 = MonoT5ReRanker()
 \end{lstlisting}
 \end{frame}
 
-\begin{frame}[fragile]{Exercise 1: BM25 vs. Cross-Encoder}
-\begin{lstlisting}[language=Python]
-# Stage 1: BM25 retrieves top 1000
-# Stage 2: monoT5 re-ranks top 100
-pipeline_rerank = (bm25 % 100) >> monoT5
+\begin{frame}[fragile]{Exercise 1: The Reranking Pipeline}
+\irStage{PRACTICE}
+\begin{lstlisting}[language=Python, basicstyle=\small\ttfamily]
+# Stage 1: BM25 retrieves top 100
+# Stage 2: monoT5 re-ranks
+pipeline = (bm25 % 100) >> monoT5
 
-# Compare
-comparison = pt.Experiment(
-    [bm25, pipeline_rerank],
+# Evaluate
+pt.Experiment(
+    [bm25, pipeline],
     topics, qrels,
-    eval_metrics=["map", "ndcg_cut_10", "P_10"],
+    eval_metrics=["map", "ndcg_cut_10"],
     names=["BM25", "BM25 + monoT5"]
 )
-print(comparison)
-
-# Per-query analysis: which queries improve most?
-results_bm25 = pt.Experiment([bm25], topics, qrels,
-    eval_metrics=["ndcg_cut_10"], perquery=True)
-results_rerank = pt.Experiment([pipeline_rerank], topics, qrels,
-    eval_metrics=["ndcg_cut_10"], perquery=True)
 \end{lstlisting}
 \end{frame}
 
-\begin{frame}[fragile]{Exercise 2: Pipeline Combinations}
-\begin{lstlisting}[language=Python]
-# Build multiple pipelines
-rm3 = pt.rewrite.RM3(index)
-
-pipelines = {
-    "BM25": bm25,
-    "BM25 + RM3": bm25 >> rm3 >> bm25,
-    "BM25 + monoT5": (bm25 % 100) >> monoT5,
-    "BM25 + RM3 + monoT5": (
-        bm25 >> rm3 >> bm25) % 100 >> monoT5,
-}
-
-results = pt.Experiment(
-    list(pipelines.values()), topics, qrels,
-    eval_metrics=["map", "ndcg_cut_10", "recall_100"],
-    names=list(pipelines.keys())
-)
-print(results)
-\end{lstlisting}
-
-\textbf{Discussion:}
+\begin{frame}{Exercise 2: Analyzing Improvements}
+\irStage{PRACTICE}
 \begin{itemize}
-    \item Does RM3 still help when BERT re-ranks? (Yes --- better Stage 1 recall)
-    \item What is the latency difference?
+    \item Find a query where \textbf{monoT5 >> BM25}.
+    \item Inspect the top Docs.
+    \item \textbf{Question:} Why did BM25 fail? (Mismatch? Intent?)
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Exercise 3: Effect of Re-rank Depth}
-\begin{lstlisting}[language=Python]
-# How many docs should we re-rank?
-depths = [10, 20, 50, 100, 200, 500]
-pipelines_depth = {
-    f"rerank@{d}": (bm25 % d) >> monoT5
-    for d in depths
-}
+\begin{frame}{Practice: Depth vs. Accuracy}
+\irStage{PRACTICE}
+\textbf{How many documents should we re-rank for the best performance?}
 
-results = pt.Experiment(
-    [bm25] + list(pipelines_depth.values()),
-    topics, qrels,
-    eval_metrics=["ndcg_cut_10", "recall_100"],
-    names=["BM25 only"] + list(pipelines_depth.keys())
-)
-print(results)
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{top-10}: Extremely fast, but minimal recall coverage.
+    \item \textbf{top-100}: Best quality/latency trade-off \textcolor{irHybrid}{\checkmark}.
+    \item \textbf{top-1000}: Diminishing returns; latency becomes too high.
+\end{itemize}
 
-# Plot: NDCG@10 vs re-rank depth
-# Observe: diminishing returns after ~100
-# Also: recall_100 stays same (only reordering!)
-\end{lstlisting}
-
-\textbf{Key insight:} Re-ranking deeper costs more time but reaches diminishing returns quickly. The sweet spot is typically 100--200.
+\vspace{1em}
+\cpause
+\begin{exampleblock}{Conclusion}
+Re-ranking beyond 100--200 documents rarely improves top-10 metrics, but increases latency linearly.
+\end{exampleblock}
 \end{frame}
 
-\begin{frame}{Student Exercises}
-\begin{block}{Exercise A: Analyze Cross-Encoder Improvements (10 min)}
-\begin{itemize}
-    \item Find a query where monoT5 significantly improves over BM25
-    \item Inspect the top-5 documents from each
-    \item Why did BM25 fail? (vocabulary mismatch? topical but not relevant?)
-\end{itemize}
-\end{block}
-
-\begin{block}{Exercise B: When Does Re-ranking Fail? (10 min)}
-\begin{itemize}
-    \item Find a query where monoT5 does \textbf{not} help (or hurts)
-    \item Check: is the relevant document in BM25's top-1000? (recall ceiling)
-    \item What would fix this? (hint: dense retrieval, Lecture 5)
-\end{itemize}
-\end{block}
-
-\begin{block}{Exercise C: Latency Measurement (5 min)}
-\begin{itemize}
-    \item Time BM25 alone vs.\ BM25+monoT5 per query
-    \item How does re-rank depth affect latency?
-    \item What depth gives the best quality-vs-latency trade-off?
-\end{itemize}
-\end{block}
+\begin{frame}{Student Exercise: Analyze (15 min)}
+\irStage{PRACTICE}
+\begin{enumerate}
+    \item Find a query where \textbf{monoT5} moves a relevant doc from pos 50 to pos 1.
+    \item Find a query where the relevant doc is \textbf{not in the top 100}.
+    \item \textbf{Discuss:} Can the re-ranker help in Case 2?
+\end{enumerate}
 \end{frame}
 
 
@@ -1302,36 +998,62 @@ print(results)
 \end{frame}
 
 \begin{frame}{The Representation Spectrum}
+\irStage{SUMMARY}
+\textbf{Text representations evolved from sparse matching to deep semantic interaction.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Sparse}: High scalability, zero semantics (Exact-match bottleneck).
+    \item \textbf{Dense}: Good semantics, high scalability via ANN (Retrieval).
+    \item \textbf{Neural}: Deepest interaction, lowest scalability (Re-ranking).
+\end{itemize}
+
+\vspace{0.5em}
 \begin{center}
 \input{tikz/representation_spectrum.tex}
 \end{center}
-
-\vspace{0.5em}
-
-\begin{exampleblock}{Today's Key Insight}
-Cross-encoders are the \textbf{most accurate} ranking method but \textbf{cannot retrieve}. They must be paired with a fast first stage (BM25 or dense retrieval).
-\end{exampleblock}
 \end{frame}
 
-\begin{frame}{Cross-Encoder vs.\ Bi-Encoder (Preview of Lecture 5)}
+\begin{frame}{Cross-Encoder vs.\ Bi-Encoder: Architecture}
+\irStage{BACKGROUND}
+\textbf{The architectural difference determines whether documents can be pre-computed.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Bi-Encoder}: Encodes $q$ and $d$ independently $\to$ Pre-computation OK.
+    \item \textbf{Cross-Encoder}: Encodes $q$ and $d$ together $\to$ Full token interaction.
+    \item \textbf{Result}: Bi-Encoders are for search; Cross-Encoders are for ranking.
+\end{itemize}
+
+\vspace{0.5em}
 \begin{center}
 \input{tikz/cross_vs_bi_encoder.tex}
 \end{center}
+\end{frame}
+
+\begin{frame}{Cross-Encoder vs.\ Bi-Encoder: Comparison}
+\irStage{BACKGROUND}
+\textbf{Choosing the right model depends on where you are in the search pipeline.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Strategy}: Use Bi-Encoders to find thousands of candidates fast.
+    \item \textbf{Precision}: Use Cross-Encoders to sort the final top-100 list.
+    \item \textbf{Goal}: Balance web-scale speed with deep semantic accuracy.
+\end{itemize}
 
 \vspace{0.5em}
-
 \begin{table}
 \centering
-\footnotesize
+\small
 \begin{tabular}{lcc}
 \toprule
-& \textbf{Cross-Encoder} & \textbf{Bi-Encoder} \\
+ & \textbf{Bi-Encoder} & \textbf{Cross-Encoder} \\
 \midrule
-Query-doc interaction & Full (all layers) & None (dot product only) \\
-Pre-compute doc embeddings & \textcolor{red}{\ding{55}} No & \textcolor{green}{\checkmark} Yes (offline) \\
-Use for retrieval & \textcolor{red}{\ding{55}} No (too slow) & \textcolor{green}{\checkmark} Yes (with ANN) \\
-Accuracy & Higher & Lower \\
-Speed at inference & Slow & Fast \\
+Pre-compute & \textcolor{irHybrid}{\checkmark} Yes (Offline) & \textcolor{irRerank}{\texttimes} No (Runtime) \\
+Retrieval & \textcolor{irHybrid}{\checkmark} Use with ANN & \textcolor{irRerank}{\texttimes} Too expensive \\
+Latency & Low (~10ms) & High (~500ms scale) \\
+Accuracy & Lower & Higher \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1345,37 +1067,31 @@ Speed at inference & Slow & Fast \\
 
 
 \begin{frame}{Preview: Lecture 5 --- Dense Retrieval}
+\irStage{SYSTEM ARCHITECTURE}
 \begin{block}{The Problem We'll Solve}
-Cross-encoders can't retrieve. BM25 misses semantic matches. \\
+Cross-encoders are too slow to score 1M documents. \\
 What if we could do \textbf{semantic retrieval} over the full corpus?
 \end{block}
 
-\vspace{0.5em}
-
-\begin{block}{Solution: Bi-Encoders + ANN}
+\vspace{1em}
+\cpause
+\textbf{Solution: Bi-Encoders + ANN}
 \begin{enumerate}
-    \item Encode all documents \textbf{offline} with BERT $\to$ dense vectors
-    \item Store in ANN index (IVF+PQ from Lecture 2!)
-    \item At query time: encode query with BERT $\to$ ANN search $\to$ top-$k$
+    \item Encode all documents \textbf{offline} $\to$ Dense vectors.
+    \item Store in ANN index (using IVF+PQ from Lecture 2!).
+    \item At query time: Query Vector $\to$ ANN Search $\to$ Top-$k$.
 \end{enumerate}
-\end{block}
-
-\vspace{0.5em}
-
-\begin{exampleblock}{What You'll Learn}
-\begin{itemize}
-    \item Bi-encoder training: contrastive learning, hard negatives
-    \item DPR, ColBERT (late interaction)
-    \item Hybrid retrieval: BM25 + Dense
-    \item Connection to Lecture 2's ANN indexing (IVF+PQ, FAISS)
-\end{itemize}
-\end{exampleblock}
 \end{frame}
 
-\begin{frame}{Dense Retrieval with ANN}
+\begin{frame}{The Dense Retrieval Pipeline}
+\irStage{SYSTEM ARCHITECTURE}
 \begin{center}
-\includegraphics[width=0.85\textwidth]{figures/dense-retrieval-ann.pdf}
+\input{tikz/dense_retrieval_pipeline.tex}
 \end{center}
+
+\vspace{1em}
+\cpause
+\textbf{Efficiency:} ANN reduces a million-vector search to ~10ms scale.
 \end{frame}
 
 
@@ -1421,21 +1137,17 @@ All of today's methods produce \textbf{features} for learning to rank:
 \end{frame}
 
 \begin{frame}{Key Takeaways}
-\begin{block}{1. Dense Representations Capture Semantics}
-Word2Vec/GloVe learn word vectors from co-occurrence. But static embeddings cannot handle polysemy. Contextualized embeddings (BERT) solve this.
-\end{block}
+\irStage{SUMMARY}
+\begin{itemize}
+    \item \textbf{Dense Reps:} Capture semantics that sparse terms miss.
+    \item \textbf{Transformers:} Contextualize embeddings via self-attention.
+    \item \textbf{Cross-Encoders:} Most accurate re-rankers (slow).
+    \item \textbf{Pipelines:} Standard architecture: \textit{Retrieve $\to$ Rerank}.
+\end{itemize}
 
-\begin{block}{2. Transformers Enable Contextualized Understanding}
-Self-attention lets every token attend to every other token. Multi-head attention captures multiple relationship types. Positional encoding preserves word order.
-\end{block}
-
-\begin{block}{3. Cross-Encoders Are the Most Accurate Rankers}
-BERT cross-encoders process query + document jointly. They understand synonymy, negation, and semantic relevance. But they're too slow for full-corpus retrieval.
-\end{block}
-
-\begin{block}{4. The Two-Stage Pipeline Is the Standard Architecture}
-BM25 (fast, high recall) $\to$ Cross-encoder (slow, high precision). RM3 can further improve Stage 1 recall. This is how modern search engines work.
-\end{block}
+\vspace{1em}
+\cpause
+\textbf{Preview:} Next class we solve the \textit{Recall Ceiling} with \textbf{Dense Retrieval}.
 \end{frame}
 
 \begin{frame}{Assignment}
@@ -1466,49 +1178,26 @@ Extended Jupyter notebook. Bring your best pipeline to Lecture 5.
 \end{frame}
 
 \begin{frame}{Next Class: Dense Retrieval}
+\irStage{SUMMARY}
+\textbf{Next week, we solve the "Recall Ceiling" by using Bi-Encoders for full-corpus search.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Goal}: Move semantic matching from Stage 2 to Stage 1.
+    \item \textbf{Method}: Approximate Nearest Neighbors (ANN) over dense vectors.
+    \item \textbf{Result}: Massive recall gains for topically broad queries.
+\end{itemize}
+
+\vspace{1em}
+\cpause
 \begin{block}{Preparation}
-\textbf{Read:}
-\begin{itemize}
-    \item Karpukhin et al.\ (2020): ``Dense Passage Retrieval for Open-Domain QA''
-    \item Khattab \& Zaharia (2020): ``ColBERT: Efficient and Effective Passage Search''
-\end{itemize}
-
-\textbf{Skim:}
-\begin{itemize}
-    \item Reimers \& Gurevych (2019): ``Sentence-BERT''
-\end{itemize}
+\textbf{Read}: Karpukhin et al. (2020) on DPR and Khattab (2020) on ColBERT.
 \end{block}
-
-\vspace{0.5em}
-
-\begin{exampleblock}{What We'll Build}
-\begin{itemize}
-    \item Bi-encoder retrieval over the full corpus
-    \item Dense + Sparse hybrid retrieval
-    \item Connect to ANN indexing from Lecture 2
-    \item The missing piece: semantic matching at retrieval time
-\end{itemize}
-\end{exampleblock}
 \end{frame}
 
 \begin{frame}{Questions?}
 \begin{center}
 \Huge Questions?
-
-\vspace{2em}
-
-\Large
-Office Hours: [Your time]
-
-\vspace{1em}
-
-Email: [Your email]
-
-\vspace{2em}
-
-\normalsize
-\textbf{Key formula to remember:}
-$$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right) V$$
 \end{center}
 \end{frame}
 
@@ -1518,6 +1207,7 @@ $$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)
 \appendix
 
 \begin{frame}{Backup: BERT Model Sizes}
+\irStage{BACKGROUND}
 \begin{table}
 \centering
 \begin{tabular}{lcccl}
@@ -1525,61 +1215,42 @@ $$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)
 \textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Params} & \textbf{Use Case} \\
 \midrule
 BERT-tiny & 2 & 128 & 4M & Debugging \\
-BERT-mini & 4 & 256 & 11M & Mobile \\
 BERT-small & 4 & 512 & 29M & Lightweight \\
-BERT-base & 12 & 768 & 110M & Standard \\
-BERT-large & 24 & 1024 & 340M & Best quality \\
+BERT-base & 12 & 768 & 110M & \textbf{Standard} \\
+BERT-large & 24 & 1024 & 340M & SOTA \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \vspace{1em}
-
-\textbf{For IR re-ranking:}
-\begin{itemize}
-    \item BERT-base is the standard (good quality-to-speed ratio)
-    \item BERT-large: $\sim$3$\times$ slower, $\sim$1--2 NDCG points better
-    \item DistilBERT: 40\% faster, minimal quality loss (good for production)
-\end{itemize}
+\cpause
+\textbf{Production:} DistilBERT is 40\% faster with minimal quality loss.
 \end{frame}
 
-\begin{frame}{Backup: Attention Weight Visualization}
-\textbf{Query:} ``who founded Tesla'' \quad \textbf{Document:} ``Elon Musk founded Tesla Motors in 2003\ldots''
+\begin{frame}{Backup: Attention Weights (Example)}
+\irStage{TRANSFORMERS}
+\textbf{Query:} ``who founded Tesla'' \quad \textbf{Doc:} ``Elon Musk founded Tesla...''
 
 \vspace{0.5em}
-
 \begin{center}
 \begin{tikzpicture}[scale=0.85]
     % Query tokens (left)
     \foreach \i/\word in {0/who, 1/founded, 2/Tesla} {
-        \node[font=\footnotesize, anchor=east, red] (q\i) at (0, -\i*0.8) {\word};
+        \node[font=\footnotesize, anchor=east, irRerank] (q\i) at (0, -\i*0.8) {\word};
     }
     % Doc tokens (right)
     \foreach \j/\word in {0/Elon, 1/Musk, 2/founded, 3/Tesla, 4/Motors, 5/in, 6/2003} {
-        \node[font=\footnotesize, anchor=west, green!60!black] (d\j) at (5, -\j*0.5 + 0.5) {\word};
+        \node[font=\footnotesize, anchor=west, irHybrid] (d\j) at (5, -\j*0.5 + 0.5) {\word};
     }
 
-    % Attention weights (thicker = higher weight)
-    \draw[blue, opacity=0.2, line width=0.5pt] (q0.east) -- (d0.west);
-    \draw[blue, opacity=0.7, line width=2pt] (q0.east) -- (d1.west);
-    \draw[blue, opacity=0.1, line width=0.3pt] (q0.east) -- (d2.west);
+    % Attention weights
+    \draw[irDense, opacity=0.7, line width=2pt] (q0.east) -- (d1.west);
+    \draw[irDense, opacity=0.9, line width=3pt] (q1.east) -- (d2.west);
+    \draw[irDense, opacity=0.8, line width=2.5pt] (q2.east) -- (d3.west);
 
-    \draw[blue, opacity=0.9, line width=3pt] (q1.east) -- (d2.west);
-    \draw[blue, opacity=0.1, line width=0.3pt] (q1.east) -- (d5.west);
-
-    \draw[blue, opacity=0.8, line width=2.5pt] (q2.east) -- (d3.west);
-    \draw[blue, opacity=0.4, line width=1pt] (q2.east) -- (d4.west);
-
-    \node[font=\footnotesize, gray] at (2.5, -3.5) {Line thickness $\propto$ attention weight};
+    \node[font=\tiny, irInfra] at (2.5, -3.5) {Thickness $\propto$ Attention Weight};
 \end{tikzpicture}
 \end{center}
-
-\textbf{Observations:}
-\begin{itemize}
-    \item ``who'' attends strongly to ``Musk'' (answer entity)
-    \item ``founded'' attends to ``founded'' (exact match) and weakly to ``in'' (temporal)
-    \item ``Tesla'' attends to ``Tesla'' and ``Motors'' (entity span)
-\end{itemize}
 \end{frame}
 
 \begin{frame}{Backup: Beyond BERT --- Modern Cross-Encoders}
@@ -1651,35 +1322,29 @@ Novel approach: give GPT-4 a \textit{list} of documents and ask it to sort by re
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Backup: Historical Context}
+\begin{frame}{Backup: Historical Milestones}
+\irStage{BACKGROUND}
 \begin{center}
 \begin{tikzpicture}[
-    event/.style={rectangle, draw, rounded corners, fill=blue!10, text width=3.5cm, align=center, font=\footnotesize, minimum height=0.8cm}
+    event/.style={rectangle, draw, rounded corners, fill=irDense!10, text width=2.2cm, align=center, font=\tiny, minimum height=0.6cm}
 ]
-    \draw[->, thick] (0, 0) -- (12, 0);
+    \draw[->, thick, irInfra] (0, 0) -- (10, 0);
 
-    \node[event] at (0.5, 1) {2013\\Word2Vec\\(Mikolov)};
-    \node[event] at (3, -1) {2014\\GloVe\\(Pennington)};
-    \node[event] at (5.5, 1) {2017\\Transformer\\(Vaswani)};
-    \node[event] at (8, -1) {2018\\BERT\\(Devlin)};
-    \node[event] at (10.5, 1) {2019\\monoBERT\\(Nogueira)};
+    \node[event] at (0.5, 0.8) {2013\\Word2Vec};
+    \node[event] at (2.5, -0.8) {2014\\GloVe};
+    \node[event] at (4.5, 0.8) {2017\\Transformer};
+    \node[event] at (6.5, -0.8) {2018\\BERT};
+    \node[event] at (8.5, 0.8) {2019\\monoBERT};
 
-    \foreach \x in {0.5, 3, 5.5, 8, 10.5} {
-        \fill (\x, 0) circle (3pt);
+    \foreach \x in {0.5, 2.5, 4.5, 6.5, 8.5} {
+        \fill[irInfra] (\x, 0) circle (2pt);
     }
 \end{tikzpicture}
 \end{center}
 
 \vspace{1em}
-
-\textbf{Key milestones for IR:}
-\begin{itemize}
-    \item 2013: Dense word representations become practical
-    \item 2017: Attention mechanism replaces RNNs
-    \item 2018: Pre-trained contextual models (transfer learning for NLP)
-    \item 2019: First application to IR re-ranking --- large gains over BM25
-    \item 2020+: Dense retrieval, hybrid systems, LLM-based ranking
-\end{itemize}
+\cpause
+\textbf{Focus:} 2019 marked the shift to \textit{contextualized} neural re-ranking.
 \end{frame}
 
 \end{document}
