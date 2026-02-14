@@ -51,7 +51,7 @@
 \input{theme/macros.tex}
 
 % Title information
-\title[Embeddings \& Re-ranking]{Embeddings \& Transformer Re-rankers}
+\title[Representation Learning for rankings]{Representation Learning for rankings}
 \subtitle{Lecture 4: From Bag-of-Words to Contextualized Representations}
 \author{Avishek Anand}
 \institute{Information Retrieval}
@@ -129,16 +129,14 @@ How do we learn dense representations that capture word meaning?
 \begin{itemize}
     \item ``A bottle of \textit{tezguino} is on the table.''
     \item ``Everybody enjoys \textit{tezguino}.''
-    \item ``\textit{Tezguino} makes you drunk.''
+    % \item ``\textit{Tezguino} makes you drunk.''
     \item ``We brew \textit{tezguino} from corn.''
 \end{itemize}
 
-\vspace{0.5em}
-
+% \vspace{0.5em}
+\cpause
 Without ever seeing a definition, we infer: \textit{tezguino} is an alcoholic beverage.
-
-\vspace{1em}
-
+% \vspace{1em}
 \begin{exampleblock}{Implication for IR}
 Words that appear in similar contexts should have similar vector representations. If we achieve this, ``car'' and ``automobile'' will be close in vector space.
 \end{exampleblock}
@@ -156,6 +154,7 @@ Train a neural network to predict context words from a target word (Skip-gram) o
 \end{center}
 \end{frame}
 
+
 \begin{frame}{Word2Vec: Famous Properties}
 \begin{block}{Linear Analogies}
 $$\vec{\text{king}} - \vec{\text{man}} + \vec{\text{woman}} \approx \vec{\text{queen}}$$
@@ -170,9 +169,12 @@ $$\vec{\text{king}} - \vec{\text{man}} + \vec{\text{woman}} \approx \vec{\text{q
     \item Semantic similarity $\approx$ vector proximity (cosine similarity)
 \end{itemize}
 
-\vspace{1em}
+\end{frame}
 
-\textbf{Relevance to IR:}
+
+\begin{frame}{Word2Vec: Relevance to IR}
+\vspace{0.5em}
+
 \begin{itemize}
     \item $\cos(\vec{\text{car}}, \vec{\text{automobile}}) \approx 0.7$ --- high similarity!
     \item $\cos(\vec{\text{car}}, \vec{\text{banana}}) \approx 0.1$ --- low similarity
@@ -187,37 +189,37 @@ Each word has \textbf{exactly one} vector, regardless of context.\\
 \end{alertblock}
 \end{frame}
 
-\begin{frame}{GloVe: Global Vectors}
-\begin{block}{Key Idea (Pennington et al., 2014)}
-Instead of predicting context words, directly factorize the \textbf{word co-occurrence matrix}. Objective: $\vec{w}_i \cdot \vec{w}_j$ should approximate $\log(\text{co-occurrence count})$.
-\end{block}
+% \begin{frame}{GloVe: Global Vectors}
+% \begin{block}{Key Idea (Pennington et al., 2014)}
+% Instead of predicting context words, directly factorize the \textbf{word co-occurrence matrix}. Objective: $\vec{w}_i \cdot \vec{w}_j$ should approximate $\log(\text{co-occurrence count})$.
+% \end{block}
 
-\vspace{1em}
+% \vspace{1em}
 
-\begin{columns}
-\begin{column}{0.48\textwidth}
-\textbf{Word2Vec vs.\ GloVe:}
-\begin{itemize}
-    \item Word2Vec: local context windows
-    \item GloVe: global co-occurrence statistics
-    \item \textbf{In practice:} similar quality
-    \item Both produce static, non-contextual vectors
-\end{itemize}
-\end{column}
-\begin{column}{0.48\textwidth}
-\textbf{Common dimensions:}
-\begin{itemize}
-    \item 50d (fast, less accurate)
-    \item 100d, 200d (common)
-    \item 300d (standard, best quality)
-\end{itemize}
+% \begin{columns}
+% \begin{column}{0.48\textwidth}
+% \textbf{Word2Vec vs.\ GloVe:}
+% \begin{itemize}
+%     \item Word2Vec: local context windows
+%     \item GloVe: global co-occurrence statistics
+%     \item \textbf{In practice:} similar quality
+%     \item Both produce static, non-contextual vectors
+% \end{itemize}
+% \end{column}
+% \begin{column}{0.48\textwidth}
+% \textbf{Common dimensions:}
+% \begin{itemize}
+%     \item 50d (fast, less accurate)
+%     \item 100d, 200d (common)
+%     \item 300d (standard, best quality)
+% \end{itemize}
 
-\vspace{0.5em}
+% \vspace{0.5em}
 
-\textbf{Pre-trained:} Trained on Wikipedia + web data, downloadable.
-\end{column}
-\end{columns}
-\end{frame}
+% \textbf{Pre-trained:} Trained on Wikipedia + web data, downloadable.
+% \end{column}
+% \end{columns}
+% \end{frame}
 
 \begin{frame}{From Words to Documents: The Naive Approach}
 \begin{block}{Average Word Embeddings}
@@ -243,8 +245,7 @@ $$\vec{d} = \frac{\vec{\text{the}} + \vec{\text{cat}} + \vec{\text{sat}} + \vec{
 \begin{column}{0.48\textwidth}
 \textbf{\textcolor{red}{\ding{55}} Problems:}
 \begin{itemize}
-    \item Loses word order completely
-    \item ``dog bites man'' = ``man bites dog''
+    \item Loses word order completely (``dog bites man'' = ``man bites dog'')
     \item Polysemy unresolved
     \item Rare/important words drowned out
 \end{itemize}
@@ -300,8 +301,7 @@ Sequential models (RNNs, LSTMs):
 
 \vspace{1em}
 
-\begin{block}{The Transformer Insight (Vaswani et al., 2017)}
-\textbf{``Attention Is All You Need''}
+\begin{block}{The Transformer Insight (Vaswani et al., 2017) in ``Attention Is All You Need''}
 \begin{itemize}
     \item Process all words \textbf{simultaneously} (parallel)
     \item Each word attends to \textbf{every other word} directly
@@ -313,7 +313,7 @@ Sequential models (RNNs, LSTMs):
 
 \begin{frame}{Encoder Model Architecture}
 \begin{center}
-\includegraphics[width=0.75\textwidth]{figures/embeddings-encoder-model.pdf}
+\includegraphics[width=0.50\textwidth]{figures/embeddings-encoder-model.pdf}
 \end{center}
 \end{frame}
 
@@ -357,14 +357,14 @@ Each word $w_i$ is projected into three vectors:
 \textbf{Attention computation:}
 $$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right) V$$
 
-\vspace{0.5em}
+% \vspace{0.5em}
 
 \textbf{Step by step:}
 \begin{enumerate}
     \item Compute similarity: $\vec{q}_i \cdot \vec{k}_j$ for all pairs $(i, j)$
-    \item Scale by $\sqrt{d_k}$ to prevent extreme values
-    \item Softmax $\to$ attention weights (sum to 1)
-    \item Weighted sum of value vectors $\to$ new representation for word $i$
+    \item Scale by $\sqrt{d_k}$ to prevent extreme values, 
+    \item apply softmax $\to$ attention weights (sum to 1)
+    \item compute weighted sum of value vectors $\to$ new representation for word $i$
 \end{enumerate}
 
 \vspace{0.5em}
@@ -375,7 +375,7 @@ Every word's output is a \textbf{weighted combination of all words' values}, whe
 \end{frame}
 
 \begin{frame}{Self-Attention: Worked Example (1/2)}
-\textbf{Sentence:} ``retrieval models'' (2 tokens for simplicity, $d_k = 2$)
+\textbf{Sentence:} ``\texttt{retrieval models}'' (2 tokens for simplicity, $d_k = 2$)
 
 \vspace{0.5em}
 
@@ -429,11 +429,11 @@ These are the \textbf{attention weights}: how much ``retrieval'' attends to each
 \textbf{Step 4: Weighted sum of values}:
 \begin{align*}
 \vec{h}_{\text{retrieval}} &= 0.55 \times \vec{v}_{\text{retrieval}} + 0.45 \times \vec{v}_{\text{models}} \\
-&= 0.55 \times [0.3, 0.9] + 0.45 \times [0.7, 0.4] \\
+% &= 0.55 \times [0.3, 0.9] + 0.45 \times [0.7, 0.4] \\
 &= [0.48, 0.68]
 \end{align*}
 
-\vspace{0.5em}
+% \vspace{0.5em}
 
 \begin{exampleblock}{Result}
 The output for ``retrieval'' now incorporates information from ``models''!
@@ -444,14 +444,14 @@ The output for ``retrieval'' now incorporates information from ``models''!
 \begin{block}{Problem}
 A single attention head can only capture one type of relationship. But words relate to each other in multiple ways (syntactic, semantic, positional).
 \end{block}
-
+\cpause
 \vspace{0.5em}
 
 \begin{block}{Solution: Multiple Heads}
 Run $h$ separate attention computations in parallel, each with its own $Q$, $K$, $V$ projections. Concatenate and project:
 $$\text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \ldots, \text{head}_h) \cdot W^O$$
 \end{block}
-
+\cpause
 \vspace{0.5em}
 
 \textbf{BERT uses $h = 12$ heads.} Each head can learn different patterns:
@@ -474,14 +474,14 @@ Self-attention is permutation-invariant --- ``dog bites man'' and ``man bites do
 Before feeding tokens to the transformer, add a \textbf{positional encoding} vector to each word embedding:
 $$\vec{x}_i = \vec{e}_{\text{word}_i} + \vec{p}_i$$
 \end{block}
-
+\cpause
 \vspace{0.5em}
 
-\textbf{Sinusoidal encoding} (Vaswani et al.):
-\begin{align*}
-PE_{(pos, 2i)} &= \sin(pos / 10000^{2i/d}) \\
-PE_{(pos, 2i+1)} &= \cos(pos / 10000^{2i/d})
-\end{align*}
+% \textbf{Sinusoidal encoding} (Vaswani et al.):
+% \begin{align*}
+% PE_{(pos, 2i)} &= \sin(pos / 10000^{2i/d}) \\
+% PE_{(pos, 2i+1)} &= \cos(pos / 10000^{2i/d})
+% \end{align*}
 
 Each position gets a unique pattern. Nearby positions have similar encodings.
 
