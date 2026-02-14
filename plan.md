@@ -11,7 +11,7 @@
 | L1: Intro to IR | ✅ Done | Boolean retrieval, VSM, TF-IDF, cosine similarity |
 | L2: Indexing | ✅ Done | Inverted index, preprocessing, compression, ANN, IVF+PQ, FAISS |
 | L3: Ranking | ✅ Slides exist | BM25, LM (JM/Dirichlet), RM3, query expansion, PyTerrier |
-| L4: Embeddings & Re-ranking | 🔲 To plan | |
+| L4: Embeddings & Re-ranking | ✅ Done | WordEmbeddings, Transformers, BERT, Cross-encoders, ColBERT |
 | L5: Dense Retrieval | 🔲 To plan | |
 | L6: Learning to Rank | 🔲 To plan | |
 
@@ -74,7 +74,7 @@ Key dependency insight: **L4 and L5 both depend on L3, but L5 also depends on L4
 
 ## Lecture 4: Embeddings & Transformer Re-rankers
 
-### Big Picture
+### Big Picture (Done)
 This is the "neural turn" lecture. Students go from bag-of-words to contextualized representations. The key deliverable: understand how BERT cross-encoders re-rank BM25 candidates.
 
 ### Proposed Structure
@@ -117,28 +117,30 @@ This is the "neural turn" lecture. Students go from bag-of-words to contextualiz
 - Latency analysis: 1000 × BERT inference ≈ too slow; 100 × BERT ≈ feasible
 - **This is the de facto architecture of modern search**
 
-**Section 5: Hands-on** (15 min)
+**Section 5: Training & Evaluation** (15 min)
+- MS MARCO dataset: sparse labels, scale
+- Negative sampling: random vs. BM25 hard negatives
+- Metrics: MRR@10, NDCG@10 (TREC Deep Learning Track)
+
+**Section 6: Transition to Retrieval — ColBERT** (10 min)
+- Late interaction: MaxSim mechanism
+- Accuracy-latency trade-offs (Cross-encoder vs. ColBERT vs. Bi-encoder)
+- Pre-computing token embeddings
+
+**Section 7: Hands-on** (10 min)
 - PyTerrier with BERT re-ranker
-- Compare BM25 → BM25+BERT → BM25+RM3+BERT
-- Show per-query improvements
+- Comparing BM25 vs. BM25+monoBERT
 
 ### Key Concepts Introduced
-- Word embeddings (Word2Vec, GloVe)
-- Contextualized embeddings
-- Self-attention mechanism
-- Transformer encoder
-- BERT (MLM, NSP, fine-tuning)
-- Cross-encoder (query-document joint encoding)
+- Transformers & Self-attention
+- BERT as a Cross-encoder
 - Two-stage retrieve-then-rerank pipeline
-- monoBERT / monoT5
-
-### What NOT to cover here (save for L5)
-- Bi-encoders (separate query/doc encoding) → that's dense retrieval
-- FAISS / ANN for embeddings → already in L2, will connect in L5
-- Contrastive training / hard negatives → L5
+- Negative sampling (hard negatives)
+- MRR and NDCG evaluations
+- Late interaction (ColBERT)
 
 ### Boundary with L5
-The cleanest split: **L4 = cross-encoders (re-ranking); L5 = bi-encoders (retrieval)**. Cross-encoders can't retrieve because they need both q and d at inference time. Bi-encoders pre-encode documents, enabling retrieval via ANN. This is a natural and important distinction.
+The cleanest split: **L4 = cross-encoders (re-ranking) + ColBERT intro; L5 = bi-encoders (retrieval) + advanced dense training**.
 
 ---
 

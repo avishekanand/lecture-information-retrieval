@@ -136,10 +136,7 @@ Three reasons make indexing indispensable:
     \item \textbf{Feasibility:} We must reduce millions of documents to hundreds of candidates.
 \end{enumerate}
 
-\begin{definition}[Recall Ceiling]
-\label{def:recall-ceiling}
-The \emph{recall ceiling} of an indexing system is the maximum recall achievable by any downstream component. If a relevant document is not returned by the candidate generation stage, no re-ranker or LLM can recover it.
-\end{definition}
+The \emph{recall ceiling} of an indexing system is the maximum recall achievable by any downstream component. If a relevant document is not returned by the candidate generation stage, no re-ranker or LLM can recover it~\cite{robertson2009probabilistic}.
 
 \begin{center}
 \input{tikz/indexing_controls.tex}
@@ -980,69 +977,7 @@ Use \textbf{sparse} for exact names, model numbers, unique terms. Use \textbf{de
 %=======================================================================
 % REFERENCES
 %=======================================================================
-\begin{thebibliography}{99}
-
-\bibitem{lewis2020rag}
-P.~Lewis, E.~Perez, A.~Piktus, F.~Petroni, V.~Karpukhin, N.~Goyal, H.~K\"uttler, M.~Lewis, W.~Yih, T.~Rockt\"aschel, S.~Riedel, and D.~Kiela.
-Retrieval-augmented generation for knowledge-intensive NLP tasks.
-\emph{NeurIPS}, 2020.
-
-\bibitem{salton1975vector}
-G.~Salton, A.~Wong, and C.~S.~Yang.
-A vector space model for automatic indexing.
-\emph{Communications of the ACM}, 18(11):613--620, 1975.
-
-\bibitem{porter1980algorithm}
-M.~F.~Porter.
-An algorithm for suffix stripping.
-\emph{Program}, 14(3):130--137, 1980.
-
-\bibitem{reimers2019sentence}
-N.~Reimers and I.~Gurevych.
-Sentence-BERT: Sentence embeddings using Siamese BERT-networks.
-\emph{EMNLP-IJCNLP}, pages 3982--3992, 2019.
-
-\bibitem{indyk1998approximate}
-P.~Indyk and R.~Motwani.
-Approximate nearest neighbors: Towards removing the curse of dimensionality.
-\emph{STOC}, pages 604--613, 1998.
-
-\bibitem{jegou2011product}
-H.~J\'egou, M.~Douze, and C.~Schmid.
-Product quantization for nearest neighbor search.
-\emph{IEEE TPAMI}, 33(1):117--128, 2011.
-
-\bibitem{johnson2019billion}
-J.~Johnson, M.~Douze, and H.~J\'egou.
-Billion-scale similarity search with GPUs.
-\emph{IEEE Transactions on Big Data}, 7(3):535--547, 2021.
-
-\bibitem{malkov2018efficient}
-Y.~A.~Malkov and D.~A.~Yashunin.
-Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs.
-\emph{IEEE TPAMI}, 42(4):824--836, 2020.
-
-\bibitem{lin2021deepimpact}
-J.~Lin et al.
-A few brief notes on DeepImpact, COIL, and a conceptual framework for information retrieval techniques.
-\emph{arXiv:2106.14807}, 2021.
-
-\bibitem{macdonald2021pyterrier}
-C.~Macdonald, N.~Tonellotto, S.~MacAvaney, and I.~Ounis.
-PyTerrier: Declarative experimentation in Python from BM25 to dense retrieval.
-\emph{CIKM}, pages 4526--4533, 2021.
-
-\bibitem{manning2008introduction}
-C.~D.~Manning, P.~Raghavan, and H.~Sch\"utze.
-\emph{Introduction to Information Retrieval}.
-Cambridge University Press, 2008.
-\url{https://nlp.stanford.edu/IR-book/}
-
-\bibitem{robertson2009bm25}
-S.~Robertson and H.~Zaragoza.
-The probabilistic relevance framework: BM25 and beyond.
-\emph{Foundations and Trends in IR}, 3(4):333--389, 2009.
-
-\end{thebibliography}
+\bibliographystyle{plain}
+\bibliography{master}
 
 \end{document}
