@@ -1,0 +1,43 @@
+\begin{tikzpicture}[
+    scale=0.8,
+    bar/.style={rectangle, draw, fill=blue!40, minimum width=0.4cm, anchor=south},
+    axis/.style={->, thick}
+]
+    % Document 1 Distribution
+    \begin{scope}[xshift=0cm]
+        \draw[axis] (0,0) -- (5,0) node[right] {\tiny terms};
+        \draw[axis] (0,0) -- (0,3) node[above] {\tiny $P(w|d_1)$};
+        \node[bar, minimum height=2.5cm] (b11) at (0.5,0) {}; % "information"
+        \node[bar, minimum height=1.5cm] (b12) at (1.5,0) {}; % "retrieval"
+        \node[bar, minimum height=0.5cm] (b13) at (2.5,0) {}; % "system"
+        \node[bar, minimum height=0.2cm] (b14) at (3.5,0) {}; % "other"
+        \node[below, font=\tiny] at (0.5,0) {info.};
+        \node[below, font=\tiny] at (1.5,0) {retr.};
+        \node[below, font=\tiny] at (2.5,0) {sys.};
+        \node[below, font=\tiny] at (3.5,0) {other};
+        \node[font=\small\bfseries] at (2.5,3.5) {Doc $d_1$: Information Retrieval Paper};
+    \end{scope}
+
+    % Document 2 Distribution
+    \begin{scope}[xshift=7cm]
+        \draw[axis] (0,0) -- (5,0) node[right] {\tiny terms};
+        \draw[axis] (0,0) -- (0,3) node[above] {\tiny $P(w|d_2)$};
+        \node[bar, minimum height=0.2cm, fill=red!40] (b21) at (0.5,0) {}; % "information"
+        \node[bar, minimum height=0.1cm, fill=red!40] (b22) at (1.5,0) {}; % "retrieval"
+        \node[bar, minimum height=1.0cm, fill=red!40] (b23) at (2.5,0) {}; % "system"
+        \node[bar, minimum height=2.0cm, fill=red!40] (b24) at (3.5,0) {}; % "OS"
+        \node[below, font=\tiny] at (0.5,0) {info.};
+        \node[below, font=\tiny] at (1.5,0) {retr.};
+        \node[below, font=\tiny] at (2.5,0) {sys.};
+        \node[below, font=\tiny] at (4.0,0) {OS};
+        \node[font=\small\bfseries] at (2.5,3.5) {Doc $d_2$: Operating Systems Paper};
+    \end{scope}
+
+    % Coordinate for the text box
+    \coordinate (boxpos) at (6,-1);
+
+    \node[draw, fill=gray!10, rounded corners, below=1.5cm of boxpos, text width=12cm, align=center] {
+        \textbf{Concept:} Each document is a probability distribution over the entire vocabulary. \\
+        Retrieval asks: \emph{``How likely is the query sequence under this specific distribution?''}
+    };
+\end{tikzpicture}

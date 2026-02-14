@@ -358,59 +358,43 @@ $$1 - b + b \cdot \frac{|d|}{\text{avgdl}}$$
 % NEW: WORKED BM25 EXAMPLE (END-TO-END)
 % ====================================================================
 
-\begin{frame}[shrink=10]{Worked Example: Full BM25 Scoring}
-\textbf{Query:} ``quantum algorithm'' \quad $N = 100{,}000$, avgdl $= 500$
+\begin{frame}{BM25 Example: Effect of Document Length}
+\textbf{Scenario:} Term appears 20 times, $k_1=1.2$, $b=0.75$, avgdl=1000
 
-\vspace{0.5em}
+\vspace{1em}
 
-\textbf{Two candidate documents:}
-\begin{itemize}
-    \item Doc A: 300 words. ``quantum'' appears 5$\times$, ``algorithm'' appears 3$\times$.
-    \item Doc B: 800 words. ``quantum'' appears 8$\times$, ``algorithm'' appears 1$\times$.
-\end{itemize}
-
-\textbf{Collection stats:} df(quantum) $= 200$, df(algorithm) $= 5{,}000$
-
-\vspace{0.5em}
-
-\textbf{Step 1: Compute IDF.}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\textbf{Short Document (500 words)}
 \begin{align*}
-\text{IDF}(\text{quantum}) &= \log\frac{100000 - 200 + 0.5}{200 + 0.5} = \log\frac{99800.5}{200.5} = \log(497.8) = \mathbf{6.21} \\
-\text{IDF}(\text{algorithm}) &= \log\frac{100000 - 5000 + 0.5}{5000 + 0.5} = \log\frac{95000.5}{5000.5} = \log(19.0) = \mathbf{2.94}
+\text{norm} &= 1 - 0.75 + 0.75 \cdot \frac{500}{1000} \\
+&= 0.625 \\
+\text{TF component} &= \frac{20 \cdot 2.2}{20 + 1.2 \cdot 0.625} \\
+&= \frac{44}{20.75} = 2.12
 \end{align*}
+\end{column}
+
+\begin{column}{0.5\textwidth}
+\textbf{Long Document (2000 words)}
+\begin{align*}
+\text{norm} &= 1 - 0.75 + 0.75 \cdot \frac{2000}{1000} \\
+&= 1.75 \\
+\text{TF component} &= \frac{20 \cdot 2.2}{20 + 1.2 \cdot 1.75} \\
+&= \frac{44}{22.1} = 1.99
+\end{align*}
+\end{column}
+\end{columns}
+
+\vspace{1em}
+
+\begin{alertblock}{Observation}
+Same TF, but short document scores higher due to length penalty
+\end{alertblock}
 \end{frame}
 
-\begin{frame}[shrink=10]{Worked Example: Full BM25 Scoring (cont.)}
-\textbf{Step 2: Compute scores.} ($k_1 = 1.2$, $b = 0.75$, avgdl $= 500$)
-
-\vspace{0.5em}
-
-\textbf{Doc A} ($|d| = 300$): \quad norm $= 1 - 0.75 + 0.75 \cdot \frac{300}{500} = 0.70$
-
-\vspace{-0.3em}
-{\small
-\begin{align*}
-\text{quantum:} &\quad \frac{5 \times 2.2}{5 + 1.2 \times 0.70} = \frac{11.0}{5.84} = 1.88 \\
-\text{algorithm:} &\quad \frac{3 \times 2.2}{3 + 1.2 \times 0.70} = \frac{6.6}{3.84} = 1.72 \\
-\text{BM25}(q, A) &= 6.21 \times 1.88 + 2.94 \times 1.72 = 11.67 + 5.06 = \mathbf{16.73}
-\end{align*}
-}
-
-\textbf{Doc B} ($|d| = 800$): \quad norm $= 1 - 0.75 + 0.75 \cdot \frac{800}{500} = 1.45$
-
-\vspace{-0.3em}
-{\small
-\begin{align*}
-\text{quantum:} &\quad \frac{8 \times 2.2}{8 + 1.2 \times 1.45} = \frac{17.6}{9.74} = 1.81 \\
-\text{algorithm:} &\quad \frac{1 \times 2.2}{1 + 1.2 \times 1.45} = \frac{2.2}{2.74} = 0.80 \\
-\text{BM25}(q, B) &= 6.21 \times 1.81 + 2.94 \times 0.80 = 11.24 + 2.35 = \mathbf{13.59}
-\end{align*}
-}
-
-\begin{exampleblock}{Result: Doc A (16.73) $>$ Doc B (13.59)}
-Doc A wins despite fewer ``quantum'' hits. Why? (1) Shorter doc $\to$ less length penalty. (2) More ``algorithm'' hits $\to$ both query terms well-covered.
+\begin{exampleblock}{Worked Example}
+For a step-by-step end-to-end BM25 calculation, see the \textbf{Appendix} at the end of these slides.
 \end{exampleblock}
-\end{frame}
 
 \begin{frame}{BM25 Example: Effect of Document Length}
 \textbf{Scenario:} Term appears 20 times, $k_1=1.2$, $b=0.75$, avgdl=1000
@@ -622,28 +606,48 @@ In Lecture 4, we'll see how transformers extend this probabilistic foundation wi
 \end{alertblock}
 \end{frame}
 
-\begin{frame}[shrink=5]{Query Likelihood Model}
-\begin{block}{Basic Formulation}
-Rank documents by probability they would generate the query:
-$$P(q|d) = \prod_{w \in q} P(w|d)^{\text{count}(w,q)}$$
+\begin{frame}[shrink=5]{Query Likelihood Model: Philosophy}
+\begin{block}{The Generative Story}
+Instead of matching keywords, we ask: \textbf{``What is the probability that this document would produce this query?''}
 \end{block}
 
 \vspace{1em}
 
-\textbf{Maximum Likelihood Estimate:}
-$$P_{\text{ML}}(w|d) = \frac{\text{count}(w,d)}{|d|}$$
-
-\vspace{1em}
-
-\begin{alertblock}{Critical Problem: Zero Probabilities}
-If query word doesn't appear in document:
+\textbf{Mathematical Formulation:}
 \begin{itemize}
-    \item $P(w|d) = 0$ $\rightarrow$ Product = entire $P(q|d) = 0$
-    \item Document ranked at bottom even if partially relevant
+    \item Assume query terms $w \in q$ are sampled \textbf{independently} from the document $d$ (unigram assumption).
+    \item Rank documents by:
+    $$P(q|d) = \prod_{w \in q} P(w|d)$$
+    \item In practice, we use log-probabilities to avoid underflow:
+    $$\text{score}(q,d) = \sum_{w \in q} \log P(w|d)$$
+\end{itemize}
+\end{frame}
+
+\begin{frame}[shrink=5]{Estimation \& The Zero Frequency Problem}
+\begin{block}{Maximum Likelihood Estimate (MLE)}
+How do we calculate $P(w|d)$? The simplest way is term frequency:
+$$P_{\text{ML}}(w|d) = \frac{\text{count}(w,d)}{|d|}$$
+\end{block}
+
+\vspace{0.5em}
+
+\begin{alertblock}{The Catch}
+If a query term $w$ is \textbf{not in the document}, then $P_{\text{ML}}(w|d) = 0$.
+\begin{itemize}
+    \item The product $P(q|d) = 0$ for the entire query!
+    \item One missing term kills the score, even for a 90\% relevant document.
 \end{itemize}
 \end{alertblock}
 
-\textbf{Solution:} Smoothing is essential, not optional!
+\vspace{0.5em}
+
+\textbf{Example:} Query ``machine learning algorithms'' misses a document about ``machine learning'' because the word ``algorithms'' is absent.
+\end{frame}
+
+\begin{frame}{Visualizing Language Models}
+\begin{center}
+\input{tikz/lm_distribution_viz.tex}
+\end{center}
 \end{frame}
 
 \begin{frame}[shrink=10]{Zero Probability Example}
@@ -1002,28 +1006,41 @@ User marks documents as relevant/non-relevant
 
 \begin{frame}{RM3: Relevance Model 3}
 \begin{block}{Foundation}
-Probabilistic query expansion using language modeling framework
+Provides a probabilistic way to perform query expansion by building a \textbf{model of relevance} ($R$) from the initial top-$k$ results.
 \end{block}
 
-\vspace{1em}
+\vspace{0.5em}
 
-\textbf{Two-stage process:}
+\textbf{Phase 1: Estimating the Relevance Model $P(w|R)$}
+We want to find terms $w$ that are likely to appear in relevant documents:
+$$P(w|R) \approx \sum_{d \in \text{top-}k} \underbrace{P(w|d)}_{\text{term presence}} \cdot \underbrace{P(d|q)}_{\text{doc relevance weight}}$$
 
-\begin{enumerate}
-    \item \textbf{Estimate Relevance Model}
-    $$P(w|R) \propto \sum_{d \in R} P(w|d) \cdot P(d|q)$$
-    \begin{itemize}
-        \item For each word $w$, estimate probability from ``relevance''
-        \item Weight by how relevant each doc appears: $P(d|q)$ from initial retrieval
-        \item Select top \texttt{fb\_terms} words by $P(w|R)$
-    \end{itemize}
-    
-    \item \textbf{Interpolate with Original Query}
-    $$P(w|Q_{\text{new}}) = (1-\lambda) \cdot P(w|Q_{\text{original}}) + \lambda \cdot P(w|R)$$
-    \begin{itemize}
-        \item $\lambda$ typically 0.5--0.8: balance original vs. expansion
-    \end{itemize}
-\end{enumerate}
+\begin{itemize}
+    \item $P(w|d)$ is the smoothed language model of document $d$.
+    \item $P(d|q)$ is the score of the document from the first retrieval stage.
+    \item Terms common across many high-scoring documents get the highest $P(w|R)$.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{RM3: Interpolation and Final Query}
+\textbf{Phase 2: Combining with the Original Query}
+To prevent the query from drifting too far, we interpolate the relevance model with the original query's word distribution:
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50, title=RM3 Linear Interpolation]
+$$P(w|q_{\text{new}}) = (1-\lambda) P(w|q_{\text{orig}}) + \lambda P(w|R)$$
+\end{tcolorbox}
+
+\begin{itemize}
+    \item $\lambda=1$: Full query expansion (total trust in top-$k$).
+    \item $\lambda=0$: No expansion (original query only).
+    \item \textbf{Common default:} $\lambda \approx 0.5$.
+\end{itemize}
+
+\vspace{0.5em}
+
+\begin{exampleblock}{The Final Retrieval}
+The top \texttt{fb\_terms} from $P(w|q_{\text{new}})$ are used to form a new weighted query for the second stage.
+\end{exampleblock}
 \end{frame}
 
 \begin{frame}[shrink=5]{RM3: Key Parameters}
@@ -1504,6 +1521,75 @@ print(final_results)
     \item ``bank'' (river) vs. ``bank'' (financial) treated identically
 \end{itemize}
 \end{alertblock}
+\end{frame}
+
+\appendix
+
+\begin{frame}[shrink=10]{Appendix: Detailed BM25 Worked Example}
+\textbf{Query:} ``quantum algorithm'' \quad $N = 100{,}000$, avgdl $= 500$
+
+\vspace{0.5em}
+
+\begin{columns}
+\begin{column}{0.45\textwidth}
+\textbf{Candidate Doc A:}
+\begin{itemize}
+    \item $|d| = 300$
+    \item tf(quantum) = 5
+    \item tf(algorithm) = 3
+\end{itemize}
+\end{column}
+\begin{column}{0.45\textwidth}
+\textbf{Candidate Doc B:}
+\begin{itemize}
+    \item $|d| = 800$
+    \item tf(quantum) = 8
+    \item tf(algorithm) = 1
+\end{itemize}
+\end{column}
+\end{columns}
+
+\vspace{1em}
+
+\textbf{Stats:} df(quantum) = 200, df(algorithm) = 5,000
+
+\vspace{0.5em}
+
+\textbf{1. IDF Calculation:}
+\begin{align*}
+\text{IDF(q)} &= \log\frac{10^5 - 200 + 0.5}{200 + 0.5} \approx \mathbf{6.21} \\
+\text{IDF(a)} &= \log\frac{10^5 - 5000 + 0.5}{5000 + 0.5} \approx \mathbf{2.94}
+\end{align*}
+\end{frame}
+
+\begin{frame}[shrink=10]{Appendix: BM25 Worked Example (cont.)}
+\textbf{2. Final Scores ($k_1=1.2, b=0.75$):}
+
+\vspace{1em}
+
+\begin{table}
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Step} & \textbf{Doc A ($|d|=300$)} & \textbf{Doc B ($|d|=800$)} \\
+\midrule
+Length Norm & $1 - 0.75 + 0.75(\frac{300}{500}) = \mathbf{0.7}$ & $1 - 0.75 + 0.75(\frac{800}{500}) = \mathbf{1.45}$ \\
+\midrule
+TF(q) term & $\frac{5 \times 2.2}{5 + 1.2 \times 0.7} = \mathbf{1.88}$ & $\frac{8 \times 2.2}{8 + 1.2 \times 1.45} = \mathbf{1.81}$ \\
+\midrule
+TF(a) term & $\frac{3 \times 2.2}{3 + 1.2 \times 0.7} = \mathbf{1.72}$ & $\frac{1 \times 2.2}{1 + 1.2 \times 1.45} = \mathbf{0.80}$ \\
+\midrule
+\textbf{Total Score} & $6.21(1.88) + 2.94(1.72) = \mathbf{16.73}$ & $6.21(1.81) + 2.94(0.80) = \mathbf{13.59}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{1em}
+
+\begin{exampleblock}{Insight}
+Doc A wins because it is concise and covers both query terms effectively. Doc B is penalized for its length and lack of the second term (algorithm).
+\end{exampleblock}
 \end{frame}
 
 \end{document}
