@@ -67,6 +67,54 @@
 \end{frame}
 
 % ====================================================================
+% CONTEXT: WHERE RANKING FITS IN THE MODERN IR PIPELINE
+% ====================================================================
+
+\begin{frame}{Where We Are: The IR Pipeline}
+\begin{center}
+\input{tikz/retrieval_reasoning.tex}
+\end{center}
+
+\vspace{0.5em}
+\cpause
+\begin{alertblock}{Our Focus Today}
+The methods that \textbf{power the retrieval step} in this pipeline --- the scoring functions that decide which documents make it to re-ranking at all.
+\end{alertblock}
+
+\end{frame}
+
+\begin{frame}[shrink=20]{Classical vs.\ Modern: The Retrieval--Ranking Boundary}
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.46\textwidth}
+\begin{block}{Classical IR}
+\begin{itemize}
+    \item \textbf{Retrieval = Ranking}
+    \item One algorithm (BM25) does it all
+    \item Query $\to$ BM25 score $\to$ ranked list
+\end{itemize}
+\end{block}
+\end{column}
+% \cpause
+\begin{column}{0.50\textwidth}
+\begin{block}{Modern IR \textcolor{irRerank}{(Lectures 4--6)}}
+\begin{itemize}
+    \item \textbf{Retrieval $\neq$ Ranking}
+    \item Stage 1: BM25/ANN $\to$ top-1000 (fast)
+    \item Stage 2: Re-ranker/LTR $\to$ top-10 (accurate)
+    \item Each stage only sees what the previous provides
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+
+\vspace{0.3em}
+\begin{center}
+\scalebox{0.88}{\input{tikz/classical_modern_pipeline.tex}}
+\end{center}
+\cpause
+\end{frame}
+
+% ====================================================================
 % SECTION 1: FROM VECTOR SPACE TO PROBABILISTIC RANKING
 % ====================================================================
 \section{From Vector Space to Probabilistic Ranking}
@@ -81,7 +129,7 @@
     \item Documents and queries as vectors in term space
     \item Similarity measured by cosine distance
     \item Foundation for understanding term-based retrieval
-\end{itemize}
+\end{itemize}\cpause
 \end{block}
 
 \begin{block}{Indexing (Lecture 2)}
@@ -89,7 +137,7 @@
     \item Inverted index: term $\to$ posting list (docID, tf, positions)
     \item Accumulator-based scoring: only touch documents with term overlap
     \item Dense indexing: IVF+PQ for semantic vectors
-\end{itemize}
+\end{itemize}\cpause
 \end{block}
 
 \begin{alertblock}{Today's Question}
@@ -97,11 +145,11 @@ We can store and retrieve efficiently. But \textbf{how do we score?}
 \end{alertblock}
 \end{frame}
 
-\begin{frame}[shrink=5]{The Probability Ranking Principle (PRP)}
+\begin{frame}[shrink=10]{The Probability Ranking Principle (PRP)}
 \begin{block}{Theorem (Robertson, 1977)}
 If documents are ranked by decreasing probability of relevance given the query, then the expected effectiveness of the system is maximized---under the assumption of independent relevance.
 \end{block}
-
+\cpause
 \vspace{1em}
 
 \textbf{Formally:} Rank by $P(\text{relevant} \mid q, d)$
@@ -114,6 +162,7 @@ If documents are ranked by decreasing probability of relevance given the query, 
     \item All scoring functions (TF-IDF, BM25, LM) are approximations of this ideal
     \item Independence assumption is strong---violated in practice (documents are correlated)
 \end{itemize}
+\cpause
 
 \vspace{0.5em}
 
@@ -134,7 +183,7 @@ The PRP tells us \emph{what} to optimize. BM25 and Language Models tell us \emph
 \vspace{0.5em}
 \textbf{Return:} Ranked list scored by relevance $P(\text{relevant}|q,d)$
 \end{block}
-
+\cpause
 \vspace{1em}
 
 \begin{exampleblock}{Key Insight}
@@ -143,7 +192,7 @@ Not all term matches are equal:
     \item Rare terms (``syzygy'') more informative than common (``the'')
     \item Term frequency matters, but with diminishing returns
     \item Document length affects scoring
-\end{itemize}
+\end{itemize}\cpause
 \end{exampleblock}
 \end{frame}
 
@@ -154,7 +203,7 @@ Not all term matches are equal:
 \begin{itemize}
     \item More occurrences $\rightarrow$ more important
     \item $\text{tf}(t,d) = \text{count}(t,d)$
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 
@@ -170,15 +219,15 @@ Not all term matches are equal:
 $$\text{TF-IDF}(t,d) = \text{tf}(t,d) \times \text{idf}(t)$$
 \end{block}
 
-\vspace{1em}
-
-\begin{alertblock}{Problem}
-Linear TF growth unrealistic:
-\begin{itemize}
-    \item 100 occurrences $\neq$ 100$\times$ more relevant than 1
-    \item Need saturation
-\end{itemize}
-\end{alertblock}
+% \vspace{1em}
+% \cpause
+% \begin{alertblock}{Problem}
+% Linear TF growth unrealistic:
+% \begin{itemize}
+%     \item 100 occurrences $\neq$ 100$\times$ more relevant than 1
+%     \item Need saturation
+% \end{itemize}
+% \end{alertblock}
 \end{column}
 \end{columns}
 \end{frame}
@@ -204,13 +253,24 @@ the & 20 & 15 & 50000 & 0.30 & Low IDF \\
 
 \vspace{1em}
 
-\begin{block}{Observation}
+% \begin{block}{Observation}
+% \begin{itemize}
+%     \item ``retrieval'' gets high weight (rare term)
+%     \item ``the'' downweighted despite frequency (common term)
+%     \item But TF still grows linearly $\rightarrow$ need saturation
+% \end{itemize}\cpause
+% \cpause
+% \end{block}
+
+\cpause
+\begin{alertblock}{Problem}
+Linear TF growth unrealistic:
 \begin{itemize}
-    \item ``retrieval'' gets high weight (rare term)
-    \item ``the'' downweighted despite frequency (common term)
-    \item But TF still grows linearly $\rightarrow$ need saturation
+    \item 100 occurrences $\neq$ 100$\times$ more relevant than 1
+    \item Need saturation
 \end{itemize}
-\end{block}
+\end{alertblock}
+
 \end{frame}
 
 % ====================================================================
@@ -229,7 +289,7 @@ the & 20 & 15 & 50000 & 0.30 & Low IDF \\
 \begin{itemize}
     \item Relevance increases with TF
     \item But saturates quickly
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 
@@ -238,7 +298,7 @@ the & 20 & 15 & 50000 & 0.30 & Low IDF \\
     \item ``algorithm'' 5$\times$ vs. 50$\times$ 
     \item 5$\rightarrow$10 is meaningful
     \item 45$\rightarrow$50 barely noticeable
-\end{itemize}
+\end{itemize}\cpause
 \end{column}
 
 \begin{column}{0.5\textwidth}
@@ -283,7 +343,7 @@ where:
 \begin{itemize}
     \item $N$ = total number of documents
     \item $\text{df}_t$ = document frequency of term $t$
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 
@@ -293,7 +353,7 @@ where:
     \item Can be negative for very common terms ($\text{df} > N/2$)
     \item Rare terms get high positive IDF
     \item Common terms get low or negative IDF
-\end{itemize}
+\end{itemize}\cpause
 \end{frame}
 
 \begin{frame}{BM25 Component 2: Saturating TF}
@@ -306,7 +366,7 @@ $$\frac{f(t,d) \cdot (k_1+1)}{f(t,d) + k_1}$$
     \item $k_1 \to 0$: Boolean matching (TF doesn't matter)
     \item $k_1 \to \infty$: Linear TF (like TF-IDF)
     \item $k_1 = 1.2$: Moderate saturation (standard)
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 
@@ -341,7 +401,7 @@ $$1 - b + b \cdot \frac{|d|}{\text{avgdl}}$$
     \item $b = 0$: No length normalization
     \item $b = 1$: Full normalization (penalize long docs heavily)
     \item $b = 0.75$: Partial normalization (standard)
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 
@@ -350,7 +410,7 @@ $$1 - b + b \cdot \frac{|d|}{\text{avgdl}}$$
     \item Long documents have more terms just by chance
     \item Should we penalize or not? Depends on collection
     \item $b$ controls the trade-off
-\end{itemize}
+\end{itemize}\cpause
 \end{frame}
 
 
@@ -358,10 +418,10 @@ $$1 - b + b \cdot \frac{|d|}{\text{avgdl}}$$
 % NEW: WORKED BM25 EXAMPLE (END-TO-END)
 % ====================================================================
 
-\begin{frame}{BM25 Example: Effect of Document Length}
+\begin{frame}[shrink=15]{BM25 Example: Effect of Document Length}
 \textbf{Scenario:} Term appears 20 times, $k_1=1.2$, $b=0.75$, avgdl=1000
 
-\vspace{1em}
+\vspace{0.5em}
 
 \begin{columns}
 \begin{column}{0.5\textwidth}
@@ -385,49 +445,17 @@ $$1 - b + b \cdot \frac{|d|}{\text{avgdl}}$$
 \end{column}
 \end{columns}
 
-\vspace{1em}
+\vspace{0.5em}
 
 \begin{alertblock}{Observation}
 Same TF, but short document scores higher due to length penalty
 \end{alertblock}
-\end{frame}
+
+\vspace{0.3em}
 
 \begin{exampleblock}{Worked Example}
 For a step-by-step end-to-end BM25 calculation, see the \textbf{Appendix} at the end of these slides.
 \end{exampleblock}
-
-\begin{frame}{BM25 Example: Effect of Document Length}
-\textbf{Scenario:} Term appears 20 times, $k_1=1.2$, $b=0.75$, avgdl=1000
-
-\vspace{1em}
-
-\begin{columns}
-\begin{column}{0.5\textwidth}
-\textbf{Short Document (500 words)}
-\begin{align*}
-\text{norm} &= 1 - 0.75 + 0.75 \cdot \frac{500}{1000} \\
-&= 0.625 \\
-\text{TF component} &= \frac{20 \cdot 2.2}{20 + 1.2 \cdot 0.625} \\
-&= \frac{44}{20.75} = 2.12
-\end{align*}
-\end{column}
-
-\begin{column}{0.5\textwidth}
-\textbf{Long Document (2000 words)}
-\begin{align*}
-\text{norm} &= 1 - 0.75 + 0.75 \cdot \frac{2000}{1000} \\
-&= 1.75 \\
-\text{TF component} &= \frac{20 \cdot 2.2}{20 + 1.2 \cdot 1.75} \\
-&= \frac{44}{22.1} = 1.99
-\end{align*}
-\end{column}
-\end{columns}
-
-\vspace{1em}
-
-\begin{alertblock}{Observation}
-Same TF, but short document scores higher due to length penalty
-\end{alertblock}
 \end{frame}
 
 \begin{frame}{BM25 Example: Rare vs. Common Terms}
@@ -457,77 +485,78 @@ IDF difference drives discrimination:
     \item Rare terms dominate scoring (Matches on ``quantum'' worth $\sim$15$\times$ matches on ``system'')
     \item Common terms contribute little or negatively
     % \item 
-\end{itemize}
+\end{itemize}\cpause
 \end{block}
 \end{frame}
 
-\begin{frame}[shrink=5]{BM25F: Fielded Documents}
-\begin{block}{Motivation}
-Real documents have \textbf{fields}: title, abstract, body, URL, anchor text. \\
-A match in the title is worth more than a match in the body.
-\end{block}
 
-\vspace{0.5em}
+% \begin{frame}[shrink=30]{BM25F: Fielded Documents}
+% \begin{block}{Motivation}
+% Real documents have \textbf{fields}: title, abstract, body, URL, anchor text. \\
+% A match in the title is worth more than a match in the body.
+% \end{block}
 
-\begin{block}{BM25F Formula (Simplified)}
-Replace raw TF with a \textbf{weighted sum across fields}:
-$$\tilde{f}(t, d) = \sum_{z \in \text{fields}} w_z \cdot \frac{f(t, d_z)}{1 - b_z + b_z \cdot \frac{|d_z|}{\text{avgdl}_z}}$$
-Then plug $\tilde{f}$ into standard BM25 in place of $f(t,d)$.
-\end{block}
+% \vspace{0.5em}
 
-\vspace{0.5em}
+% \begin{block}{BM25F Formula (Simplified)}
+% Replace raw TF with a \textbf{weighted sum across fields}:
+% $$\tilde{f}(t, d) = \sum_{z \in \text{fields}} w_z \cdot \frac{f(t, d_z)}{1 - b_z + b_z \cdot \frac{|d_z|}{\text{avgdl}_z}}$$
+% Then plug $\tilde{f}$ into standard BM25 in place of $f(t,d)$.
+% \end{block}
 
-\textbf{Parameters per field:}
-\begin{itemize}
-    \item $w_z$: field weight (title $w = 5$, body $w = 1$, URL $w = 2$)
-    \item $b_z$: per-field length normalization
-\end{itemize}
+% \vspace{0.5em}
 
-\vspace{0.5em}
+% \textbf{Parameters per field:}
+% \begin{itemize}
+%     \item $w_z$: field weight (title $w = 5$, body $w = 1$, URL $w = 2$)
+%     \item $b_z$: per-field length normalization
+% \end{itemize}\cpause
 
-\begin{exampleblock}{Used In}
-Elasticsearch, Solr, Bing, and most production web search engines
-\end{exampleblock}
-\end{frame}
+% \vspace{0.5em}
 
-\begin{frame}{BM25 Parameter Tuning Guidelines}
-\begin{block}{Standard Defaults}
-$k_1 = 1.2$, $b = 0.75$ (works well for many collections)
-\end{block}
+% \begin{exampleblock}{Used In}
+% Elasticsearch, Solr, Bing, and most production web search engines
+% \end{exampleblock}
+% \end{frame}
 
-\vspace{1em}
+% \begin{frame}{BM25 Parameter Tuning Guidelines}
+% \begin{block}{Standard Defaults}
+% $k_1 = 1.2$, $b = 0.75$ (works well for many collections)
+% \end{block}
 
-\begin{columns}
-\begin{column}{0.5\textwidth}
-\textbf{When to adjust $k_1$:}
-\begin{itemize}
-    \item \textbf{Verbose collections} (news, articles) \\
-    $\rightarrow$ Higher $k_1$ (1.5--2.0)
-    \item \textbf{Keyword collections} (tweets, queries) \\
-    $\rightarrow$ Lower $k_1$ (0.8--1.2)
-\end{itemize}
-\end{column}
+% \vspace{1em}
 
-\begin{column}{0.5\textwidth}
-\textbf{When to adjust $b$:}
-\begin{itemize}
-    \item \textbf{Variable-length docs} (web pages) \\
-    $\rightarrow$ Higher $b$ (0.8--0.9)
-    \item \textbf{Uniform-length docs} (abstracts) \\
-    $\rightarrow$ Lower $b$ (0.5--0.7)
-\end{itemize}
-\end{column}
-\end{columns}
+% \begin{columns}
+% \begin{column}{0.5\textwidth}
+% \textbf{When to adjust $k_1$:}
+% \begin{itemize}
+%     \item \textbf{Verbose collections} (news, articles) \\
+%     $\rightarrow$ Higher $k_1$ (1.5--2.0)
+%     \item \textbf{Keyword collections} (tweets, queries) \\
+%     $\rightarrow$ Lower $k_1$ (0.8--1.2)
+% \end{itemize}\cpause
+% \end{column}
 
-\vspace{1em}
+% \begin{column}{0.5\textwidth}
+% \textbf{When to adjust $b$:}
+% \begin{itemize}
+%     \item \textbf{Variable-length docs} (web pages) \\
+%     $\rightarrow$ Higher $b$ (0.8--0.9)
+%     \item \textbf{Uniform-length docs} (abstracts) \\
+%     $\rightarrow$ Lower $b$ (0.5--0.7)
+% \end{itemize}\cpause
+% \end{column}
+% \end{columns}
 
-\begin{alertblock}{In Lecture 6 (Learning to Rank)}
-You'll learn to tune these parameters systematically using labeled data
-\end{alertblock}
-\end{frame}
+% \vspace{1em}
+
+% \begin{alertblock}{In Lecture 6 (Learning to Rank)}
+% You'll learn to tune these parameters systematically using labeled data
+% \end{alertblock}
+% \end{frame}
 
 % ====================================================================
-% SECTION 3: QUERY EXPANSION
+% SECTION 3: Language Models for Rankings
 % ====================================================================
 \section{Statistical Language Models for Ranking}
 
@@ -535,7 +564,7 @@ You'll learn to tune these parameters systematically using labeled data
 \sectionpage
 \end{frame}
 
-\begin{frame}[shrink=5]{A Different Ranking Philosophy}
+\begin{frame}{A Different Ranking Philosophy}
 \begin{columns}
 \begin{column}{0.48\textwidth}
 \textbf{BM25 Approach:}
@@ -543,12 +572,13 @@ You'll learn to tune these parameters systematically using labeled data
     \item ``How well does document match query?''
     \item Scoring based on term overlap
     \item Weighted by importance (IDF, TF)
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{0.5em}
 
 \begin{block}{Matching Score}
-$$\text{score}(q,d) = \sum_{t} w(t,q,d)$$
+% $$\text{score}(q,d) = \sum_{t} w(t,q,d)$$
+$$\text{BM25}(q,d) = \sum_{t \in q} \text{IDF}(t) \cdot \frac{f(t,d) \cdot (k_1+1)}{f(t,d) + k_1 \cdot \left(1-b+b \cdot \frac{|d|}{\text{avgdl}}\right)}$$
 \end{block}
 \end{column}
 
@@ -558,7 +588,7 @@ $$\text{score}(q,d) = \sum_{t} w(t,q,d)$$
     \item ``How likely would this document generate this query?''
     \item Rank by $P(q|d)$
     \item Probabilistic generative model
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{0.5em}
 
@@ -570,65 +600,88 @@ $$\text{score}(q,d) = P(q|d)$$
 
 \vspace{1em}
 
-\begin{exampleblock}{Generative Story}
-\begin{enumerate}
-    \item Pick a document $d$
-    \item Document has a language model (probability distribution over words)
-    \item Generate query by sampling from this distribution
-    \item Documents that would more likely generate $q$ are ranked higher
-\end{enumerate}
+\begin{exampleblock}{Key Shift}
+BM25 asks \textit{``does this document contain the right words?''} \\
+Language Models ask \textit{``would a reader of this document ever write this query?''}
 \end{exampleblock}
+\cpause
 \end{frame}
 
-\begin{frame}[shrink=10]{Why Language Models Matter}
-\begin{block}{Principled Probabilistic Framework}
-\begin{itemize}
-    \item Solid theoretical foundation (compared to heuristic weighting)
-    \item Smoothing becomes natural and essential
-    \item Interpretable as generative process
-\end{itemize}
-\end{block}
+\begin{frame}{The Generative Story}
+\begin{exampleblock}{Intuition}
+Imagine randomly sampling words from a document. The document that is \textbf{most likely to produce your query terms} is ranked highest.
+\end{exampleblock}
 
 \vspace{1em}
 
-\begin{block}{Connection to Modern IR}
-\begin{itemize}
-    \item Foundation for neural language models (Lecture 4)
-    \item BERT, GPT are sophisticated language models
-    \item Understanding statistical LMs helps understand neural LMs
-\end{itemize}
-\end{block}
+\textbf{How it works step by step:}
+\begin{enumerate}
+    \item Pick a document $d$ from the collection\cpause
+    \item The document defines a \textbf{language model} --- a probability distribution $P(w|d)$ over words\cpause
+    \item \textbf{Sample} query words from this distribution: $P(q|d) = \prod_{w \in q} P(w|d)$\cpause
+    \item Rank documents by $P(q|d)$ --- those more likely to ``emit'' the query rank higher\cpause
+\end{enumerate}
 
-\vspace{1em}
+\vspace{0.5em}
 
-\begin{alertblock}{Preview}
-In Lecture 4, we'll see how transformers extend this probabilistic foundation with contextualized representations
-\end{alertblock}
+% \begin{alertblock}{Practical consequence}
+% A document that uses the query words frequently (and exclusively) will get a high score. But a document missing even one query word gets $P(q|d) = 0$ --- this is why smoothing matters.
+% \end{alertblock}
 \end{frame}
 
-\begin{frame}[shrink=5]{Query Likelihood Model: Philosophy}
+% \begin{frame}[shrink=10]{Why Language Models Matter}
+% \begin{block}{Principled Probabilistic Framework}
+% \begin{itemize}
+%     \item Solid theoretical foundation (compared to heuristic weighting)
+%     \item Smoothing becomes natural and essential
+%     \item Interpretable as generative process
+% \end{itemize}\cpause
+% \end{block}
+
+% \vspace{1em}
+
+% \begin{block}{Connection to Modern IR}
+% \begin{itemize}
+%     \item Foundation for neural language models (Lecture 4)
+%     \item BERT, GPT are sophisticated language models
+%     \item Understanding statistical LMs helps understand neural LMs
+% \end{itemize}\cpause
+% \end{block}
+
+% \vspace{1em}
+
+% \begin{alertblock}{Preview}
+% In Lecture 4, we'll see how transformers extend this probabilistic foundation with contextualized representations
+% \end{alertblock}
+% \end{frame}
+
+\begin{frame}[shrink=12]{Query Likelihood Model: Philosophy}
 \begin{block}{The Generative Story}
 Instead of matching keywords, we ask: \textbf{``What is the probability that this document would produce this query?''}
 \end{block}
-
+\cpause
 \vspace{1em}
 
 \textbf{Mathematical Formulation:}
 \begin{itemize}
     \item Assume query terms $w \in q$ are sampled \textbf{independently} from the document $d$ (unigram assumption).
+    \cpause
     \item Rank documents by:
     $$P(q|d) = \prod_{w \in q} P(w|d)$$
+    \cpause
     \item In practice, we use log-probabilities to avoid underflow:
     $$\text{score}(q,d) = \sum_{w \in q} \log P(w|d)$$
-\end{itemize}
+\end{itemize}\cpause
 \end{frame}
 
-\begin{frame}[shrink=5]{Estimation \& The Zero Frequency Problem}
+\begin{frame}[shrink=12]{Estimation}
 \begin{block}{Maximum Likelihood Estimate (MLE)}
 How do we calculate $P(w|d)$? The simplest way is term frequency:
 $$P_{\text{ML}}(w|d) = \frac{\text{count}(w,d)}{|d|}$$
 \end{block}
 
+But what is the catch here?
+\cpause
 \vspace{0.5em}
 
 \begin{alertblock}{The Catch}
@@ -636,7 +689,7 @@ If a query term $w$ is \textbf{not in the document}, then $P_{\text{ML}}(w|d) = 
 \begin{itemize}
     \item The product $P(q|d) = 0$ for the entire query!
     \item One missing term kills the score, even for a 90\% relevant document.
-\end{itemize}
+\end{itemize}\cpause
 \end{alertblock}
 
 \vspace{0.5em}
@@ -673,7 +726,7 @@ $P(q|d)$ & \multicolumn{3}{c}{$0.067 \times 0.067 \times 0 = \mathbf{0}$} \\
 \end{table}
 
 \vspace{1em}
-
+\cpause
 \begin{alertblock}{Problem}
 Document is clearly relevant, but one missing term kills the entire score!
 \end{alertblock}
@@ -715,10 +768,10 @@ $$P(w|d) = (1-\lambda) \cdot P_{\text{ML}}(w|d) + \lambda \cdot P(w|C)$$
     \item $\lambda = 0$: Only use document (no smoothing)
     \item $\lambda = 1$: Only use collection (ignore document)
     \item $\lambda = 0.1$: Mostly trust document, small collection backup
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
-
+\cpause
 \textbf{Properties:}
 \begin{itemize}
     \item \textcolor{green}{\checkmark} Simple and interpretable
@@ -736,7 +789,7 @@ $$P(w|d) = \frac{\text{count}(w,d) + \mu \cdot P(w|C)}{|d| + \mu}$$
 \begin{itemize}
     \item Smoothing strength (number of ``pseudo-counts'' from collection)
     \item Higher $\mu$: More smoothing. Lower $\mu$: Less smoothing.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 
@@ -745,7 +798,7 @@ $$P(w|d) = \frac{\text{count}(w,d) + \mu \cdot P(w|C)}{|d| + \mu}$$
     \item \textbf{Short documents:} $\mu$ dominates denominator $\rightarrow$ rely more on collection
     \item \textbf{Long documents:} Actual counts dominate $\rightarrow$ rely on document
     \item Automatically adapts smoothing to document length!
-\end{itemize}
+\end{itemize}\cpause
 \end{frame}
 
 \begin{frame}{Dirichlet Smoothing: Length Adaptation Example}
@@ -772,53 +825,165 @@ Long doc & 2 & 2000 & $\frac{2 + 2}{4000} = 0.001$ \\
     \item Same term count (2), but short doc $\to$ higher probability
     \item Long doc $\to$ more smoothing, closer to collection probability
     \item This is \textbf{automatic} based on $|d|$
-\end{itemize}
+\end{itemize}\cpause
 \end{block}
 \end{frame}
 
-\begin{frame}{Jelinek-Mercer vs. Dirichlet}
-\begin{table}
-\centering
-\small
-\begin{tabular}{lll}
-\toprule
-\textbf{Aspect} & \textbf{Jelinek-Mercer} & \textbf{Dirichlet} \\
-\midrule
-Formula & $(1{-}\lambda) P_{\text{ML}}(w|d) + \lambda P(w|C)$ & $\frac{\text{count}(w,d) + \mu P(w|C)}{|d| + \mu}$ \\
-Parameter & $\lambda$ (0.1--0.3) & $\mu$ (1000--2500) \\
-Length adaptation & Fixed for all docs & Automatic \\
-Smoothing amount & Same for all docs & More for short docs \\
-Interpretation & Linear interpolation & Pseudo-counts \\
-Best for & Uniform-length collections & Variable-length collections \\
-\bottomrule
-\end{tabular}
-\end{table}
+% ====================================================================
+% NEW: QUERY LIKELIHOOD SCORING WALKTHROUGH WITH JM SMOOTHING
+% ====================================================================
 
-\vspace{1em}
+\begin{frame}{Query Likelihood Scoring: Step by Step}
+\begin{exampleblock}{The Recipe}
+Given query $q$ and document $d$, score = $\log P(q|d)$:
+\end{exampleblock}
 
-\begin{block}{Which to Use?}
-\textbf{Dirichlet generally better} for most collections. Standard in Indri, Galago.
-\end{block}
+\vspace{0.4em}
+
+\begin{enumerate}
+    \item \textbf{Estimate} via MLE: $\displaystyle P_{\text{ML}}(w|d) = \frac{\text{count}(w,d)}{|d|}$\cpause
+    \cpause
+    \vspace{0.2em}
+    \item \textbf{Smooth} (JM): $\hat{P}(w|d) = (1-\lambda)\,P_{\text{ML}}(w|d) + \lambda\,P(w|C)$\cpause
+    \cpause
+    \vspace{0.2em}
+    \item \textbf{Score}: $\displaystyle\text{score}(q,d) = \sum_{w \in q} \log \hat{P}(w|d)$\cpause
+    \cpause
+    \vspace{0.2em}
+    \item \textbf{Rank} by score --- higher score = more relevant.\cpause
+\end{enumerate}
+
+% \vspace{0.4em}
+
+% \begin{columns}[T]
+% \begin{column}{0.48\textwidth}
+% \begin{alertblock}{Why log?}
+% $\prod_w \hat{P}(w|d)$ underflows for long queries; $\sum_w \log \hat{P}(w|d)$ is numerically stable.
+% \end{alertblock}
+% \end{column}
+% \begin{column}{0.48\textwidth}
+% \begin{block}{Why smoothing?}
+% If any $\hat{P}(w|d) = 0$, the whole score $= -\infty$. Smoothing guarantees $\hat{P}(w|d) > 0$.
+% \end{block}
+% \end{column}
+% \end{columns}
 \end{frame}
 
-\begin{frame}{Language Models vs. BM25}
-\begin{table}
-\centering
-\small
-\begin{tabular}{lll}
-\toprule
-\textbf{Aspect} & \textbf{BM25} & \textbf{Language Models} \\
-\midrule
-Philosophy & Term matching score & Generative probability \\
-TF handling & Explicit saturation $(k_1)$ & Implicit via smoothing \\
-Length norm & Explicit $(b)$ & Implicit via smoothing \\
-IDF & Explicit component & Through $P(w|C)$ \\
-Zero probabilities & Avoided via IDF & Smoothing essential \\
-Parameters & $k_1, b$ & $\lambda$ or $\mu$ \\
-Foundation & Probabilistic relevance & Language modeling \\
-\bottomrule
-\end{tabular}
-\end{table}
+% \begin{frame}[shrink=8]{JM Smoothing: Scoring Example (Setup)}
+% \textbf{Query:} ``neural network'' \quad ($\lambda = 0.2$) \quad $P(\text{neural}|C) = 0.002$, $P(\text{network}|C) = 0.005$
+
+% \vspace{0.5em}
+
+% \begin{columns}[T]
+% \begin{column}{0.48\textwidth}
+% \begin{block}{Doc A --- 100 words}
+% \begin{itemize}
+%     \item ``neural'' appears 3 times
+%     \item ``network'' appears 2 times
+% \end{itemize}
+% \vspace{0.3em}
+% $P_{\text{ML}}(\text{neural}|A) = \tfrac{3}{100} = 0.030$\\[0.2em]
+% $P_{\text{ML}}(\text{network}|A) = \tfrac{2}{100} = 0.020$
+% \end{block}
+% \end{column}
+% \begin{column}{0.48\textwidth}
+% \begin{block}{Doc B --- 500 words}
+% \begin{itemize}
+%     \item ``neural'' appears 5 times
+%     \item ``network'' appears 1 time
+% \end{itemize}
+% \vspace{0.3em}
+% $P_{\text{ML}}(\text{neural}|B) = \tfrac{5}{500} = 0.010$\\[0.2em]
+% $P_{\text{ML}}(\text{network}|B) = \tfrac{1}{500} = 0.002$
+% \end{block}
+% \end{column}
+% \end{columns}
+
+% \vspace{0.5em}
+% \begin{exampleblock}{Note}
+% Doc B has 5 raw occurrences of ``neural'' vs.\ Doc A's 3 --- but Doc A has a \textbf{higher relative frequency} because it is shorter.
+% \end{exampleblock}
+% \end{frame}
+
+% \begin{frame}[shrink=15]{JM Smoothing: Scoring Example (Calculation)}
+% \textbf{Apply JM smoothing} $\hat{P}(w|d) = 0.8 \cdot P_{\text{ML}}(w|d) + 0.2 \cdot P(w|C)$, then score:
+
+% \vspace{0.5em}
+
+% \begin{table}
+% \centering
+% \small
+% \begin{tabular}{llccr}
+% \toprule
+% \textbf{Doc} & \textbf{Term} & \textbf{$P_{\text{ML}}(w|d)$} & \textbf{$\hat{P}(w|d)$ (JM)} & \textbf{$\log \hat{P}$} \\
+% \midrule
+% A & neural  & 0.030 & $0.8\times0.030 + 0.2\times0.002 = 0.0244$ & $-3.71$ \\
+% A & network & 0.020 & $0.8\times0.020 + 0.2\times0.005 = 0.0170$ & $-4.07$ \\
+% \midrule
+% \multicolumn{4}{r}{\textbf{Doc A score}} & $\mathbf{-7.78}$ \\
+% \midrule
+% B & neural  & 0.010 & $0.8\times0.010 + 0.2\times0.002 = 0.0084$ & $-4.78$ \\
+% B & network & 0.002 & $0.8\times0.002 + 0.2\times0.005 = 0.0026$ & $-5.95$ \\
+% \midrule
+% \multicolumn{4}{r}{\textbf{Doc B score}} & $\mathbf{-10.73}$ \\
+% \bottomrule
+% \end{tabular}
+% \end{table}
+
+% \vspace{0.5em}
+
+% \begin{block}{Result: Doc A $\succ$ Doc B}
+% \begin{itemize}
+%     \item Doc A wins despite Doc B having 5 raw occurrences of ``neural'' vs.\ Doc A's 3
+%     \item \textbf{Why?} Doc A is shorter --- its term distribution is more concentrated
+%     \item Smoothing ensures Doc B's score stays finite (no zero probabilities)
+% \end{itemize}\cpause
+% \end{block}
+% \end{frame}
+
+% \begin{frame}{Jelinek-Mercer vs. Dirichlet}
+% \begin{table}
+% \centering
+% \small
+% \begin{tabular}{lll}
+% \toprule
+% \textbf{Aspect} & \textbf{Jelinek-Mercer} & \textbf{Dirichlet} \\
+% \midrule
+% Formula & $(1{-}\lambda) P_{\text{ML}}(w|d) + \lambda P(w|C)$ & $\frac{\text{count}(w,d) + \mu P(w|C)}{|d| + \mu}$ \\
+% Parameter & $\lambda$ (0.1--0.3) & $\mu$ (1000--2500) \\
+% Length adaptation & Fixed for all docs & Automatic \\
+% Smoothing amount & Same for all docs & More for short docs \\
+% Interpretation & Linear interpolation & Pseudo-counts \\
+% Best for & Uniform-length collections & Variable-length collections \\
+% \bottomrule
+% \end{tabular}
+% \end{table}
+
+% \vspace{1em}
+
+% \begin{block}{Which to Use?}
+% \textbf{Dirichlet generally better} for most collections. Standard in Indri, Galago.
+% \end{block}
+% \end{frame}
+
+% \begin{frame}{Language Models vs. BM25}
+% \begin{table}
+% \centering
+% \small
+% \begin{tabular}{lll}
+% \toprule
+% \textbf{Aspect} & \textbf{BM25} & \textbf{Language Models} \\
+% \midrule
+% Philosophy & Term matching score & Generative probability \\
+% TF handling & Explicit saturation $(k_1)$ & Implicit via smoothing \\
+% Length norm & Explicit $(b)$ & Implicit via smoothing \\
+% IDF & Explicit component & Through $P(w|C)$ \\
+% Zero probabilities & Avoided via IDF & Smoothing essential \\
+% Parameters & $k_1, b$ & $\lambda$ or $\mu$ \\
+% Foundation & Probabilistic relevance & Language modeling \\
+% \bottomrule
+% \end{tabular}
+% \end{table}
 
 % \vspace{0.5em}
 
@@ -828,39 +993,41 @@ Foundation & Probabilistic relevance & Language modeling \\
 %     % \item BM25: Better understood, more robust defaults
 %     \item Dirichlet LM: Better for variable-length collections
 %     \item \textbf{Best practice:} Try both!
-% \end{itemize}
+% \end{itemize}\cpause
 % \end{block}
-\end{frame}
+% \end{frame}
 
-\begin{frame}{Connection: RM3 Uses Language Modeling}
-\begin{block}{Recall RM3 Formula}
-$$P(w|R) \propto \sum_{d \in R} P(w|d) \cdot P(d|q)$$
-\end{block}
-
-\vspace{0.5em}
-
-\textbf{Key Insight:}
-\begin{itemize}
-    \item RM3 uses language modeling framework
-    \item $P(w|d)$ estimated for each pseudo-relevant doc
-    \item RM3 builds a \textit{language model of relevance}
-\end{itemize}
+% \begin{frame}{Connection: RM3 Uses the Same LM Framework}
+% \begin{block}{RM3 Relevance Model Formula}
+% $$P(w|R) \propto \sum_{d \in \text{top-}k} \underbrace{\hat{P}(w|d)}_{\text{JM-smoothed LM}} \cdot \underbrace{P(d|q)}_{\propto\,\text{score}(q,d)}$$
+% \end{block}
 
 % \vspace{0.5em}
 
-\begin{exampleblock}{Why This Matters}
-Understanding language models helps you understand query expansion:
-\begin{itemize}
-    \item Both use probabilistic term distributions
-    \item Both require smoothing
-    \item Natural progression: Statistical LM $\rightarrow$ RM3 $\rightarrow$ Neural LM (Lecture 4)
-\end{itemize}
-\end{exampleblock}
-\end{frame}
+% \textbf{The components are exactly what we just computed:}
+% \begin{itemize}
+%     \item $\hat{P}(w|d)$ is the \textbf{JM-smoothed probability} from the previous slides
+%     \item $P(d|q)$ is proportional to the query likelihood score $\text{score}(q,d) = \sum_{w} \log \hat{P}(w|d)$
+%     \item High-scoring documents contribute more to the relevance model
+% \end{itemize}\cpause
+
+% \vspace{0.5em}
+
+% \begin{exampleblock}{Intuition}
+% RM3 builds a \textbf{weighted mixture} of document language models, where each document's weight is how likely it is to be relevant. Terms that appear frequently across \emph{high-scoring} documents rise to the top --- these are your expansion terms.
+% \end{exampleblock}
+
+% \vspace{0.3em}
+
+% \begin{center}
+% \small Statistical LM $\xrightarrow{\text{smooth}}$ $\hat{P}(w|d)$ $\xrightarrow{\text{weight by relevance}}$ RM3 $\xrightarrow{\text{contextualize}}$ Neural LM (Lecture 4)
+% \end{center}
+% \cpause
+% \end{frame}
 
 
 % ====================================================================
-% SECTION 5: PYTERRIER
+% SECTION 5: Query Expansion and Pseudo Relevance Feedback
 % ====================================================================
 \section{Query Expansion and Pseudo Relevance Feedback}
 
@@ -881,7 +1048,7 @@ Queries and relevant documents use different vocabulary:
 \begin{itemize}
     \item Query: ``heart attack''
     \item Document: ``myocardial infarction''
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{0.5em}
 
@@ -889,7 +1056,7 @@ Queries and relevant documents use different vocabulary:
 \begin{itemize}
     \item Query: ``ML''
     \item Document: ``machine learning''
-\end{itemize}
+\end{itemize}\cpause
 \end{column}
 
 \begin{column}{0.48\textwidth}
@@ -897,7 +1064,7 @@ Queries and relevant documents use different vocabulary:
 \begin{itemize}
     \item Query: ``elderly care''
     \item Document: ``geriatric nursing''
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{0.5em}
 
@@ -905,7 +1072,7 @@ Queries and relevant documents use different vocabulary:
 \begin{itemize}
     \item BM25 score = 0
     \item Relevant doc not retrieved
-\end{itemize}
+\end{itemize}\cpause
 \end{column}
 \end{columns}
 
@@ -920,13 +1087,13 @@ Exact term matching only --- no semantic understanding
 \textit{(Fully addressed by Dense Retrieval in Lecture 5)}
 \end{frame}
 
-\begin{frame}[shrink=5]{Relevance Feedback Overview}
+\begin{frame}[shrink=25]{Relevance Feedback Overview}
 \begin{block}{Explicit Relevance Feedback}
 User marks documents as relevant/non-relevant
 \begin{itemize}
     \item \textcolor{red}{\ding{55}} Impractical: users won't give feedback
     \item \textcolor{red}{\ding{55}} Chicken-and-egg: need good initial results
-\end{itemize}
+\end{itemize}\cpause
 \end{block}
 
 \vspace{1em}
@@ -937,7 +1104,7 @@ User marks documents as relevant/non-relevant
     \item \textcolor{green}{\checkmark} No user interaction needed
     \item \textcolor{green}{\checkmark} Automatic query expansion
     \item \textcolor{red}{\ding{55}} Risk: If assumption fails $\rightarrow$ query drift
-\end{itemize}
+\end{itemize}\cpause
 \end{block}
 
 \vspace{1em}
@@ -966,7 +1133,7 @@ User marks documents as relevant/non-relevant
 %     \item $\beta = 0.75$: Weight toward positive examples
 %     \item $\gamma = 0.15$: Weight away from negative examples
 %     \item In PRF: $\gamma = 0$ (no negative feedback available)
-% \end{itemize}
+% \end{itemize}\cpause
 
 % \vspace{0.5em}
 
@@ -988,11 +1155,11 @@ User marks documents as relevant/non-relevant
 %     \begin{itemize}
 %         \item All terms contribute (even noisy ones)
 %         \item No principled term selection
-%     \end{itemize}
+%     \end{itemize}\cpause
 %     \item \textbf{No probabilistic foundation}
 %     \begin{itemize}
 %         \item Weights based on geometry, not probability
-%     \end{itemize}
+%     \end{itemize}\cpause
 %     \item \textbf{Empirically outperformed} by RM3
 % \end{enumerate}
 % \end{alertblock}
@@ -1019,7 +1186,7 @@ $$P(w|R) \approx \sum_{d \in \text{top-}k} \underbrace{P(w|d)}_{\text{term prese
     \item $P(w|d)$ is the smoothed language model of document $d$.
     \item $P(d|q)$ is the score of the document from the first retrieval stage.
     \item Terms common across many high-scoring documents get the highest $P(w|R)$.
-\end{itemize}
+\end{itemize}\cpause
 \end{frame}
 
 \begin{frame}{RM3: Interpolation and Final Query}
@@ -1034,7 +1201,7 @@ $$P(w|q_{\text{new}}) = (1-\lambda) P(w|q_{\text{orig}}) + \lambda P(w|R)$$
     \item $\lambda=1$: Full query expansion (total trust in top-$k$).
     \item $\lambda=0$: No expansion (original query only).
     \item \textbf{Common default:} $\lambda \approx 0.5$.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{0.5em}
 
@@ -1043,13 +1210,13 @@ The top \texttt{fb\_terms} from $P(w|q_{\text{new}})$ are used to form a new wei
 \end{exampleblock}
 \end{frame}
 
-\begin{frame}[shrink=5]{RM3: Key Parameters}
+\begin{frame}[shrink=12]{RM3: Key Parameters}
 \begin{block}{fb\_docs (Feedback Documents): 3--10}
 How many top documents to use for expansion
 \begin{itemize}
     \item Too few: May miss relevant terms. Too many: Risk non-relevant docs.
     \item \textbf{Standard:} 10
-\end{itemize}
+\end{itemize}\cpause
 \end{block}
 
 \begin{block}{fb\_terms (Feedback Terms): 10--20}
@@ -1057,7 +1224,7 @@ How many expansion terms to add
 \begin{itemize}
     \item Too few: Limited benefit. Too many: Noise.
     \item \textbf{Standard:} 10
-\end{itemize}
+\end{itemize}\cpause
 \end{block}
 
 \begin{block}{$\lambda$ (Interpolation Weight): 0.5--0.8}
@@ -1065,7 +1232,7 @@ Original vs. expansion weight
 \begin{itemize}
     \item Lower (0.5): Trust original query more
     \item Higher (0.8): Trust expansion more
-\end{itemize}
+\end{itemize}\cpause
 \end{block}
 \end{frame}
 
@@ -1086,7 +1253,7 @@ Original vs. expansion weight
 \textbf{Extracted Terms (fb\_terms=5):}
 \begin{itemize}
     \item neural (P=0.15), deep (P=0.12), supervised (P=0.10), algorithms (P=0.09), AI (P=0.08)
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{0.5em}
 
@@ -1099,6 +1266,7 @@ Original vs. expansion weight
 % ====================================================================
 % NEW SECTION: LLM-BASED QUERY EXPANSION
 % ====================================================================
+\section{LLM-Based Query Expansion}
 
 \begin{frame}{Beyond PRF: Modern Query Expansion Strategies}
 \begin{center}
@@ -1112,13 +1280,41 @@ LLMs have \textbf{parametric knowledge} --- they can generate expansion terms wi
 \end{block}
 \end{frame}
 
-\begin{frame}[shrink=5]{Strategy 1: LLM Synonym \& Paraphrase Generation}
-\begin{block}{Idea}
-Ask an LLM to generate synonyms, related terms, or paraphrases of the query.
+\begin{frame}{Strategy 1: LLM Synonym \& Paraphrase Generation --- Intuition}
+% \begin{exampleblock}{The Problem} 
+Query: ``heart attack symptoms'' \quad$\longrightarrow$\quad BM25 score = 0 for a document that says ``myocardial infarction''
+% \end{exampleblock}
+\cpause
+% \vspace{0.5em}
+
+\begin{block}{Core Idea}
+LLMs were trained on billions of words --- they \emph{know} that doctors call a heart attack a ``myocardial infarction''. Ask the LLM to bridge the vocabulary gap \textbf{before} retrieval runs.
 \end{block}
+
+\vspace{1em}
+
+\begin{center}
+\begin{tikzpicture}[node distance=1.2cm, every node/.style={font=\small\sffamily}]
+    \node[sparse] (q) {Query};
+    \node[dense, right=1.5cm of q] (llm) {LLM as Query Expander};
+    \node[irBoxBase, fill=irHybrid!10, draw=irHybrid, right=1.5cm of llm] (exp) {Expanded Terms};
+    \node[sparse, right=1.5cm of exp] (bm25) {BM25};
+    \draw[irArrowBase] (q) -- (llm);
+    \draw[irArrowBase] (llm) -- (exp);
+    \draw[irArrowBase] (exp) -- (bm25);
+\end{tikzpicture}
+\end{center}
 
 \vspace{0.5em}
 
+\begin{alertblock}{Key Advantage over PRF}
+\footnotesize
+No documents needed first --- LLM's parametric knowledge bridges the gap from the start.
+\end{alertblock}
+
+\end{frame}
+
+\begin{frame}[shrink=25]{Strategy 1: LLM Synonym \& Paraphrase Generation --- Method}
 \textbf{Prompt:}
 \begin{tcolorbox}[colback=gray!10, colframe=gray!50, fontupper=\small\ttfamily]
 Given the search query: "heart attack symptoms"\\
@@ -1135,7 +1331,7 @@ Return only the terms, one per line.
     \item chest pain emergency symptoms
     \item coronary event presentation
     \item acute heart failure signs
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{0.5em}
 
@@ -1146,47 +1342,155 @@ Bridges the exact vocabulary gap that BM25 cannot handle on its own
 \end{exampleblock}
 \end{frame}
 
-\begin{frame}[shrink=5]{Strategy 2: Hypothetical Document Generation (HyDE)}
-\begin{block}{Core Idea (Gao et al., 2023)}
-Ask the LLM to \textbf{generate a hypothetical relevant document}, then use its embedding for dense retrieval or extract its terms for sparse expansion.
+\begin{frame}[shrink=25]{Strategy 2: Hypothetical Document Generation (HyDE)}
+\begin{block}{The Insight}
+BM25 needs \emph{term overlap} between query and document. A 3-word query has very little overlap. A hypothetical \textbf{relevant document} would have much more overlap with real documents.
 \end{block}
 
 \vspace{0.5em}
+\cpause
+\begin{exampleblock}{Core Idea (Gao et al., 2023)}
+``What if we generated the answer first, then searched for it?''
+\end{exampleblock}
 
+
+\end{frame}
+
+\begin{frame}[shrink=25]{Strategy 2: Hypothetical Document Generation (HyDE)}
+
+\begin{exampleblock}{Core Idea (Gao et al., 2023)}
+``What if we generated the answer first, then searched for it?''
+\end{exampleblock}
+
+\vspace{1em}
+
+\begin{center}
+\begin{tikzpicture}[node distance=1.1cm, every node/.style={font=\small\sffamily}]
+    \node[sparse] (q) {Query};
+    \node[dense, right=1.4cm of q] (llm) {LLM};
+    \node[infra, right=1.4cm of llm, align=center, text width=2.2cm] (hyp) {Hypothetical\\[-0.2em]Document};
+    \node[sparse, above right=0.5cm and 1.2cm of hyp] (terms) {Extract Terms};
+    \node[rerank, below right=0.5cm and 1.2cm of hyp] (embed) {Embed (L5)};
+    \draw[irArrowBase] (q) -- (llm);
+    \draw[irArrowBase] (llm) -- (hyp);
+    \draw[irArrowBase] (hyp) -- (terms) node[midway, above, font=\tiny\itshape] {sparse};
+    \draw[irArrowBase] (hyp) -- (embed) node[midway, below, font=\tiny\itshape] {dense};
+\end{tikzpicture}
+\end{center}
+\cpause
+\end{frame}
+
+\begin{frame}[shrink=25]{Strategy 2: Hypothetical Document Generation (HyDE)}
 \textbf{Prompt:}
 \begin{tcolorbox}[colback=gray!10, colframe=gray!50, fontupper=\small\ttfamily]
 Write a short paragraph that would be a perfect answer to the question: "What causes ocean acidification?"
 \end{tcolorbox}
 
-\vspace{0.5em}
+\vspace{0.3em}
 
 \textbf{LLM Output:}
 \begin{quote}
 \small\itshape
-``Ocean acidification is primarily caused by the absorption of atmospheric carbon dioxide (CO$_2$) by seawater. When CO$_2$ dissolves, it forms carbonic acid, which lowers the pH of the ocean. This process threatens marine organisms with calcium carbonate shells, such as corals and mollusks...''
+``Ocean acidification is primarily caused by the absorption of atmospheric CO$_2$ by seawater. When CO$_2$ dissolves, it forms carbonic acid, which lowers the pH of the ocean. This process threatens marine organisms with calcium carbonate shells, such as corals and mollusks...''
 \end{quote}
 
-\vspace{0.5em}
+\vspace{0.3em}
 
-\textbf{For Sparse:} Extract key terms $\to$ ``carbonic acid'', ``calcium carbonate'', ``pH'', ``seawater'', ``corals''
+\textbf{Sparse path:} Extract key terms $\to$ ``carbonic acid'', ``calcium carbonate'', ``pH'', ``seawater'', ``corals'' $\to$ BM25 query
 
-\textbf{For Dense:} Embed the hypothetical doc $\to$ use as query vector (Lecture 5)
+\vspace{0.3em}
+
+\textbf{Dense path:} Embed the hypothetical doc $\to$ use as ANN query vector (Lecture 5)\cpause
+
 \end{frame}
 
-\begin{frame}[shrink=5]{Strategy 3: Chain-of-Thought Query Decomposition}
-\begin{block}{Idea}
-Complex queries benefit from being broken into sub-queries that each retrieve different evidence.
-\end{block}
+\begin{frame}[shrink=25]{Strategy 2: Hypothetical Document Generation (HyDE)}
+\textbf{Prompt:}
+\begin{tcolorbox}[colback=gray!10, colframe=gray!50, fontupper=\small\ttfamily]
+Write a short paragraph that would be a perfect answer to the question: "What causes ocean acidification?"
+\end{tcolorbox}
+
+\vspace{0.3em}
+
+\textbf{LLM Output:}
+\begin{quote}
+\small\itshape
+``Ocean acidification is primarily caused by the absorption of atmospheric CO$_2$ by seawater. When CO$_2$ dissolves, it forms carbonic acid, which lowers the pH of the ocean. This process threatens marine organisms with calcium carbonate shells, such as corals and mollusks...''
+\end{quote}
+
+\cpause
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textcolor{irHybrid}{\checkmark} \textbf{When it works well:}
+\begin{itemize}\small
+    \item Factual / informational queries
+    \item Domain-specific terminology
+\end{itemize}
+\end{column}
+\begin{column}{0.48\textwidth}
+\textcolor{irRerank}{\ding{55}} \textbf{Risk:}
+\begin{itemize}\small
+    \item LLM hallucinations pollute terms
+    \item Adds LLM latency per query
+\end{itemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+
+\begin{frame}{Strategy 3: Chain-of-Thought Query Decomposition --- Intuition}
+\begin{exampleblock}{The Problem}
+``How did the 2008 financial crisis affect European housing markets?'' \\
+\textbf{No single document covers all aspects.} BM25 on the full query retrieves almost nothing.
+\end{exampleblock}
 
 \vspace{0.5em}
 
+\begin{block}{Core Idea}
+Decompose complex queries into \textbf{atomic sub-queries}, retrieve evidence for each independently, then merge the results. More recall, less vocabulary mismatch.
+\end{block}
+
+\end{frame}
+
+\begin{frame}{Strategy 3: Chain-of-Thought Query Decomposition --- Intuition}
+
+\begin{block}{Core Idea}
+Decompose complex queries into \textbf{atomic sub-queries}, retrieve evidence for each independently, then merge the results. More recall, less vocabulary mismatch.
+\end{block}
+
+\cpause
+\vspace{0.8em}
+
+\begin{center}
+\begin{tikzpicture}[node distance=0.9cm, every node/.style={font=\small\sffamily}]
+    \node[infra, text width=3.5cm, align=center] (cq) {Complex Query};
+    \node[dense, right=1.3cm of cq] (llm) {LLM};
+    \node[sparse, above right=0.5cm and 1.4cm of llm, minimum width=2cm] (sq1) {Sub-query 1};
+    \node[sparse, right=1.4cm of llm, minimum width=2cm] (sq2) {Sub-query 2};
+    \node[sparse, below right=0.5cm and 1.4cm of llm, minimum width=2cm] (sq3) {Sub-query 3};
+    \node[hybrid, right=1.4cm of sq2] (merge) {Merge};
+    \draw[irArrowBase] (cq) -- (llm);
+    \draw[irArrowBase] (llm) -- (sq1);
+    \draw[irArrowBase] (llm) -- (sq2);
+    \draw[irArrowBase] (llm) -- (sq3);
+    \draw[irArrowBase] (sq1) -- (merge);
+    \draw[irArrowBase] (sq2) -- (merge);
+    \draw[irArrowBase] (sq3) -- (merge);
+\end{tikzpicture}
+\end{center}
+\cpause
+\end{frame}
+
+
+\begin{frame}[shrink=30]{Strategy 3: Chain-of-Thought Query Decomposition --- Method}
 \textbf{Prompt:}
 \begin{tcolorbox}[colback=gray!10, colframe=gray!50, fontupper=\small\ttfamily]
 I need to answer: "How did the 2008 financial crisis affect European housing markets?"\\
 Break this into 3-4 simpler search queries that together would cover the full answer.
 \end{tcolorbox}
 
-\vspace{0.5em}
+\vspace{0.3em}
 
 \textbf{LLM Output:}
 \begin{enumerate}
@@ -1194,53 +1498,208 @@ Break this into 3-4 simpler search queries that together would cover the full an
     \item ``European housing prices 2008 2009 decline''
     \item ``EU bank bailouts housing market impact''
     \item ``European mortgage lending regulations post-crisis''
-\end{enumerate}
+\end{enumerate}\cpause
 
-\vspace{0.5em}
+\vspace{0.3em}
 
 \begin{block}{Pipeline}
-Run BM25 on each sub-query $\to$ merge results $\to$ better recall than single complex query
+\texttt{BM25$_1$ $\parallel$ BM25$_2$ $\parallel$ BM25$_3$ $\parallel$ BM25$_4$} $\to$ merge (union / RRF) $\to$ better recall than single complex query
 \end{block}
+
+\vspace{0.3em}
+
+\begin{exampleblock}{Best for}
+Multi-hop reasoning queries, complex informational needs. \textbf{Not} for simple keyword lookups.
+\end{exampleblock}
 \end{frame}
 
-\begin{frame}[shrink=10]{Strategy 4: Query2Doc (Wang et al., 2023)}
-\begin{block}{Idea}
-Generate a pseudo-document with an LLM, \textbf{prepend it to the original query}, and run BM25 on the concatenation.
+\begin{frame}{Strategy 4: Query2Doc --- Intuition}
+\begin{exampleblock}{The Problem with Expansion Terms}
+Adding isolated keywords (``neural'', ``deep'', ``algorithm'') helps, but loses the context of how those words relate to each other. BM25 treats each term independently.
+\end{exampleblock}
+
+\vspace{0.5em}
+
+\begin{block}{Core Idea (Wang et al., 2023)}
+Generate a full \textbf{pseudo-document} with an LLM and \emph{prepend it to the original query}. BM25 now sees a rich, contextual query that looks like the documents it is searching over.
 \end{block}
 
 \vspace{0.5em}
 
+\begin{center}
+\scalebox{0.82}{%
+\begin{tikzpicture}[node distance=1.0cm, every node/.style={font=\small\sffamily}]
+    \node[sparse] (q) {Query};
+    \node[dense, right=1.2cm of q] (llm) {LLM};
+    \node[infra, right=1.2cm of llm, text width=2.2cm, align=center] (pd) {Pseudo\\[-0.2em]Document};
+    \node[irBoxBase, fill=irHybrid!10, draw=irHybrid, right=1.2cm of pd, text width=2.0cm, align=center] (concat) {Query +\\[-0.2em]Pseudo-doc};
+    \node[sparse, right=1.2cm of concat] (bm25) {BM25};
+    \draw[irArrowBase] (q) -- (llm);
+    \draw[irArrowBase] (llm) -- (pd);
+    \draw[irArrowBase] (pd) -- (concat);
+    \draw[irArrowBase] (q.south) to[out=-60,in=-120] (concat.south);
+    \draw[irArrowBase] (concat) -- (bm25);
+\end{tikzpicture}}
+\end{center}
+\cpause
+\end{frame}
+
+\begin{frame}[shrink=20]{Strategy 4: Query2Doc --- Method}
 \textbf{Original query:} ``dark matter detection methods''
+
+\vspace{0.3em}
 
 \textbf{LLM-generated pseudo-doc:}
 \begin{quote}
 \small\itshape
-``Dark matter detection experiments include direct detection using cryogenic detectors, indirect detection through gamma-ray observations, and collider searches at the Large Hadron Collider...''
+``Dark matter detection experiments include direct detection using cryogenic detectors, indirect detection through gamma-ray observations, and collider searches at the Large Hadron Collider (LHC). WIMP-based detectors and axion searches are among the leading approaches...''
 \end{quote}
 
-\textbf{Expanded query to BM25:} original query + pseudo-doc text
+\textbf{Expanded query to BM25:} \texttt{[original query] + [pseudo-doc text]}
 
-\vspace{0.5em}
+\cpause
 
-\begin{columns}
+\vspace{0.3em}
+
+\begin{columns}[T]
 \begin{column}{0.48\textwidth}
-\textbf{\textcolor{green}{\checkmark} Advantages:}
-\begin{itemize}
-    \item Drops into any BM25 system
-    \item No retrieval needed first
-    \item LLM runs once per query
+\begin{block}{\textcolor{irHybrid}{\checkmark} Advantages}
+\begin{itemize}\small
+    \item Drops into \textit{any} BM25 system unchanged
+    \item No prior retrieval step needed
+    \item LLM runs only once per query
+    \item Rich term co-occurrence context preserved
 \end{itemize}
+\end{block}
 \end{column}
 \begin{column}{0.48\textwidth}
-\textbf{\textcolor{red}{\ding{55}} Risks:}
-\begin{itemize}
-    \item LLM hallucinations add noise
-    \item Longer ``query'' = slower
-    \item Need to weight original vs.\ generated text
+\begin{alertblock}{\ding{55} Risks}
+\begin{itemize}\small
+    \item LLM hallucinations add noise terms
+    \item Longer concatenated query = slower scoring
+    \item May need weighting: original vs.\ generated
 \end{itemize}
+\end{alertblock}
 \end{column}
 \end{columns}
 \end{frame}
+
+% =========================
+% Strategy 5: GenQR
+% =========================
+
+\begin{frame}{Strategy 5: GenQR (Generative Query Reformulation) --- Intuition}
+\begin{exampleblock}{The Problem with ``term lists'' expansions}
+Synonyms/HyDE/Query2Doc can help, but often produce \emph{bag-of-terms} or long pseudo-text.\\
+Sometimes you just want a \textbf{better query} that expresses the same intent.
+\end{exampleblock}
+
+\vspace{0.5em}
+
+\begin{block}{Core Idea (Wang et al., 2023)}
+Use an LLM to \textbf{rewrite the query itself} into 3--5 high-quality paraphrases, then retrieve using the reformulated query (often appended/interpolated with the original).
+\end{block}
+
+\vspace{0.8em}
+
+\begin{center}
+\begin{tikzpicture}[node distance=1.1cm, every node/.style={font=\small\sffamily}]
+    \node[infra, text width=2.4cm, align=center] (q) {Original\\Query $q_0$};
+    \node[dense, right=1.3cm of q] (llm) {GenQR\\(T5 / FLAN-T5)};
+    \node[irBoxBase, fill=irHybrid!10, draw=irHybrid, right=1.3cm of llm, text width=3.0cm, align=center] (qr) {Reformulated\\Query $q_r$\\(paraphrases)};
+    \node[sparse, right=1.3cm of qr] (bm25) {BM25};
+    \node[rerank, right=1.3cm of bm25] (rerank) {Neural\\Re-ranker};
+
+    \draw[irArrowBase] (q) -- (llm);
+    \draw[irArrowBase] (llm) -- (qr);
+    \draw[irArrowBase] (qr) -- (bm25);
+    \draw[irArrowBase] (bm25) -- (rerank);
+\end{tikzpicture}
+\end{center}
+
+\vspace{0.3em}
+\begin{alertblock}{Key point vs PRF}
+No dependence on top-$k$ pseudo-relevant docs: GenQR is \textbf{direct reformulation} using only $q_0$.
+\end{alertblock}
+\end{frame}
+
+\begin{frame}[shrink=22]{Strategy 5: GenQR --- Method (Prompting \& Fine-tuning)}
+\textbf{Two common instantiations:}
+
+\vspace{0.3em}
+\begin{block}{(A) Prompting an instruction-tuned model (e.g., FLAN-T5)}
+\begin{tcolorbox}[colback=gray!10, colframe=gray!50, fontupper=\small\ttfamily]
+Improve the search effectiveness by suggesting rewrites for the query:\\
+\hspace*{1em} "dark matter detection methods"\\
+Return 5 rewritten queries (one per line).
+\end{tcolorbox}
+\end{block}
+
+\cpause
+\vspace{0.4em}
+
+\begin{block}{(B) Fine-tuning a text-to-text model (e.g., T5) for ``refine''}
+Train a model to generate $q_r$ given $q_0$ using weak supervision:
+\begin{itemize}\small
+    \item Build query pairs $\langle q_x, q_y\rangle$ that share relevant documents (same intent)
+    \item Filter pairs to reduce drift / noise (e.g., overlap + effectiveness + stopword filtering)
+    \item Fine-tune with an explicit task token: \texttt{T5("refine", $q_0$, "</s>")}
+\end{itemize}
+\end{block}
+
+\vspace{0.3em}
+\begin{exampleblock}{Output form}
+GenQR outputs \textbf{well-formed rewritten queries} (not just extra keywords), which you can:
+\textbf{append} to the original or \textbf{interpolate} (weighted) for first-stage retrieval.
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}[shrink=22]{Strategy 5: GenQR --- Pipeline Details, When It Works, Risks}
+\begin{block}{Retrieval pipeline integration (retrieve-then-rerank)}
+\small
+\begin{itemize}
+    \item Generate $N$ paraphrases (often $N\!=\!5$) using decoding (e.g., beam search), then keep top-$N$.
+    \item Form final first-stage query:
+    \[
+      q^{\dagger} = q_0 \;+\; \beta \cdot q_r
+      \quad \text{(append / weight reformulations vs original)}
+    \]
+    \item Run BM25 on $q^{\dagger}$, then re-rank with a neural model (monoT5 / cross-encoder).
+\end{itemize}
+\end{block}
+
+\cpause
+\vspace{0.4em}
+
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{block}{\textcolor{irHybrid}{\checkmark} When it works best}
+\begin{itemize}\small
+    \item Lexical mismatch (multiple valid phrasings)
+    \item Natural-language / verbose queries
+    \item Collections where BM25 recall is the bottleneck
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{alertblock}{\ding{55} Risks / gotchas}
+\begin{itemize}\small
+    \item \textbf{Topical drift}: rewrite changes intent (silent failure)
+    \item \textbf{Extra latency}: generation per query (mitigate with small models / caching)
+    \item Needs careful $\beta$ (too high $\Rightarrow$ rewrite dominates)
+\end{itemize}
+\end{alertblock}
+\end{column}
+\end{columns}
+
+\vspace{0.2em}
+\begin{exampleblock}{Practical advice}
+Treat GenQR as a \textbf{recall booster}. Keep the original query strong; set $\beta$ small and validate.
+\end{exampleblock}
+\end{frame}
+
+
+
 
 \begin{frame}{Comparison: Classical vs. LLM Query Expansion}
 \begin{table}
@@ -1278,7 +1737,7 @@ Interpretability & Terms from real docs & Generated terms \\
     \item Broad informational queries
     \item Query: ``climate change''
     \item Expansion adds: ``warming'', ``CO2'', ``emissions''
-\end{itemize}
+\end{itemize}\cpause
 \end{block}
 \end{column}
 
@@ -1290,7 +1749,7 @@ Interpretability & Terms from real docs & Generated terms \\
     \item Very specific queries
     \item Query: ``jaguar''
     \item Expansion adds: ``car'', ``speed'' (wrong sense!)
-\end{itemize}
+\end{itemize}\cpause
 \end{alertblock}
 \end{column}
 \end{columns}
@@ -1311,186 +1770,186 @@ Interpretability & Terms from real docs & Generated terms \\
 \end{frame}
 
 % ====================================================================
-% SECTION 4: LANGUAGE MODELS
+% SECTION 4: Pyterrier
 % ====================================================================
-\section{Hands-On with PyTerrier}
+% \section{Hands-On with PyTerrier}
 
-\begin{frame}[plain]
-\sectionpage
-\end{frame}
+% \begin{frame}[plain]
+% \sectionpage
+% \end{frame}
 
-\begin{frame}[fragile]{PyTerrier Setup}
-\begin{lstlisting}[language=Python]
-import pyterrier as pt
-if not pt.started():
-    pt.init()
+% \begin{frame}[fragile]{PyTerrier Setup}
+% \begin{lstlisting}[language=Python]
+% import pyterrier as pt
+% if not pt.started():
+%     pt.init()
 
-# Load dataset (VASWANI: small, fast for teaching)
-dataset = pt.get_dataset('irds:vaswani')
+% # Load dataset (VASWANI: small, fast for teaching)
+% dataset = pt.get_dataset('irds:vaswani')
 
-# Index (or use pre-built)
-if not os.path.exists("./vaswani_index"):
-    indexer = pt.IterDictIndexer("./vaswani_index")
-    index_ref = indexer.index(dataset.get_corpus_iter())
-else:
-    index_ref = pt.IndexRef.of("./vaswani_index")
+% # Index (or use pre-built)
+% if not os.path.exists("./vaswani_index"):
+%     indexer = pt.IterDictIndexer("./vaswani_index")
+%     index_ref = indexer.index(dataset.get_corpus_iter())
+% else:
+%     index_ref = pt.IndexRef.of("./vaswani_index")
 
-index = pt.IndexFactory.of(index_ref)
+% index = pt.IndexFactory.of(index_ref)
 
-# Get topics and qrels
-topics = dataset.get_topics().head(10)
-qrels = dataset.get_qrels()
-\end{lstlisting}
-\end{frame}
+% # Get topics and qrels
+% topics = dataset.get_topics().head(10)
+% qrels = dataset.get_qrels()
+% \end{lstlisting}
+% \end{frame}
 
-\begin{frame}[fragile]{Exercise 1: BM25 Baseline}
-\begin{lstlisting}[language=Python]
-# Default BM25 (k1=1.2, b=0.75)
-bm25 = pt.BatchRetrieve(index, wmodel="BM25")
+% \begin{frame}[fragile]{Exercise 1: BM25 Baseline}
+% \begin{lstlisting}[language=Python]
+% # Default BM25 (k1=1.2, b=0.75)
+% bm25 = pt.BatchRetrieve(index, wmodel="BM25")
 
-# Retrieve results
-results = bm25.transform(topics)
+% # Retrieve results
+% results = bm25.transform(topics)
 
-# Examine one query
-print(results[results['qid']=='1'][
-    ['qid', 'docno', 'score', 'rank']].head())
-\end{lstlisting}
+% # Examine one query
+% print(results[results['qid']=='1'][
+%     ['qid', 'docno', 'score', 'rank']].head())
+% \end{lstlisting}
 
-\vspace{1em}
+% \vspace{1em}
 
-\textbf{Output:}
-\begin{table}
-\tiny
-\begin{tabular}{llcc}
-\toprule
-qid & docno & score & rank \\
-\midrule
-1 & 51 & 8.234 & 1 \\
-1 & 486 & 7.921 & 2 \\
-1 & 12 & 7.456 & 3 \\
-\bottomrule
-\end{tabular}
-\end{table}
-\end{frame}
+% \textbf{Output:}
+% \begin{table}
+% \tiny
+% \begin{tabular}{llcc}
+% \toprule
+% qid & docno & score & rank \\
+% \midrule
+% 1 & 51 & 8.234 & 1 \\
+% 1 & 486 & 7.921 & 2 \\
+% 1 & 12 & 7.456 & 3 \\
+% \bottomrule
+% \end{tabular}
+% \end{table}
+% \end{frame}
 
-\begin{frame}[fragile]{Exercise 1: Parameter Effects}
-\begin{lstlisting}[language=Python]
-# Create BM25 variants
-bm25_default = pt.BatchRetrieve(index, wmodel="BM25")
-bm25_high_k1 = pt.BatchRetrieve(index, wmodel="BM25", 
-                                 controls={"bm25.k1": "2.0"})
-bm25_low_b = pt.BatchRetrieve(index, wmodel="BM25", 
-                               controls={"bm25.b": "0.3"})
-bm25_high_b = pt.BatchRetrieve(index, wmodel="BM25", 
-                                controls={"bm25.b": "0.95"})
+% \begin{frame}[fragile]{Exercise 1: Parameter Effects}
+% \begin{lstlisting}[language=Python]
+% # Create BM25 variants
+% bm25_default = pt.BatchRetrieve(index, wmodel="BM25")
+% bm25_high_k1 = pt.BatchRetrieve(index, wmodel="BM25", 
+%                                  controls={"bm25.k1": "2.0"})
+% bm25_low_b = pt.BatchRetrieve(index, wmodel="BM25", 
+%                                controls={"bm25.b": "0.3"})
+% bm25_high_b = pt.BatchRetrieve(index, wmodel="BM25", 
+%                                 controls={"bm25.b": "0.95"})
 
-# Compare
-comparison = pt.Experiment(
-    [bm25_default, bm25_high_k1, bm25_low_b, bm25_high_b],
-    topics, qrels,
-    eval_metrics=["map", "ndcg_cut_10", "P_10"],
-    names=["Default", "k1=2.0", "b=0.3", "b=0.95"]
-)
-print(comparison)
-\end{lstlisting}
-\end{frame}
+% # Compare
+% comparison = pt.Experiment(
+%     [bm25_default, bm25_high_k1, bm25_low_b, bm25_high_b],
+%     topics, qrels,
+%     eval_metrics=["map", "ndcg_cut_10", "P_10"],
+%     names=["Default", "k1=2.0", "b=0.3", "b=0.95"]
+% )
+% print(comparison)
+% \end{lstlisting}
+% \end{frame}
 
-\begin{frame}[fragile]{Exercise 2: RM3 Query Expansion}
-\begin{lstlisting}[language=Python]
-# RM3 pipeline: retrieve -> expand -> retrieve again
-bm25 = pt.BatchRetrieve(index, wmodel="BM25")
-rm3 = pt.rewrite.RM3(index)  # Default: fb_docs=10, fb_terms=10
-pipeline_rm3 = bm25 >> rm3 >> bm25
+% \begin{frame}[fragile]{Exercise 2: RM3 Query Expansion}
+% \begin{lstlisting}[language=Python]
+% # RM3 pipeline: retrieve -> expand -> retrieve again
+% bm25 = pt.BatchRetrieve(index, wmodel="BM25")
+% rm3 = pt.rewrite.RM3(index)  # Default: fb_docs=10, fb_terms=10
+% pipeline_rm3 = bm25 >> rm3 >> bm25
 
-# Compare with baseline
-comparison = pt.Experiment(
-    [bm25, pipeline_rm3],
-    topics, qrels,
-    eval_metrics=["map", "ndcg_cut_10", "recall_100"],
-    names=["BM25", "BM25+RM3"]
-)
-print(comparison)
+% # Compare with baseline
+% comparison = pt.Experiment(
+%     [bm25, pipeline_rm3],
+%     topics, qrels,
+%     eval_metrics=["map", "ndcg_cut_10", "recall_100"],
+%     names=["BM25", "BM25+RM3"]
+% )
+% print(comparison)
 
-# Inspect expanded query
-expanded = (bm25 >> rm3).transform(topics)
-print("Original:", topics[topics['qid']=='1']['query'].values[0])
-print("Expanded:", expanded[expanded['qid']=='1']['query'].values[0])
-\end{lstlisting}
-\end{frame}
+% # Inspect expanded query
+% expanded = (bm25 >> rm3).transform(topics)
+% print("Original:", topics[topics['qid']=='1']['query'].values[0])
+% print("Expanded:", expanded[expanded['qid']=='1']['query'].values[0])
+% \end{lstlisting}
+% \end{frame}
 
-\begin{frame}[fragile,shrink=5]{Exercise 2b: LLM-Based Query Expansion}
-\begin{lstlisting}[language=Python]
-from openai import OpenAI
-client = OpenAI()
+% \begin{frame}[fragile,shrink=30]{Exercise 2b: LLM-Based Query Expansion}
+% \begin{lstlisting}[language=Python]
+% from openai import OpenAI
+% client = OpenAI()
 
-def llm_expand(query, n_terms=5):
-    """Expand query using LLM synonym generation."""
-    resp = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": 
-            f"Generate {n_terms} search terms related to: "
-            f"'{query}'. Return only the terms, comma-separated."}]
-    )
-    expansion = resp.choices[0].message.content
-    return f"{query} {expansion}"
+% def llm_expand(query, n_terms=5):
+%     """Expand query using LLM synonym generation."""
+%     resp = client.chat.completions.create(
+%         model="gpt-4o-mini",
+%         messages=[{"role": "user", "content": 
+%             f"Generate {n_terms} search terms related to: "
+%             f"'{query}'. Return only the terms, comma-separated."}]
+%     )
+%     expansion = resp.choices[0].message.content
+%     return f"{query} {expansion}"
 
-# Expand all topics
-topics_expanded = topics.copy()
-topics_expanded['query'] = topics_expanded['query'].apply(llm_expand)
+% # Expand all topics
+% topics_expanded = topics.copy()
+% topics_expanded['query'] = topics_expanded['query'].apply(llm_expand)
 
-# Run BM25 on expanded queries
-results_llm = bm25.transform(topics_expanded)
+% # Run BM25 on expanded queries
+% results_llm = bm25.transform(topics_expanded)
 
-# Compare: BM25 vs RM3 vs LLM-expand vs LLM+RM3
-pipeline_llm_rm3 = bm25 >> rm3 >> bm25  # on LLM-expanded topics
-\end{lstlisting}
+% # Compare: BM25 vs RM3 vs LLM-expand vs LLM+RM3
+% pipeline_llm_rm3 = bm25 >> rm3 >> bm25  # on LLM-expanded topics
+% \end{lstlisting}
 
-\textbf{Discussion:} When does LLM expansion beat RM3? When does combining help?
-\end{frame}
+% \textbf{Discussion:} When does LLM expansion beat RM3? When does combining help?
+% \end{frame}
 
-\begin{frame}[fragile]{Exercise 3: Language Models}
-\begin{lstlisting}[language=Python]
-# Dirichlet LM with different mu values
-lm_1000 = pt.BatchRetrieve(index, wmodel="DirichletLM", 
-                           controls={"c": "1000"})
-lm_2500 = pt.BatchRetrieve(index, wmodel="DirichletLM", 
-                           controls={"c": "2500"})
-lm_5000 = pt.BatchRetrieve(index, wmodel="DirichletLM", 
-                           controls={"c": "5000"})
+% \begin{frame}[fragile]{Exercise 3: Language Models}
+% \begin{lstlisting}[language=Python]
+% # Dirichlet LM with different mu values
+% lm_1000 = pt.BatchRetrieve(index, wmodel="DirichletLM", 
+%                            controls={"c": "1000"})
+% lm_2500 = pt.BatchRetrieve(index, wmodel="DirichletLM", 
+%                            controls={"c": "2500"})
+% lm_5000 = pt.BatchRetrieve(index, wmodel="DirichletLM", 
+%                            controls={"c": "5000"})
 
-# Compare with BM25
-comparison = pt.Experiment(
-    [bm25, lm_1000, lm_2500, lm_5000],
-    topics, qrels,
-    eval_metrics=["map", "ndcg_cut_10", "P_10"],
-    names=["BM25", "LM mu=1000", "LM mu=2500", "LM mu=5000"]
-)
-print(comparison)
-\end{lstlisting}
-\end{frame}
+% # Compare with BM25
+% comparison = pt.Experiment(
+%     [bm25, lm_1000, lm_2500, lm_5000],
+%     topics, qrels,
+%     eval_metrics=["map", "ndcg_cut_10", "P_10"],
+%     names=["BM25", "LM mu=1000", "LM mu=2500", "LM mu=5000"]
+% )
+% print(comparison)
+% \end{lstlisting}
+% \end{frame}
 
-\begin{frame}[fragile]{Exercise 4: Comprehensive Comparison}
-\begin{lstlisting}[language=Python]
-# Build all systems
-systems = {
-    "BM25": bm25,
-    "Dirichlet LM": lm_2500,
-    "BM25 + RM3": bm25 >> pt.rewrite.RM3(index) >> bm25,
-    "LM + RM3": lm_2500 >> pt.rewrite.RM3(index) >> lm_2500,
-}
+% \begin{frame}[fragile]{Exercise 4: Comprehensive Comparison}
+% \begin{lstlisting}[language=Python]
+% # Build all systems
+% systems = {
+%     "BM25": bm25,
+%     "Dirichlet LM": lm_2500,
+%     "BM25 + RM3": bm25 >> pt.rewrite.RM3(index) >> bm25,
+%     "LM + RM3": lm_2500 >> pt.rewrite.RM3(index) >> lm_2500,
+% }
 
-# Final evaluation
-final_results = pt.Experiment(
-    list(systems.values()),
-    topics, qrels,
-    eval_metrics=["map", "ndcg_cut_10", "P_10", "recall_100"],
-    names=list(systems.keys())
-)
-print(final_results)
-\end{lstlisting}
+% # Final evaluation
+% final_results = pt.Experiment(
+%     list(systems.values()),
+%     topics, qrels,
+%     eval_metrics=["map", "ndcg_cut_10", "P_10", "recall_100"],
+%     names=list(systems.keys())
+% )
+% print(final_results)
+% \end{lstlisting}
 
-\textbf{Discussion:} Which baseline wins? Does RM3 help more for BM25 or LM?
-\end{frame}
+% \textbf{Discussion:} Which baseline wins? Does RM3 help more for BM25 or LM?
+% \end{frame}
 
 % ====================================================================
 % SECTION 6: CONNECTIONS
@@ -1507,7 +1966,7 @@ print(final_results)
     \item \textbf{BM25:} Probabilistic relevance, saturating TF, length normalization
     \item \textbf{Language Models:} Generative probabilities, smoothing essential
     \item \textbf{Query Expansion:} RM3 for vocabulary mismatch + LLM-based alternatives
-\end{itemize}
+\end{itemize}\cpause
 \end{block}
 
 \vspace{1em}
@@ -1519,7 +1978,7 @@ print(final_results)
     \item No semantic understanding
     \item ``car'' and ``automobile'' completely different
     \item ``bank'' (river) vs. ``bank'' (financial) treated identically
-\end{itemize}
+\end{itemize}\cpause
 \end{alertblock}
 \end{frame}
 
@@ -1537,7 +1996,7 @@ print(final_results)
     \item $|d| = 300$
     \item tf(quantum) = 5
     \item tf(algorithm) = 3
-\end{itemize}
+\end{itemize}\cpause
 \end{column}
 \begin{column}{0.45\textwidth}
 \textbf{Candidate Doc B:}
@@ -1545,7 +2004,7 @@ print(final_results)
     \item $|d| = 800$
     \item tf(quantum) = 8
     \item tf(algorithm) = 1
-\end{itemize}
+\end{itemize}\cpause
 \end{column}
 \end{columns}
 

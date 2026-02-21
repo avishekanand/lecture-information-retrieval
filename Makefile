@@ -1,8 +1,8 @@
 .PHONY: all clean animated static
 
 BUILD_DIR = build
-# Only compile active lectures (01, 02, 03, 04)
-ACTIVE_LECTURES = 01_intro_vector_space.tex 02_indexing.tex 03_ranking.tex 04_embeddings_reranking.tex
+# Compile all lectures (01-06)
+ACTIVE_LECTURES = 01_intro_vector_space.tex 02_indexing.tex 03_ranking.tex 04_embeddings_reranking.tex 05_dense_retrieval.tex 06-ltr.tex
 PDFS_ANIMATED = $(addprefix $(BUILD_DIR)/, $(ACTIVE_LECTURES:.tex=_animated.pdf))
 PDFS_STATIC = $(addprefix $(BUILD_DIR)/, $(ACTIVE_LECTURES:.tex=_static.pdf))
 
@@ -17,13 +17,14 @@ $(BUILD_DIR):
 
 # Animated version (default)
 $(BUILD_DIR)/%_animated.pdf: %.tex | $(BUILD_DIR)
-	pdflatex -jobname=$(basename $(notdir $@)) -output-directory=$(BUILD_DIR) $<
-	pdflatex -jobname=$(basename $(notdir $@)) -output-directory=$(BUILD_DIR) $<
+	pdflatex -jobname=$(basename $(notdir $@)) -output-directory=$(BUILD_DIR) -interaction=nonstopmode $<
+	pdflatex -jobname=$(basename $(notdir $@)) -output-directory=$(BUILD_DIR) -interaction=nonstopmode $<
+
 
 # Static version
 $(BUILD_DIR)/%_static.pdf: %.tex | $(BUILD_DIR)
-	pdflatex -jobname=$(basename $(notdir $@)) -output-directory=$(BUILD_DIR) "\def\staticmode{1} \input{$<}"
-	pdflatex -jobname=$(basename $(notdir $@)) -output-directory=$(BUILD_DIR) "\def\staticmode{1} \input{$<}"
+	pdflatex -jobname=$(basename $(notdir $@)) -output-directory=$(BUILD_DIR) -interaction=nonstopmode "\PassOptionsToClass{handout}{beamer} \def\staticmode{1} \input{$<}"
+	pdflatex -jobname=$(basename $(notdir $@)) -output-directory=$(BUILD_DIR) -interaction=nonstopmode "\PassOptionsToClass{handout}{beamer} \def\staticmode{1} \input{$<}"
 
 clean:
 	rm -rf $(BUILD_DIR)

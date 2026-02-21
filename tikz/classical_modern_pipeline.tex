@@ -1,0 +1,68 @@
+\begin{tikzpicture}[scale=0.92]
+
+    % ============================================================
+    % LEFT PANEL: Classical IR
+    % ============================================================
+    \node[font=\small\bfseries\sffamily, text=irSparse] at (-2.8, 4.1) {Classical IR};
+
+    % Query
+    \node[font=\tiny\sffamily, text=irInfra, align=center] (qcl) at (-2.8, 3.5) {Query};
+
+    % Single BM25 box (does retrieval + ranking together)
+    \node[sparse, minimum width=3.6cm, minimum height=0.9cm] (bm25cl) at (-2.8, 2.2)
+        {\textbf{BM25 Scoring}};
+
+    % Annotation: one-step brace
+    \node[font=\tiny\itshape, text=irSparse, align=center, anchor=east] at (-4.7, 2.2)
+        {Retrieval\\[-0.15em]\& Ranking\\[-0.15em]in one step};
+    \draw[irSparse!60, ->, thin] (-4.1, 2.2) -- (bm25cl.west);
+
+    % Arrow Query → BM25
+    \draw[irArrowBase] (qcl.south) -- (bm25cl.north);
+
+    % Result
+    \node[ghost, minimum width=3.6cm, minimum height=0.7cm] (rl) at (-2.8, 0.8)
+        {Ranked List};
+
+    % Arrow BM25 → Ranked List
+    \draw[irArrowBase] (bm25cl.south) -- (rl.north);
+
+    % Candidate count label on arrow
+    \node[irLabel, anchor=west] at (-1.0, 1.5) {All docs};
+
+    % ============================================================
+    % DIVIDER
+    % ============================================================
+    \draw[irMuted!80, dashed] (0.05, 0.2) -- (0.05, 4.3);
+
+    % ============================================================
+    % RIGHT PANEL: Modern IR
+    % ============================================================
+    \node[font=\small\bfseries\sffamily, text=irInfra] at (2.8, 4.1)
+        {Modern IR \textcolor{irRerank}{\tiny(Lectures 4--6)}};
+
+    % Query
+    \node[font=\tiny\sffamily, text=irInfra, align=center] (qm) at (2.8, 3.5) {Query};
+
+    % Tier 1: Retrieval
+    \node[sparse, minimum width=3.2cm] (ret) at (2.8, 2.7) {BM25 / ANN};
+    \node[irLabel, anchor=west] at (4.5, 2.7) {$\sim$1M docs};
+    \draw[irArrowBase] (qm.south) -- (ret.north);
+
+    % Arrow + label
+    \node[irLabel, anchor=west] at (4.5, 2.15) {top-1000};
+    \draw[irArrowBase] (ret.south) -- (1.6+1.2, 1.7);
+
+    % Tier 2: Re-ranker
+    \node[rerank, minimum width=3.2cm] (rr) at (2.8, 1.6) {Re-ranker};
+    \node[irLabel, anchor=west] at (4.5, 1.6) {\textcolor{irRerank}{Lecture 4--6}};
+
+    % Arrow + label
+    \node[irLabel, anchor=west] at (4.5, 1.05) {top-10};
+    \draw[irArrowBase] (rr.south) -- (2.8, 0.6);
+
+    % Tier 3: Result
+    \node[ghost, minimum width=3.2cm, minimum height=0.7cm] (res) at (2.8, 0.3)
+        {Ranked List};
+
+\end{tikzpicture}

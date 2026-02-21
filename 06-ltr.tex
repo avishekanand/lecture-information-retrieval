@@ -75,7 +75,7 @@
     \item \textbf{Textual}: BM25, semantic match.
     \item \textbf{Quality}: Ratings, reviews.
     \item \textbf{Business}: Price, Prime shipping, revenue per click.
-\end{itemize}
+\end{itemize}\cpause
 \end{column}
 \begin{column}{0.5\textwidth}
 \begin{center}
@@ -94,7 +94,7 @@
     \item \textbf{Scope}: Amazon, eBay, and Google use **1000+ features** per document.
     \item \textbf{The Wall}: No human can manually tune $1000$ weights $\mathbf{w}$ to optimize a metric like NDCG.
     \item \textbf{Heterogeneity}: Combining BM25 (float) with "Is Fresh" (binary) and "Price" (currency).
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 \cpause
@@ -165,7 +165,7 @@ Sparse/Dense retrieval retrieves thousands; LTR perfectly orders the top 100.
     \item \textbf{L3--L4}: BM25 and BERT Cross-Encoders (Standard 2-stage pipeline).
     \item \textbf{L5}: Dense retrieval with Bi-Encoders and Late Interaction (ColBERT).
     \item \textbf{L5 (cont)}: Generative retrieval (DSI, SEAL).
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 \cpause
@@ -201,7 +201,7 @@ Ranking metrics depend on \textbf{sorting}, which is discrete. We must find diff
     \item \textbf{Traditional}: Hand-crafted features (BM25, PageRank) + LambdaMART.
     \item \textbf{Neural}: End-to-end representation learning + Ranking loss.
     \item \textbf{Cycle}: Feedback loop via gradients from ranking loss $\to$ model parameters.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{0.5em}
 \begin{center}
@@ -226,7 +226,7 @@ Ranking metrics depend on \textbf{sorting}, which is discrete. We must find diff
     \item \textbf{P@$k$ / R@$k$}: Good for broad recall but position-blind within top-$k$.
     \item \textbf{MRR}: Excellent for navigational/QA tasks (cares about first result).
     \item \textbf{MAP}: Averages precision across all relevant docs; sensitive to rank.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 \cpause
@@ -244,7 +244,7 @@ Binary metrics ignore the \textbf{intensity} of relevance. In modern search, we 
     \item \textbf{Grades}: Cumulative Gain (CG) sums relevance scores: $\sum \text{rel}_i$.
     \item \textbf{Discount}: DCG applies a logarithmic decay: $\sum \frac{\text{rel}_i}{\log_2(i+1)}$.
     \item \textbf{Normalization}: NDCG scales DCG to $[0, 1]$ relative to the ideal sort.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{0.5em}
 \cpause
@@ -262,7 +262,7 @@ Binary metrics ignore the \textbf{intensity} of relevance. In modern search, we 
     \item \textbf{Current}: Grades $[2, 3, 1, 0, 0] \to \text{DCG} \approx 4.39$.
     \item \textbf{Ideal}: Grades $[3, 2, 1, 0, 0] \to \text{DCG} \approx 4.76$.
     \item \textbf{Result}: $\text{NDCG} = 4.39 / 4.76 \approx \mathbf{0.92}$.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 \cpause
@@ -288,7 +288,7 @@ Notice that moving the "3" from position 1 to 2 caused an 8\% drop in score. NDC
     \item \textbf{Regression}: Predict the exact relevance grade $y$ (e.g., MSE loss).
     \item \textbf{Classification}: Predict relevance class (e.g., Binary Cross-Entropy).
     \item \textbf{Scalability}: $O(N)$ complexity makes it fast for massive candidate sets.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 \cpause
@@ -306,7 +306,7 @@ Pointwise models ignore the \textbf{relative order} between documents. They don'
     \item \textbf{Input}: Joint query-document sequence \texttt{[CLS] Q [SEP] D}.
     \item \textbf{Loss}: Binary Cross-Entropy on the \texttt{[CLS]} representation.
     \item \textbf{Success}: Works well because BERT captures deep semantics, but \textbf{not} because the loss is optimal for ranking.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 \cpause
@@ -332,7 +332,7 @@ With enough data and model capacity (like LLMs), simplistic pointwise losses oft
     \item \textbf{Intuition}: For each pair $(d_i, d_j)$, if $y_i > y_j$, the model should score $s_i > s_j$.
     \item \textbf{Strength}: Transforms ranking into binary classification of pairs.
     \item \textbf{Feedback}: Errors are symmetric --- push one up, the other down.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{0.5em}
 \begin{center}
@@ -349,7 +349,7 @@ With enough data and model capacity (like LLMs), simplistic pointwise losses oft
     \item \textbf{Probability}: $P(d_i \succ d_j) = \sigma(s_i - s_j)$.
     \item \textbf{Loss}: Binary Cross-Entropy on pairs where $d_i$ is more relevant.
     \item \textbf{Update}: Gradient pushes $s_i$ up and $s_j$ down proportional to error.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 \cpause
@@ -367,7 +367,7 @@ With enough data and model capacity (like LLMs), simplistic pointwise losses oft
     \item \textbf{Conflict}: $P(\text{Tier-1} \succ \text{Blog}) \approx 0.40$ (Model is wrong).
     \item \textbf{Gradient}: Pushes Tier-1 score up ($+0.60$) and Blog down ($-0.60$).
     \item \textbf{Observation}: RankNet weights all swaps equally, regardless of position.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 \cpause
@@ -385,7 +385,7 @@ Swapping docs at positions 1--2 should be "more important" than positions 99--10
     \item \textbf{Margin}: Force $\vw^\top (\vx_i - \vx_j) \geq 1$ for correctly ordered pairs.
     \item \textbf{Feed}: Users clicking result $i$ after skipping $j \implies d_i \succ d_j$.
     \item \textbf{Legacy}: Solid theory (max-margin) but less scalable than boosting.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 \cpause
@@ -411,7 +411,7 @@ Joachims (2002) showed that even noisy implicit signals (clicks) can train a com
     \item \textbf{Weight}: Multiply the pairwise gradient by $|\Delta\text{NDCG}|$ of the swap.
     \item \textbf{Focus}: Errors at the top (pos 1--2) get massive gradients.
     \item \textbf{Result}: Errors at the bottom (pos 99--100) are almost ignored.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{0.5em}
 \cpause
@@ -429,7 +429,7 @@ Joachims (2002) showed that even noisy implicit signals (clicks) can train a com
     \item \textbf{Problem}: NDCG is non-differentiable (jumpy).
     \item \textbf{Solution}: Specify the physical "force" ($\lambda$) acting on each doc.
     \item \textbf{Analogy}: "Pull" relevant docs up, "push" irrelevant ones down.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 \cpause
@@ -447,7 +447,7 @@ Surprisingly, optimizing these gradients leads to a local optimum for the target
     \item \textbf{Top Swap} (Pos 1--2): Resulting $|\Delta\text{NDCG}| = \mathbf{0.154}$.
     \item \textbf{Bottom Swap} (Pos 3--4): Resulting $|\Delta\text{NDCG}| = \mathbf{0.030}$.
     \item \textbf{Impact}: The top swap exerts 5$\times$ more gradient force on the model than the bottom swap.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 \cpause
@@ -465,7 +465,7 @@ This weighting causes the model to "give up" on tail documents and focus exclusi
     \item \textbf{MART}: Multiple Additive Regression Trees (Boosting).
     \item \textbf{Process}: Compute current $\lambda$ for all docs $\to$ Fit a tree to predict those $\lambda$ values $\to$ Add tree to ensemble.
     \item \textbf{Standard}: Powering Bing, Yahoo, and specialized e-commerce search for years.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 \cpause
@@ -483,7 +483,7 @@ Non-neural trees handle \textbf{heterogeneous features} (BM25 score + PageRank +
     \item \textbf{Lexical}: BM25, TF-IDF, Language Model scores.
     \item \textbf{Structural}: In-link count (PageRank), URL length, title matches.
     \item \textbf{Modern}: Dense similarity (L5), Cross-encoder scores (L4).
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 \cpause
@@ -509,7 +509,7 @@ LambdaMART doesn't replace BM25; it uses BM25 as \textbf{one of many inputs}. It
     \item \textbf{Philosophy}: Don't look at doc pairs; look at the \textit{permutation}.
     \item \textbf{Models}: $P(\text{ranking} \mid \text{scores})$ is modelled as a probability distribution.
     \item \textbf{Loss}: Minimize KL-divergence between predicted and ideal distributions.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{0.5em}
 \begin{center}
@@ -526,7 +526,7 @@ LambdaMART doesn't replace BM25; it uses BM25 as \textbf{one of many inputs}. It
     \item \textbf{Probabilistic}: $P_s(d_i) = \frac{\exp(s_i)}{\sum_j \exp(s_j)}$ (Standard Softmax).
     \item \textbf{Loss}: Cross-Entropy between predicted and target softmaxes.
     \item \textbf{Benefit}: Naturally handles the interaction between all documents.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 \cpause
@@ -544,7 +544,7 @@ Pushing one document to position 1 automatically lowers the "Top-1" probability 
     \item \textbf{Teacher}: Provides graded relevance scores for top-$k$ documents.
     \item \textbf{Student}: Must learn to reproduce the relative ordering, not just absolute scores.
     \item \textbf{Losses}: Listwise KL-divergence over softmaxes works best.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 \cpause
@@ -562,7 +562,7 @@ Using pairwise/listwise distillation significantly outperforms simple MSE on the
     \item \textbf{Stage 1}: Dense/Sparse Retrieval (Recall optimized, Pointwise InfoNCE).
     \item \textbf{Stage 2}: Neural Re-ranker (High interaction, Pairwise BERT).
     \item \textbf{Stage 3}: LambdaMART (Aggregates all signals + metadata).
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 \cpause
@@ -577,7 +577,7 @@ Using pairwise/listwise distillation significantly outperforms simple MSE on the
 \end{center}
 \end{frame}
 
-\begin{frame}[fragile]{Practical LTR: LightGBM & PyTerrier}
+\begin{frame}[fragile]{Practical LTR: LightGBM \& PyTerrier}
 \irStage{HANDS-ON}
 \textbf{Standardized libraries make it easy to train metric-aware rankers.}
 
@@ -586,7 +586,7 @@ Using pairwise/listwise distillation significantly outperforms simple MSE on the
     \item \textbf{LightGBM}: The primary engine for LambdaMART in industrial search.
     \item \textbf{PyTerrier}: Orchestrates the pipeline from indexing to ensemble training.
     \item \textbf{Objective}: Simply set \texttt{"objective": "lambdarank"} to start.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{0.5em}
 \cpause
@@ -604,7 +604,7 @@ The power of LambdaMART comes from its ability to use \textbf{50+ features}: BM2
     \item \textbf{Pointwise}: Fast, scalable, but position-blind. Best for 1st stage.
     \item \textbf{Pairwise}: The standard for re-ranking. LambdaMART is the workhorse.
     \item \textbf{Listwise}: Use for deep semantic interaction or small top-$k$ re-ranking.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 \cpause
@@ -613,7 +613,7 @@ Remember: A perfect re-ranker cannot fix what the first stage missed. LTR is mos
 \end{alertblock}
 \end{frame}
 
-\begin{frame}{Next Class: Evaluation & Large Scale Systems}
+\begin{frame}{Next Class: Evaluation \& Large Scale Systems}
 \irStage{SUMMARY}
 \textbf{Next week, we move into the "wild" --- how to evaluate systems with real users.}
 
@@ -622,7 +622,7 @@ Remember: A perfect re-ranker cannot fix what the first stage missed. LTR is mos
     \item \textbf{Offline}: Benchmarks like TREC and the limits of static labels.
     \item \textbf{Online}: A/B testing, Interleaving, and Click-through analysis.
     \item \textbf{Deployment}: Building low-latency production pipelines.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 \cpause
@@ -641,7 +641,7 @@ Review the PyTerrier documentation for the Learning to Rank module.
     \item \textbf{Problem}: Hard ranks are discrete (zero gradient).
     \item \textbf{Sigmoid}: Replace $\mathbb{1}[s_j > s_i]$ with $\sigma(\alpha(s_j - s_i))$.
     \item \textbf{Result}: A differentiable surrogate for the NDCG metric.
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{1em}
 \cpause

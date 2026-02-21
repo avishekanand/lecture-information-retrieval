@@ -88,7 +88,7 @@
     \item \textbf{Lecture 2:} Inverted indexes and ANN indexes (IVF+PQ, HNSW)
     \item \textbf{Lecture 3:} BM25, Language Models, RM3 for scoring and expansion
     \item \textbf{Lecture 4:} BERT cross-encoders for re-ranking (monoBERT, monoT5)
-\end{itemize}
+\end{itemize}\cpause
 \end{block}
 
 \vspace{1em}
@@ -99,7 +99,7 @@ Cross-encoders are \textbf{too slow for retrieval}:
     \item Re-ranking 100 docs: 0.5s \textcolor{green}{\checkmark} \quad Full corpus (8.8M): 12+ hours \textcolor{red}{\ding{55}}
     \item BM25 misses semantic matches: ``automobile issues'' vs.\ ``car problems''
     \item Recall ceiling: if BM25 misses a relevant doc, the cross-encoder can \textbf{never} recover it
-\end{itemize}
+\end{itemize}\cpause
 \end{alertblock}
 \end{frame}
 
@@ -159,7 +159,7 @@ Bi-encoders are \textbf{less accurate} than cross-encoders (no query-document in
     \item Encode all 8.8M passages
     \item Build ANN index
     \item $\sim$hours on GPU
-\end{itemize}
+\end{itemize}\cpause
 \end{column}
 \begin{column}{0.48\textwidth}
 \textbf{Online (per query):}
@@ -167,7 +167,7 @@ Bi-encoders are \textbf{less accurate} than cross-encoders (no query-document in
     \item Encode query: $\sim$5 ms
     \item ANN search: $\sim$10 ms
     \item Total: $\sim$15 ms \textcolor{green}{\checkmark}
-\end{itemize}
+\end{itemize}\cpause
 \end{column}
 \end{columns}
 \end{frame}
@@ -236,7 +236,7 @@ for relevant pair $(\vq, \vd^+)$ and irrelevant pair $(\vq, \vd^-)$.
 \begin{itemize}
     \item ``car problems'' and ``automobile issues'' $\to$ nearby points
     \item ``car problems'' and ``car racing'' $\to$ far apart
-\end{itemize}
+\end{itemize}\cpause
 
 \cpause
 \vspace{0.5em}
@@ -262,7 +262,7 @@ $$\mathcal{L} = -\log \frac{\exp\!\bigl(\vq_i^\top \vp_i^+ / \tau\bigr)}{\displa
     \item $B$: batch size --- provides $B-1$ \textbf{free} negatives per query
     \item $\tau$: temperature --- controls sharpness of the softmax
     \item This is $B$-way classification: ``which passage is relevant?''
-\end{itemize}
+\end{itemize}\cpause
 
 \cpause
 \vspace{0.5em}
@@ -341,7 +341,7 @@ $$p_j = \frac{\exp(s_j / \tau)}{\sum_k \exp(s_k / \tau)}$$
     \item Strong gradients
     \item Risk: training instability
     \item Used by: DPR
-\end{itemize}
+\end{itemize}\cpause
 \end{column}
 \begin{column}{0.48\textwidth}
 \textbf{Large $\tau$ (e.g., 1.0):}
@@ -350,7 +350,7 @@ $$p_j = \frac{\exp(s_j / \tau)}{\sum_k \exp(s_k / \tau)}$$
     \item Weaker gradients, more stable
     \item Risk: slow convergence
     \item Used by: ColBERT
-\end{itemize}
+\end{itemize}\cpause
 \end{column}
 \end{columns}
 
@@ -376,7 +376,7 @@ $$\mathcal{L}_{\text{triplet}} = \max\!\bigl(0,\; d(\vq, \vd^+) - d(\vq, \vd^-) 
     \item Explicit margin $m$ enforces separation
     \item Easy to implement
     \item Fast convergence with hard triplets
-\end{itemize}
+\end{itemize}\cpause
 \end{column}
 \begin{column}{0.48\textwidth}
 \textbf{\textcolor{red}{\ding{55}} Disadvantages:}
@@ -384,7 +384,7 @@ $$\mathcal{L}_{\text{triplet}} = \max\!\bigl(0,\; d(\vq, \vd^+) - d(\vq, \vd^-) 
     \item Only \textbf{one} negative per anchor
     \item Margin $m$ is a sensitive hyperparameter
     \item Wastes batch information
-\end{itemize}
+\end{itemize}\cpause
 \end{column}
 \end{columns}
 
@@ -430,7 +430,7 @@ InfoNCE dominates because it uses \textbf{all} $B-1$ batch passages as negatives
     \item \textbf{Representation:} \texttt{[CLS]} token output --- single vector per text
     \item \textbf{Similarity:} $\text{score}(\vq, \vp) = \vq^\top \vp$ (dot product)
     \item \textbf{No interaction:} Query and passage never ``see'' each other during encoding
-\end{itemize}
+\end{itemize}\cpause
 \end{block}
 \end{frame}
 
@@ -485,7 +485,7 @@ Mixing \textbf{one} BM25 hard negative with in-batch random negatives is surpris
 \textbf{Random negative:} ``The capital of France is Paris\ldots''
 \begin{itemize}
     \item $\vq^\top \vd^- \approx 0.05$ --- trivially easy, \textbf{no learning signal}
-\end{itemize}
+\end{itemize}\cpause
 
 \cpause
 \vspace{0.5em}
@@ -495,7 +495,7 @@ Mixing \textbf{one} BM25 hard negative with in-batch random negatives is surpris
     \item Contains ``aspirin'' $\to$ BM25 ranks it high
     \item But \textbf{not about side effects} $\to$ not relevant
     \item $\vq^\top \vd^- \approx 0.6$ --- confusing, \textbf{strong learning signal!}
-\end{itemize}
+\end{itemize}\cpause
 
 \cpause
 \vspace{1em}
@@ -524,7 +524,7 @@ BM25 & 59.1 & 18.7 & --- \\
     \item First system to conclusively show \textbf{dense $>$ sparse} for open-domain QA
     \item +19pp top-20 recall over BM25 on Natural Questions
     \item Enabled the modern ``retriever + reader'' paradigm
-\end{itemize}
+\end{itemize}\cpause
 \end{block}
 
 \cpause
@@ -568,7 +568,7 @@ The \textbf{entire} document is compressed into a single 768-dim vector.
     \item Cannot capture fine-grained token-level alignments
     \item ``\textbf{Who} founded Wikipedia?'' vs.\ ``\textbf{When} was Wikipedia founded?'' $\to$ similar scores!
     \item Long documents lose information
-\end{itemize}
+\end{itemize}\cpause
 
 \cpause
 \vspace{0.5em}
@@ -643,7 +643,7 @@ $$\text{MaxSim}(\vq, \vd) = \sum_{i=1}^{|\vq|} \max_{j=1}^{|\vd|}\; \cos(\vq_i, 
     \item \textbf{Asymmetric:} Every query token must find a match; document tokens can be ignored
     \item \textbf{Decomposable:} Document embeddings precomputed and stored offline
     \item Token embeddings: $\vq_i, \vd_j \in \mathbb{R}^{128}$ (projected down from 768)
-\end{itemize}
+\end{itemize}\cpause
 \end{frame}
 
 \begin{frame}{Worked Example: MaxSim Scoring}
@@ -785,7 +785,7 @@ where $p_j = \text{softmax}(\vq^\top \vp_j / \tau)$.
     \item $p_j \approx 0$ for all $j \neq +$
     \item Push terms \textbf{vanish}
     \item No learning signal
-\end{itemize}
+\end{itemize}\cpause
 \end{column}
 \begin{column}{0.48\textwidth}
 \textbf{Hard negatives:}
@@ -793,7 +793,7 @@ where $p_j = \text{softmax}(\vq^\top \vp_j / \tau)$.
     \item $p_j > 0$ for confusing $j$
     \item Push terms are \textbf{large}
     \item Strong, informative gradient
-\end{itemize}
+\end{itemize}\cpause
 \end{column}
 \end{columns}
 \end{frame}
@@ -844,7 +844,7 @@ Query has 1 labeled positive. Where do the negatives come from?
         \item Sample random passage from corpus
         \item Easy to distinguish $\to$ weak training signal
         \item \textcolor{red}{\ding{55}} Not recommended for production
-    \end{itemize}
+    \end{itemize}\cpause
 
     \cpause
     \vspace{0.3em}
@@ -853,7 +853,7 @@ Query has 1 labeled positive. Where do the negatives come from?
     \begin{itemize}
         \item Top-$k$ BM25 results that are \textit{not} labeled relevant
         \item Lexically similar but semantically different $\to$ strong signal
-    \end{itemize}
+    \end{itemize}\cpause
 
     \cpause
     \vspace{0.3em}
@@ -862,7 +862,7 @@ Query has 1 labeled positive. Where do the negatives come from?
     \begin{itemize}
         \item Top-$k$ from model's own index (refreshed periodically)
         \item Semantically hard --- forces fine-grained distinctions
-    \end{itemize}
+    \end{itemize}\cpause
 \end{enumerate}
 \end{frame}
 
@@ -878,7 +878,7 @@ In-batch negatives may actually be \textbf{relevant} (but unlabeled).
     \item \textbf{Labeled positive:} ``Wikipedia was founded by Jimmy Wales and Larry Sanger\ldots''
     \item \textbf{In-batch ``negative'':} ``Jimmy Wales co-founded Wikipedia in 2001\ldots''\\
     $\leftarrow$ \textcolor{dense}{Actually relevant! But treated as negative.}
-\end{itemize}
+\end{itemize}\cpause
 
 \cpause
 \vspace{0.5em}
@@ -892,7 +892,7 @@ In-batch negatives may actually be \textbf{relevant} (but unlabeled).
     \item Confidence regularization: down-weight uncertain negatives
     \item Larger corpora reduce false negative probability
     \item Cross-encoder denoising (re-score negatives, remove false ones)
-\end{itemize}
+\end{itemize}\cpause
 \end{exampleblock}
 \end{frame}
 
@@ -906,7 +906,7 @@ In-batch negatives may actually be \textbf{relevant} (but unlabeled).
     \item \textbf{Larger batch = more negatives = better}
     \item Gradient accumulation to simulate larger batches
     \item Mixed precision (fp16) saves $\sim$50\% memory
-\end{itemize}
+\end{itemize}\cpause
 \end{column}
 
 \begin{column}{0.48\textwidth}
@@ -918,7 +918,7 @@ In-batch negatives may actually be \textbf{relevant} (but unlabeled).
     \item Epochs: 20--40
     \item Temperature $\tau$: 0.05--1.0
     \item Evaluate every 5K steps
-\end{itemize}
+\end{itemize}\cpause
 \end{column}
 \end{columns}
 
@@ -937,26 +937,26 @@ Batch size matters \textbf{much more} for bi-encoders. Each additional batch ele
     \begin{itemize}
         \item Batch 16 = only 15 negatives per query
         \item Use gradient accumulation to simulate larger batches
-    \end{itemize}
+    \end{itemize}\cpause
 
     \item \textbf{Only random negatives}
     \begin{itemize}
         \item Model never sees hard cases $\to$ weak representations
         \item Always include BM25 or ANN hard negatives
-    \end{itemize}
+    \end{itemize}\cpause
 
     \item \textbf{Wrong temperature}
     \begin{itemize}
         \item Too small: training diverges
         \item Too large: convergence too slow
         \item Start with $\tau = 0.05$, tune on dev set
-    \end{itemize}
+    \end{itemize}\cpause
 
     \item \textbf{Not normalizing embeddings}
     \begin{itemize}
         \item Without L2 normalization, embedding magnitudes grow unbounded
         \item Always normalize before computing similarity
-    \end{itemize}
+    \end{itemize}\cpause
 \end{enumerate}
 \end{alertblock}
 \end{frame}
@@ -1020,7 +1020,7 @@ TREC-DL 2019/20 & 8.8M passages & 43/54 & nDCG@10 \\
     \item MS MARCO / NQ: \textbf{In-domain} (train \& test same distribution)
     \item BEIR: \textbf{Zero-shot} (train on MS MARCO, test on 18 diverse tasks)
     \item Dense methods excel in-domain but often struggle on BEIR!
-\end{itemize}
+\end{itemize}\cpause
 \end{alertblock}
 \end{frame}
 
@@ -1047,7 +1047,7 @@ BEIR Avg nDCG@10 & 47.3 & 33.2 & 41.5 & 37.7 & 48.5 \\
     \item Dense models overfit to NQ/MS MARCO query structure
     \item BM25 is distribution-agnostic (just uses term statistics)
     \item BEIR includes fact-checking, citation prediction, argument retrieval
-\end{itemize}
+\end{itemize}\cpause
 
 \cpause
 \vspace{0.5em}
@@ -1165,7 +1165,7 @@ Dense + sparse complementary. BM25 for exact match, dense for semantics. Cross-e
     \item Compare against BM25 baseline on the same queries
     \item Build hybrid pipeline (BM25 + dense)
     \item Report Recall@100, MRR@10, and NDCG@10
-\end{itemize}
+\end{itemize}\cpause
 \end{block}
 
 \begin{block}{Part 8: Analysis (20 pts)}
@@ -1174,7 +1174,7 @@ Dense + sparse complementary. BM25 for exact match, dense for semantics. Cross-e
     \item Identify 2 queries where BM25 beats dense (explain why: entity matching?)
     \item Compare the full pipeline: hybrid + monoT5 vs.\ BM25 + monoT5
     \item Discuss: does the hybrid first stage improve the cross-encoder ceiling?
-\end{itemize}
+\end{itemize}\cpause
 \end{block}
 
 \begin{block}{Deliverable}
@@ -1210,7 +1210,7 @@ First to show that fine-tuning BERT as a \textbf{Siamese network} produces high-
     \item Trained on NLI data (natural language inference), not IR data
     \item Originally for sentence similarity, not retrieval
     \item Good general-purpose embeddings, but DPR better for open-domain QA
-\end{itemize}
+\end{itemize}\cpause
 
 \vspace{0.5em}
 
@@ -1280,7 +1280,7 @@ $I(\vq; \vd^+) \geq \log(B) - \mathcal{L}$. Larger $B$ gives a tighter bound on 
     \begin{itemize}
         \item Contriever, RetroMAE: unsupervised pre-training
         \item E5, GTE: instruction-tuned retrievers
-    \end{itemize}
+    \end{itemize}\cpause
 
     \vspace{0.3em}
 
@@ -1288,7 +1288,7 @@ $I(\vq; \vd^+) \geq \log(B) - \mathcal{L}$. Larger $B$ gives a tighter bound on 
     \begin{itemize}
         \item Binary quantization, product quantization
         \item Matryoshka representations (flexible dimensionality)
-    \end{itemize}
+    \end{itemize}\cpause
 
     \vspace{0.3em}
 
@@ -1296,7 +1296,7 @@ $I(\vq; \vd^+) \geq \log(B) - \mathcal{L}$. Larger $B$ gives a tighter bound on 
     \begin{itemize}
         \item CLIP for image--text retrieval
         \item ColPali: late interaction for document images
-    \end{itemize}
+    \end{itemize}\cpause
 
     \vspace{0.3em}
 
@@ -1304,7 +1304,7 @@ $I(\vq; \vd^+) \geq \log(B) - \mathcal{L}$. Larger $B$ gives a tighter bound on 
     \begin{itemize}
         \item Retrieval-augmented generation (RAG)
         \item LLM-based re-ranking (RankGPT from Lecture 4 backup)
-    \end{itemize}
+    \end{itemize}\cpause
 \end{enumerate}
 \end{frame}
 
@@ -1321,7 +1321,7 @@ $I(\vq; \vd^+) \geq \log(B) - \mathcal{L}$. Larger $B$ gives a tighter bound on 
     \item Papyan et al.\ (2020). Prevalence of Neural Collapse. \textit{PNAS}.
     \item Tishby et al.\ (2000). The Information Bottleneck Method. \textit{Allerton}.
     \item Hofst\"atter et al.\ (2021). Efficiently Teaching an Effective Dense Retriever. \textit{SIGIR}.
-\end{itemize}
+\end{itemize}\cpause
 \end{frame}
 
 % ====================================================================
@@ -1379,7 +1379,7 @@ print(comparison)
     \item Which queries does dense retrieval improve on?
     \item Which queries does BM25 still win?
     \item How much does hybrid add over each individual method?
-\end{itemize}
+\end{itemize}\cpause
 \end{frame}
 
 \begin{frame}[fragile]{Exercise 2: Dense + Cross-Encoder Pipeline}
@@ -1412,7 +1412,7 @@ results = pt.Experiment(
     \item Find a query where dense retrieval finds relevant docs that BM25 missed
     \item Inspect: is it vocabulary mismatch? Paraphrase? Different phrasing?
     \item Compare the top-5 results from each
-\end{itemize}
+\end{itemize}\cpause
 \end{block}
 
 \begin{block}{Fun Exercise B: When Dense Fails (10 min)}
@@ -1420,7 +1420,7 @@ results = pt.Experiment(
     \item Find a query where BM25 beats dense retrieval
     \item Check: is it an entity name? Rare technical term? Exact match needed?
     \item Would hybrid retrieval fix it?
-\end{itemize}
+\end{itemize}\cpause
 \end{block}
 
 \begin{block}{Fun Exercise C: Recall Ceiling (5 min)}
@@ -1428,7 +1428,7 @@ results = pt.Experiment(
     \item Compare Recall@1000 of BM25 vs.\ dense vs.\ hybrid
     \item Which gives the best ceiling for the cross-encoder re-ranker?
     \item Connect back to Lecture 4: the recall ceiling determines the pipeline's upper bound
-\end{itemize}
+\end{itemize}\cpause
 \end{block}
 \end{frame}
 

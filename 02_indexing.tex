@@ -81,7 +81,7 @@
 \begin{alertblock}{Key Principle}
 \textbf{Indexing sets the ceiling.} Everything else (re-ranking, LLM reasoning) can only refine the results that retrieval finds.
 \end{alertblock}
-\pause
+\cpause
 \end{frame}
 
 \begin{frame}{Traditional Retrieval: 10 Blue Links}
@@ -105,7 +105,7 @@
 \begin{alertblock}{Problem}
 User does all the hard work of reading and combining information!
 \end{alertblock}
-\pause
+\cpause
 \end{frame}
 
 \begin{frame}{Modern IR: Retrieval-Augmented Generation (RAG)}
@@ -163,7 +163,7 @@ User does all the hard work of reading and combining information!
 \textbf{Retrieval now serves models instead of users.} \\
 But the underlying components (Index, Retrieval, Relevance) remain the same.
 \end{alertblock}
-\pause
+\cpause
 \end{frame}
 
 \begin{frame}{Why Do We Need Indexing?}
@@ -184,7 +184,7 @@ But the underlying components (Index, Retrieval, Relevance) remain the same.
 \begin{exampleblock}{The Bottom Line}
 \textbf{Indexing is not just an optimization. It is the bridge to feasibility.}
 \end{exampleblock}
-\pause
+\cpause
 \end{frame}
 
 \begin{frame}{What Does Indexing Control?}
@@ -196,7 +196,7 @@ But the underlying components (Index, Retrieval, Relevance) remain the same.
     \item \textbf{What the LLM is allowed to see:} Retrieval is the LLM's "eyes".
 \end{itemize}
 \end{block}
-\pause
+\cpause
 
 \vspace{1em}
 
@@ -209,7 +209,7 @@ But the underlying components (Index, Retrieval, Relevance) remain the same.
 \begin{alertblock}{Hard Constraint}
 If retrieval misses it, the LLM cannot reason about it.
 \end{alertblock}
-\pause
+\cpause
 \end{frame}
 
 % \begin{frame}{Course Context (Updated)}
@@ -246,7 +246,7 @@ If retrieval misses it, the LLM cannot reason about it.
 \end{itemize}
 Answer: \textbf{Inverted indexes}
 \end{block}
-\pause
+\cpause
 
 \vspace{1em}
 
@@ -288,7 +288,7 @@ Answer: \textbf{Inverted indexes}
     \item Values = Weights (TF-IDF, BM25)
 \end{itemize}
 \end{block}
-\pause
+\cpause
 
 \begin{center}
 \input{tikz/sparse_matrix.tex}
@@ -297,7 +297,7 @@ Answer: \textbf{Inverted indexes}
 \begin{exampleblock}{Key Insight}
 The Inverted Index is a \textbf{Compressed Sparse Column (CSC)} storage of the Document-Term matrix. We avoid storing zeros!
 \end{exampleblock}
-\pause
+\cpause
 \end{frame}
 
 \begin{frame}[shrink=10]{Why Inverted Index is Fast}
@@ -358,7 +358,7 @@ $\rightarrow$ \textbf{1000$\times$ faster!}
     \item Cannot: Rank by relevance
 \end{itemize}
 \end{block}
-\pause
+\cpause
 
 \begin{block}{Level 2: With Frequencies (Ranked Retrieval)}
 \texttt{neural: [(1, tf=2), (3, tf=1), (5, tf=3), (12, tf=1), ...]}
@@ -367,7 +367,7 @@ $\rightarrow$ \textbf{1000$\times$ faster!}
     \item \textbf{This is what we use in practice}
 \end{itemize}
 \end{block}
-\pause
+\cpause
 
 \begin{block}{Level 3: With Positions (Phrase Queries)}
 \texttt{neural: [(1, tf=2, pos=[5,42]), (3, tf=1, pos=[8]), ...]}
@@ -377,14 +377,14 @@ $\rightarrow$ \textbf{1000$\times$ faster!}
     \item Cost: 2-3$\times$ larger index
 \end{itemize}
 \end{block}
-\pause
+\cpause
 \end{frame}
 
 \begin{frame}{Score Aggregation: Connecting Indexing and VSM}
 \begin{block}{Vector Space Model Scoring}
 \[ \text{score}(q, d) = \sum_{t \in q \cap d} \text{weight}(t, q) \times \text{weight}(t, d) \]
 \end{block}
-\pause
+\cpause
 
 \textbf{How it works in the engine:}
 \begin{enumerate}
@@ -435,7 +435,7 @@ $\rightarrow$ \textbf{1000$\times$ faster!}
 % \begin{exampleblock}{The Power of Sparse Indexing}
 % We only compute scores for documents that contain at least one query term!
 % \end{exampleblock}
-\pause
+\cpause
 \end{frame}
 
 % \begin{frame}[shrink=20]{Text Preprocessing Pipeline}
@@ -480,7 +480,7 @@ $\rightarrow$ \textbf{1000$\times$ faster!}
     \item Chinese/Japanese: No spaces between words!
 \end{itemize}
 \end{block}
-\pause
+\cpause
 
 \begin{block}{2. Stemming vs. Lemmatization}
 \begin{columns}
@@ -502,12 +502,12 @@ $\rightarrow$ \textbf{1000$\times$ faster!}
 \end{column}
 \end{columns}
 \end{block}
-\pause
+\cpause
 
 \begin{alertblock}{For Neural Models (BERT, embeddings)}
 \textbf{Do NOT stem!} Pre-trained models expect natural text
 \end{alertblock}
-\pause
+\cpause
 \end{frame}
 
 \begin{frame}[shrink=10]{Stop Words: Modern Perspective}
@@ -556,7 +556,7 @@ $\rightarrow$ \textbf{1000$\times$ faster!}
 \begin{block}{Recommendation}
 \textbf{Default: Keep stop words} unless you have a specific reason to remove them
 \end{block}
-\pause
+\cpause
 \end{frame}
 
 \begin{frame}[fragile]{Preprocessing Depends on Representation}
@@ -569,7 +569,7 @@ $\rightarrow$ \textbf{1000$\times$ faster!}
     \item \faTrash[regular] \textbf{Stopwords:} Optional (to save space).
 \end{itemize}
 \end{block}
-\pause
+\cpause
 \end{column}
 
 \begin{column}{0.48\textwidth}
@@ -580,7 +580,7 @@ $\rightarrow$ \textbf{1000$\times$ faster!}
     \item \faStream \textbf{Truncation:} Context window limits matter.
 \end{itemize}
 \end{block}
-\pause
+\cpause
 \end{column}
 \end{columns}
 
@@ -605,7 +605,7 @@ Modern SSDs: 500 MB/s read speed
 
 $\rightarrow$ \textbf{Reading compressed data is faster!}
 \end{block}
-\pause
+\cpause
 
 \vspace{1em}
 
@@ -623,7 +623,7 @@ Benefits:
     \item Faster I/O (disk $\rightarrow$ memory)
 \end{itemize}
 \end{exampleblock}
-\pause
+\cpause
 \end{frame}
 
 \begin{frame}[shrink=10]{Gap Encoding: The Key Insight}
@@ -653,14 +653,14 @@ Benefits:
 
 Small numbers compress much better!
 \end{block}
-\pause
+\cpause
 
 \vspace{1em}
 
 \begin{alertblock}{Decoding}
 Sequential only: $\text{docID}_i = \text{docID}_{i-1} + \text{gap}_i$
 \end{alertblock}
-\pause
+\cpause
 \end{frame}
 
 \begin{frame}[shrink=10]{Variable Byte (VB) Encoding}
@@ -671,7 +671,7 @@ Use 1 byte for small numbers, multiple bytes for large numbers
     \item 1 bit (MSB) for continuation: 1 = last byte, 0 = more bytes follow
 \end{itemize}
 \end{block}
-\pause
+\cpause
 
 \vspace{1em}
 
@@ -734,7 +734,7 @@ Use 1 byte for small numbers, multiple bytes for large numbers
     \item Dictionary compression (front coding): 30-50% savings
 \end{itemize}
 \end{block}
-\pause
+\cpause
 
 \vspace{1em}
 
@@ -745,14 +745,14 @@ Use 1 byte for small numbers, multiple bytes for large numbers
     \item \textbf{Your projects:} VB encoding is good enough (simple, effective)
 \end{itemize}
 \end{exampleblock}
-\pause
+\cpause
 
 \vspace{1em}
 
 \begin{alertblock}{Key Takeaway}
 Compression is not optional --- it makes systems \textbf{faster} and cheaper
 \end{alertblock}
-\pause
+\cpause
 \end{frame}
 
 \begin{frame}[fragile,shrink=5]{PyTerrier Demo: Sparse Indexing}
@@ -817,7 +817,7 @@ print(evaluation)
 \textbf{Limitation:} \\
 Misses ``automobile issues''
 \end{block}
-\pause
+\cpause
 \end{column}
 
 \begin{column}{0.48\textwidth}
@@ -840,7 +840,7 @@ Misses ``automobile issues''
 Matches ``automobile issues'' \\
 (similar embedding!)
 \end{block}
-\pause
+\cpause
 \end{column}
 \end{columns}
 
@@ -850,7 +850,7 @@ Matches ``automobile issues'' \\
 Can't use inverted index (no discrete terms) \\
 Need: \textbf{Approximate Nearest Neighbor (ANN) search}
 \end{alertblock}
-\pause
+\cpause
 \end{frame}
 
 \begin{frame}[shrink=15]{The ANN Search Problem}
@@ -863,7 +863,7 @@ Need: \textbf{Approximate Nearest Neighbor (ANN) search}
 
 \textbf{Find:} $k$ vectors most similar to $\vec{q}$ (typically cosine similarity)
 \end{block}
-\pause
+\cpause
 
 \vspace{1em}
 
@@ -875,7 +875,7 @@ Compare query to \textbf{all} $N$ vectors: $O(N \cdot d)$
 For $N = 10^9$ docs, $d = 768$ dimensions: \\
 768 billion operations $\rightarrow$ \textbf{too slow!} ($>$1 second even on GPU)
 \end{alertblock}
-\pause
+\cpause
 
 \vspace{1em}
 
@@ -883,7 +883,7 @@ For $N = 10^9$ docs, $d = 768$ dimensions: \\
 Trade exactness for speed: find \textit{approximately} top-$k$ \\
 Typical accuracy: 90-99\% recall (good enough for IR!)
 \end{exampleblock}
-\pause
+\cpause
 \end{frame}
 
 \begin{frame}[shrink=5]{ANN: Accuracy-Speed Trade-off}
@@ -911,7 +911,7 @@ Typical accuracy: 90-99\% recall (good enough for IR!)
 \textbf{Sparse:} Matches exact characters (lexical). \\
 \textbf{Dense:} Matches numerical meaning (semantic).
 \end{exampleblock}
-\pause
+\cpause
 \end{frame}
 
 \begin{frame}[shrink=5]{The Standard ANN Approach: IVF + PQ}
@@ -947,7 +947,7 @@ Typical accuracy: 90-99\% recall (good enough for IR!)
 \begin{block}{Core Idea}
 Cluster vectors, then search only in nearest clusters
 \end{block}
-\pause
+\cpause
 
 \vspace{0.5em}
 
@@ -964,7 +964,7 @@ Cluster vectors, then search only in nearest clusters
 \STATE Build inverted lists: cluster $i$ $\rightarrow$ [vector IDs in cluster $i$]
 \end{algorithmic}
 \end{block}
-\pause
+\cpause
 
 \vspace{1em}
 
@@ -982,7 +982,7 @@ Cluster vectors, then search only in nearest clusters
 \STATE Sort candidates by distance, return top-$k$
 \end{algorithmic}
 \end{block}
-\pause
+\cpause
 
 \vspace{0.5em}
 
@@ -993,7 +993,7 @@ Cluster vectors, then search only in nearest clusters
 \begin{block}{Goal}
 Compress 768-dim vector (3072 bytes) to 96 bytes (32$\times$ compression!)
 \end{block}
-\pause
+\cpause
 
 \vspace{1em}
 
@@ -1018,14 +1018,14 @@ Compress 768-dim vector (3072 bytes) to 96 bytes (32$\times$ compression!)
 
 \textbf{Compressed:} [42, 123, 7, 89, ...] (96 bytes)
 \end{exampleblock}
-\pause
+\cpause
 \end{frame}
 
 \begin{frame}[shrink=10]{Product Quantization: Distance Approximation}
 \begin{block}{Key Insight}
 Can approximate distances using only centroid IDs (no need to decompress!)
 \end{block}
-\pause
+\cpause
 
 \vspace{1em}
 
@@ -1054,14 +1054,14 @@ Can approximate distances using only centroid IDs (no need to decompress!)
     \item \textbf{Accuracy:} 80-95\% recall typical
 \end{itemize}
 \end{exampleblock}
-\pause
+\cpause
 \end{frame}
 
 \begin{frame}[shrink=10]{IVF + PQ: The Production Standard}
 \begin{block}{Best of Both Worlds}
 Combine IVF (clustering) with PQ (compression)
 \end{block}
-\pause
+\cpause
 
 \vspace{1em}
 
@@ -1084,7 +1084,7 @@ Combine IVF (clustering) with PQ (compression)
     \item Still achieves 90-95\% recall with proper tuning
 \end{itemize}
 \end{exampleblock}
-\pause
+\cpause
 
 \vspace{0.5em}
 
@@ -1165,7 +1165,7 @@ Explainability & High & Low (Black box) \\
     \item Use \textbf{Dense} when users ask questions in natural language or use synonyms.
 \end{itemize}
 \end{block}
-\pause
+\cpause
 \end{frame}
 
 % Removed use cases focusing on Hybrid Search
@@ -1174,7 +1174,7 @@ Explainability & High & Low (Black box) \\
 \begin{exampleblock}{Scenario}
 Research search engine with 100M papers (arXiv, PubMed, etc.)
 \end{exampleblock}
-\pause
+\cpause
 
 \textbf{The Challenge:}
 \begin{itemize}
@@ -1192,7 +1192,7 @@ Research search engine with 100M papers (arXiv, PubMed, etc.)
         \end{itemize}
 \end{itemize}
 \end{block}
-\pause
+\cpause
 
 \textbf{Result:} Billion-scale search with low latency and low cost.
 \end{frame}
@@ -1205,28 +1205,28 @@ Research search engine with 100M papers (arXiv, PubMed, etc.)
 
 \textbf{Solution:} Use hybrid! BM25 catches ``Python 3.11'' exactly
 \end{alertblock}
-\pause
+\cpause
 
 \begin{alertblock}{Pitfall 2: Not Tuning ANN Parameters}
 \textbf{Problem:} Using default \texttt{ef\_search=16} $\rightarrow$ only 80\% recall
 
 \textbf{Solution:} Tune on dev set. Start \texttt{ef\_search=64}, increase until recall plateaus
 \end{alertblock}
-\pause
+\cpause
 
 \begin{alertblock}{Pitfall 3: Inconsistent Preprocessing}
 \textbf{Problem:} Index with stemming, query without $\rightarrow$ no matches!
 
 \textbf{Solution:} Same preprocessing for both. For embeddings: no stemming!
 \end{alertblock}
-\pause
+\cpause
 
 \begin{alertblock}{Pitfall 4: Forgetting to Normalize Vectors}
 \textbf{Problem:} Using unnormalized embeddings $\rightarrow$ Euclidean distance $\neq$ cosine similarity
 
 \textbf{Solution:} Always normalize: \texttt{faiss.normalize\_L2(embeddings)}
 \end{alertblock}
-\pause
+\cpause
 \end{frame}
 
 \begin{frame}[shrink=20]{Production Checklist}
@@ -1277,7 +1277,7 @@ Research search engine with 100M papers (arXiv, PubMed, etc.)
     \item \textbf{LLM:} GPT-4o / Claude 3.5 Sonnet.
 \end{itemize}
 \end{block}
-\pause
+\cpause
 
 \begin{block}{Large Scale Open Source}
 \begin{itemize}
@@ -1287,7 +1287,7 @@ Research search engine with 100M papers (arXiv, PubMed, etc.)
     \item \textbf{Next Step:} Re-ranking with Cross-encoders (Lecture 4).
 \end{itemize}
 \end{block}
-\pause
+\cpause
 \end{frame}
 
 
@@ -1327,22 +1327,22 @@ Research search engine with 100M papers (arXiv, PubMed, etc.)
 \begin{block}{1. Inverted Indexes are the Backbone}
 Keyword matching is essential for exact queries and entities. Don't throw away BM25!
 \end{block}
-\pause
+\cpause
 
 \begin{block}{2. Dense Retrieval Enables Semantic Search}
 Embeddings capture meaning, but require ANN techniques like IVF+PQ to work at scale.
 \end{block}
-\pause
+\cpause
 
 \begin{block}{3. Candidate Generation is the Bottleneck}
 Fast indexing determines how many documents your re-rankers or LLMs can "see".
 \end{block}
-\pause
+\cpause
 
 \begin{block}{4. Scalability requires Compression}
 Techniques like Product Quantization (PQ) are vital for fitting large indexes in RAM.
 \end{block}
-\pause
+\cpause
 \end{frame}
 
 \begin{frame}[shrink=10]{Connection to Next Lectures}
@@ -1416,7 +1416,7 @@ Techniques like Product Quantization (PQ) are vital for fitting large indexes in
     \item Sentence Transformers: \url{https://www.sbert.net}
 \end{itemize}
 \end{block}
-\pause
+\cpause
 
 \begin{block}{Papers (Optional Reading)}
 \begin{itemize}
@@ -1425,7 +1425,7 @@ Techniques like Product Quantization (PQ) are vital for fitting large indexes in
     \item Hybrid Search: Lin et al. (2021) - "A Few Brief Notes on DeepImpact, COIL, and a Conceptual Framework for Information Retrieval Techniques"
 \end{itemize}
 \end{block}
-\pause
+\cpause
 
 \begin{block}{Tools}
 \begin{itemize}
@@ -1434,7 +1434,7 @@ Techniques like Product Quantization (PQ) are vital for fitting large indexes in
     \item Vespa (Yahoo's search engine, open source)
 \end{itemize}
 \end{block}
-\pause
+\cpause
 \end{frame}
 
 \begin{frame}[shrink=10]{Questions?}

@@ -9,6 +9,10 @@
 \definecolor{irANN}{HTML}{9B59B6}      % ANN/Infra: Purple
 \definecolor{irInfra}{HTML}{58595B}    % General Infra: Dark Gray
 \definecolor{irMuted}{HTML}{D9D9D9}    % Faint Gray
+\definecolor{irAccent}{HTML}{E74C3C}   % Accent: Bright Red (same as irRerank)
+\definecolor{irPrimary}{HTML}{3498DB}  % Primary: Blue (same as irSparse)
+\definecolor{irSecondary}{HTML}{E67E22} % Secondary: Orange (same as irDense)
+
 
 % Base Styles - Consistent Diagram Grammar
 \tikzset{
@@ -43,6 +47,9 @@
     ann/.style={irBoxBase, fill=irANN!10, draw=irANN},
     infra/.style={irBoxBase, fill=irInfra!10, draw=irInfra},
     % Legacy support / Utility
+    primary/.style={sparse},
+    secondary/.style={rerank},
+    accent/.style={dense},
     muted/.style={irBoxBase, fill=irMuted!20, draw=irMuted!80!black, text=irMuted!50!black},
     ghost/.style={irBoxBase, fill=white, draw=irMuted!50, text=irMuted, dashed, drop shadow={opacity=0}},
     emph/.style={draw=irRerank, thick, drop shadow={shadow xshift=0mm, shadow yshift=0mm, fill=irRerank, opacity=0.3}},

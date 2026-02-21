@@ -1,8 +1,8 @@
 \begin{tikzpicture}
     % Pipeline Steps using API
-    \IRPipelineTier{ret}{(0,3)}{Retrieval}{Millions of Docs}{primary}
-    \IRPipelineTier{rank}{(0,1.5)}{Re-ranking}{Top-100 Candidates}{secondary}
-    \IRPipelineTier{llm}{(0,0)}{Reasoning}{Top-10 Context}{accent}
+    \IRPipelineTier{ret}{(0,3)}{Retrieval}{Millions of Docs}{sparse}
+    \IRPipelineTier{rank}{(0,1.5)}{Re-ranking}{Top-100 Candidates}{rerank}
+    \IRPipelineTier{llm}{(0,0)}{Reasoning}{Top-10 Context}{dense}
     
     % Connections
     \IRArrow{ret}{rank}{}
