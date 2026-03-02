@@ -63,6 +63,14 @@
 \institute{Information Retrieval}
 \date{\today}
 
+% Automatic Roadmap/Outline slide at the start of each section
+\AtBeginSection[]
+{
+  \begin{frame}{Roadmap}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
 \begin{document}
 
 % Title slide
@@ -939,6 +947,25 @@ Sparse captures \textbf{exact matches} (named entities, rare terms). Dense captu
 \end{exampleblock}
 \end{frame}
 
+\begin{frame}{Score-Agnostic Fusion: Reciprocal Rank Fusion}
+\begin{block}{The Challenge}
+Dense scores (dot products) and Sparse scores (BM25) are on \textbf{different scales}. How to combine them without fragile hyperparameter tuning?
+\end{block}
+
+\vspace{0.5em}
+
+\begin{center}
+\input{tikz/rrf_visualization.tex}
+\end{center}
+
+\vspace{0.5em}
+\cpause
+
+\begin{alertblock}{Reciprocal Rank Fusion (RRF)}
+RRF relies only on \textbf{rankings}. It favors documents that appear high in \textit{any} characteristic (sparse or dense).
+\end{alertblock}
+\end{frame}
+
 % ====================================================================
 \section{Retrieval-Augmented Generation (RAG)}
 % ====================================================================
@@ -1035,10 +1062,6 @@ If the retriever (bi-encoder) or re-ranker (cross-encoder) fails, the generator 
 Each lecture adds a component. Dense retrieval (today) gives us semantic first-stage retrieval --- the missing piece from Lecture 4.
 \end{frame}
 
-% ====================================================================
-\section{Summary and Assignment}
-% ====================================================================
-
 \begin{frame}[plain]
 \sectionpage
 \end{frame}
@@ -1060,11 +1083,6 @@ DPR: single-vector bi-encoder. ColBERT: token-level late interaction. ANCE: dyna
 Dense + sparse complementary. BM25 for exact match, dense for semantics. Cross-encoder on top for final precision.
 \end{block}
 \end{frame}
-
-
-
-
-
 
 
 \begin{frame}{Questions?}
