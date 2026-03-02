@@ -1,0 +1,115 @@
+% Contriever: Document Views + MoCo Queue Visualization
+% Shows: document → random crop → two views → encoder → contrastive loss with queue
+\begin{tikzpicture}[
+    scale=0.72, transform shape,
+    box/.style={draw, rounded corners=3pt, minimum height=0.7cm, align=center, font=\small, drop shadow={opacity=0.1}},
+    arr/.style={-{Stealth[length=2.5mm]}, thick},
+    crop/.style={draw, dashed, rounded corners=2pt, minimum height=0.55cm, font=\tiny, align=center},
+]
+
+% ===== LEFT COLUMN (x=0 area): Contrastive Pair Generation =====
+
+% Original document
+\node[box, fill=irInfra!8, draw=irInfra!60, minimum width=3.2cm, minimum height=1.6cm, font=\tiny, text width=2.8cm] (doc) at (0, 0)
+    {\textbf{Document $d$}\\[2pt]
+     ``Aspirin is a medication used to reduce pain, fever, or inflammation...''};
+\node[font=\tiny\sffamily, text=irInfra, above=0.05cm of doc] {Unlabeled corpus};
+
+% Two crop arrows
+\draw[arr, draw=irSparse!80] ([xshift=-0.5cm]doc.south) -- ++(-0.6, -0.7)
+    node[midway, left, font=\tiny\sffamily, text=irSparse!80] {crop 1};
+\draw[arr, draw=irDense!80] ([xshift=0.5cm]doc.south) -- ++(0.6, -0.7)
+    node[midway, right, font=\tiny\sffamily, text=irDense!80] {crop 2};
+
+% View 1
+\node[crop, fill=irSparse!12, draw=irSparse, minimum width=2.2cm] (v1) at (-1.4, -2.2)
+    {View $v_1$\\``reduce pain, fever''};
+
+% View 2
+\node[crop, fill=irDense!12, draw=irDense, minimum width=2.2cm] (v2) at (1.4, -2.2)
+    {View $v_2$\\``treat inflammation''};
+
+% Encoder
+\draw[arr, draw=irSparse!80] (v1.south) -- ++(0.6, -0.6);
+\draw[arr, draw=irDense!80] (v2.south) -- ++(-0.6, -0.6);
+
+\node[box, fill=irHybrid!15, draw=irHybrid, minimum width=3.5cm] (enc) at (0, -3.8)
+    {shared Bi-Encoder $f_\theta$};
+
+% Embeddings
+\draw[arr, draw=irSparse!80] (-1.1, -4.15) -- (-1.1, -4.85);
+\draw[arr, draw=irDense!80] (1.1, -4.15) -- (1.1, -4.85);
+
+\node[box, fill=irSparse!20, draw=irSparse, minimum width=1.4cm, font=\footnotesize] (e1) at (-1.1, -5.3)
+    {$\mathbf{z}_1$};
+\node[box, fill=irDense!20, draw=irDense, minimum width=1.4cm, font=\footnotesize] (e2) at (1.1, -5.3)
+    {$\mathbf{z}_2$};
+
+% Pull together
+\draw[irHybrid!80!black, ultra thick, {Stealth[length=2mm]}-{Stealth[length=2mm]}]
+    (e1.east) -- (e2.west)
+    node[midway, above=2pt, font=\tiny\bfseries, text=irHybrid!80!black] {positives};
+
+% ===== RIGHT COLUMN (x=9.5 area): Negative Sources =====
+
+% Current batch
+\node[font=\small\bfseries, text=irInfra] at (9.5, 0.5) {Current Training Batch};
+\foreach \i/\label/\type in {1/$d_1$/neg, 2/$d_2$/neg, 3/$d_i$/pos, 4/$d_B$/neg}{
+    \pgfmathsetmacro{\xpos}{8.0 + (\i-1)*1.0}
+    \ifnum\i=3
+        \node[box, fill=irHybrid!20, draw=irHybrid, minimum width=0.9cm, minimum height=0.45cm, font=\tiny] (b\i) at (\xpos, -0.2) {\label};
+        \node[font=\tiny\bfseries, text=irHybrid!80!black] at (\xpos, -0.7) {\type};
+    \else
+        \node[box, fill=irSparse!10, draw=irSparse!60, minimum width=0.9cm, minimum height=0.45cm, font=\tiny] (b\i) at (\xpos, -0.2) {\label};
+        \node[font=\tiny, text=irInfra] at (\xpos, -0.7) {\type};
+    \fi
+}
+
+% Brace for batch
+\draw[decorate, decoration={brace, amplitude=3pt, mirror}, irInfra]
+    (7.55, -0.85) -- (11.45, -0.85)
+    node[midway, below=4pt, font=\tiny\sffamily, text=irInfra] {$B-1$ in-batch negatives};
+
+% MoCo Queue
+\node[font=\small\bfseries, text=irRerank!80!black] at (9.5, -2.5) {MoCo-style Queue};
+
+% Queue slots
+\foreach \i in {0,...,7}{
+    \pgfmathsetmacro{\xpos}{7.75 + \i*0.5}
+    \node[draw=irRerank!50, fill=irRerank!8, rounded corners=1pt, minimum width=0.4cm, minimum height=0.35cm, font=\tiny] (q\i) at (\xpos, -3.2) {$\mathbf{z}$};
+}
+\node[font=\tiny, text=irInfra] at (11.6, -3.2) {$\cdots$};
+
+\draw[decorate, decoration={brace, amplitude=3pt, mirror}, irRerank!70]
+    (7.55, -3.5) -- (11.6, -3.5)
+    node[midway, below=4pt, font=\tiny\sffamily, text=irRerank!70] {$K$ past embeddings ($K \gg B$)};
+
+% Enqueue arrow - redesigned to avoid crossings
+\draw[arr, draw=irDense!70, dashed, -{Stealth[length=2mm]}] (e2.east) .. controls (4.5, -5.3) and (7.0, -4.5) .. (7.7, -3.3)
+    node[pos=0.5, above, font=\tiny\sffamily, text=irDense!70, rotate=15] {enqueue};
+
+% ===== BOTTOM AREA (x=4.5 area): Contrastive Loss =====
+
+\node[box, fill=yellow!15, draw=yellow!60!black, minimum width=11.5cm, minimum height=1.1cm, font=\small] (loss) at (4.75, -7.8)
+    {$\mathcal{L} = -\log \dfrac{\exp(\mathbf{z}_1^\top \mathbf{z}_2 / \tau)}{\exp(\mathbf{z}_1^\top \mathbf{z}_2 / \tau) + \displaystyle\sum_{j \in \text{Batch}} \exp(\mathbf{z}_1^\top \mathbf{z}_j / \tau) + \sum_{k \in \text{Queue}} \exp(\mathbf{z}_1^\top \mathbf{z}_k / \tau)}$};
+
+% Component arrows into loss - spread out and using named anchors
+\pgfmathsetmacro{\lossTop}{-7.25}
+
+% Positive contribution
+\draw[arr, draw=irHybrid!80!black] (0, -5.6) -- (0, \lossTop);
+\node[font=\tiny\bfseries, text=irHybrid!80!black, anchor=west] at (0.1, -6.5) {positives};
+
+% Batch contribution
+\draw[arr, draw=irInfra!70] (9.5, -1.0) -- (9.5, \lossTop);
+\node[font=\tiny\sffamily, text=irInfra, anchor=west] at (9.6, -6.5) {batch negatives};
+
+% Queue contribution
+\draw[arr, draw=irRerank!70] (11.6, -3.8) |- (12.3, -6.0) |- (8.0, \lossTop);
+\node[font=\tiny\sffamily, text=irRerank!70, anchor=west] at (11.7, -5.0) {queue negatives};
+
+% Shared embeddings arrows
+\draw[arr, draw=irSparse!70] (e1.south) -- (-1.1, \lossTop);
+\draw[arr, draw=irDense!70] (e2.south) -- (1.1, \lossTop);
+
+\end{tikzpicture}

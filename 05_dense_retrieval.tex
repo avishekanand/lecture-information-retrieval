@@ -856,11 +856,8 @@ BEIR Avg nDCG@10 & 47.3 & 33.2 & 41.5 & 37.7 & 48.5 \\
 
 \begin{frame}{Solving Zero-Shot: Contriever}
 \begin{block}{Contriever (Izacard et al., 2022)}
-\begin{itemize}
-    \item Uses unsupervised contrastive pre-training on diverse Web data.
-    \item Does \textbf{not} require manual relevance labels for the first stage.
-    \item Learns robust semantic representations that generalize across domains.
-\end{itemize}
+Instead of learning retrieval from \textbf{manual relevance labels},
+how can we learn from \textbf{raw text alone} using contrastive learning.
 \end{block}
 
 \vspace{1em}
@@ -868,6 +865,46 @@ BEIR Avg nDCG@10 & 47.3 & 33.2 & 41.5 & 37.7 & 48.5 \\
 
 \begin{exampleblock}{Result}
 Contriever (48.5) finally beats BM25 (47.3) on average across BEIR, showing that domain-agnostic dense retrieval is possible.
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}[shrink=15]{How Contriever Solves the Zero-Shot Problem}
+\begin{center}
+\input{tikz/contriever_training.tex}
+\end{center}
+\end{frame}
+
+\begin{frame}{Why Contriever Works (and What It Does Not Fix)}
+\begin{columns}[T]
+\begin{column}{0.52\textwidth}
+\textbf{Why it works}
+\begin{itemize}
+    \item Learns \textbf{domain-agnostic semantic similarity}.
+    \item Trained on \textbf{diverse web text}, not one supervised benchmark.
+    % \item Symmetric query/document encoder improves \textbf{zero-shot robustness}.
+    % \item Stronger \textbf{recall} than earlier dense retrievers.
+\end{itemize}
+\end{column}
+
+\begin{column}{0.44\textwidth}
+\textbf{Limits}
+\begin{itemize}
+    \item Still not always best at \textbf{top-rank precision} (\textit{nDCG@10}).
+    % \item Weak on \textbf{time-specific} domains (e.g., TREC-COVID).
+    \item Long, argument-heavy documents remain hard (e.g., T{\'o}uch{\'e}).
+\end{itemize}
+\end{column}
+\end{columns}
+
+\vspace{0.8em}
+\cpause
+
+\begin{exampleblock}{Teaching takeaway}
+Contriever shows that dense retrieval can generalize \textbf{without labels}:
+\[
+\text{better pretraining} > \text{more MS MARCO supervision}
+\]
+for zero-shot transfer.
 \end{exampleblock}
 \end{frame}
 
