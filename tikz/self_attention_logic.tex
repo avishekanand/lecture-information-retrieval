@@ -1,0 +1,24 @@
+\begin{tikzpicture}[
+    scale=0.9, transform shape,
+    node distance=2cm,
+    vector/.style={dense, minimum width=0.6cm, minimum height=1.6cm, font=\tiny\bfseries, align=center},
+    block/.style={rerank, minimum size=1.4cm, font=\scriptsize\bfseries, align=center},
+    arrow/.style={irArrowBase}
+]
+
+% Old representation
+\node[vector] (old) at (0,0) {Old\\Rep.};
+\node[below=0.1cm of old, font=\tiny] {$\vec{h}_i^{(l)}$};
+
+% Attention Block
+\node[block, right=of old] (attn) {Attention\\Block};
+
+% New representation
+\node[vector, right=of attn] (new) {New\\Rep.};
+\node[below=0.1cm of new, font=\tiny] {$\vec{h}_i^{(l+1)}$};
+
+% Arrows
+\draw[arrow] (old.east) -- (attn.west);
+\draw[arrow] (attn.east) -- (new.west);
+
+\end{tikzpicture}

@@ -1,0 +1,44 @@
+\begin{tikzpicture}[
+    scale=0.8, transform shape,
+    block/.style={rectangle, draw=black!50, fill=blue!5, minimum width=5cm, minimum height=0.6cm, font=\scriptsize, align=center, rounded corners=1pt},
+    token/.style={rectangle, draw=black!30, fill=blue!10, minimum size=0.7cm, font=\tiny, rounded corners=2pt},
+    cls_token/.style={rectangle, draw=orange!50, fill=orange!10, minimum size=0.7cm, font=\tiny\bfseries, rounded corners=2pt},
+    h_node/.style={rectangle, draw=irHybrid!50, fill=irHybrid!10, minimum size=0.6cm, font=\tiny, rounded corners=2pt},
+    out_path/.style={irHybrid, thick, ->, >=stealth}
+]
+
+% Input tokens
+\node[cls_token] (t0) at (-2.2, -1.5) {[CLS]};
+\node[token] (t1) at (-1.3, -1.5) {$q_1$};
+\node[token] (t2) at (-0.4, -1.5) {$q_2$};
+\node[token] (t3) at (0.5, -1.5) {[SEP]};
+\node[token] (t4) at (1.4, -1.5) {$d_1$};
+\node[token] (t5) at (2.3, -1.5) {[SEP]};
+
+\node[anchor=east, font=\tiny\bfseries] at (-2.8, -1.5) {Input};
+
+% Transformer blocks
+\node[block] (b1) at (0, 0) {Transformer Block 1};
+\node[block] (b2) at (0, 0.9) {Transformer Block 2};
+\node[block, fill=none, draw=none] (dots) at (0, 1.6) {\dots};
+\node[block] (b12) at (0, 2.3) {Transformer Block 12};
+
+% Base arrows from tokens to Block 1
+\foreach \i in {0,...,5} {
+    \draw[->, gray!50, thin] (t\i.north) -- (t\i.north |- b1.south);
+}
+
+% Arrows between blocks
+\draw[->, gray!60] (b1) -- (b2);
+\draw[->, gray!60] (b2) -- (dots);
+\draw[->, gray!60] (dots) -- (b12);
+
+% Output Contextual Representations for all tokens
+\foreach \i in {0,...,5} {
+    \draw[out_path, gray!40, thin] (t\i.north |- b12.north) -- ++(0, 0.6) node[h_node, anchor=south, irHybrid] (h\i) {$\vec{h}_{\i}$};
+}
+
+% Label for the representations
+\node[anchor=west, font=\tiny\bfseries, color=irHybrid, align=center] at (3.0, 3.2) {Contextual\\Token\\Embeddings};
+
+\end{tikzpicture}

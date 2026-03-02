@@ -1,0 +1,73 @@
+% InfoNCE as Classification
+% Flow (top→bottom): Query → Documents → Similarity → Softmax → Scores
+\begin{tikzpicture}[
+    scale=0.82, transform shape,
+    box/.style={draw, rounded corners=2pt, minimum height=0.6cm, align=center, font=\small, drop shadow={opacity=0.1}},
+    arr/.style={-{Stealth[length=2.5mm]}, thick},
+]
+
+% --- Row 1: Query (object to classify) ---
+\node[box, fill=irSparse!15, draw=irSparse, minimum width=3cm, minimum height=0.8cm] (query) at (5, 0) {Query $\vq$\\[-2pt]\tiny\itshape ``side effects of aspirin''};
+\node[font=\tiny\sffamily, text=irInfra, above=0.05cm of query] {Object to classify};
+
+% Arrow from query down to document row
+\draw[arr, draw=irSparse] (query.south) -- ++(0, -0.7)
+    node[midway, right, font=\tiny\sffamily, text=irInfra] {encode};
+
+% --- Row 2: Document corpus (N classes) ---
+\foreach \i/\label/\rel in {
+    1/{$\vd_1$: aspirin effects}/1,
+    2/{$\vd_2$: Tesla founding}/0,
+    3/{$\vd_3$: Python loops}/0,
+    4/{$\vd_4$: vaccine info}/0,
+    5/{$\vd_5$: car problems}/0,
+    6/{$\vd_N$: \ldots}/0
+}{
+    \pgfmathsetmacro{\xpos}{(\i-1)*2.15}
+    \ifnum\rel=1
+        \node[box, fill=irHybrid!20, draw=irHybrid, minimum width=1.85cm, font=\tiny, minimum height=0.5cm] (d\i) at (\xpos, -1.8) {\label};
+    \else
+        \node[box, fill=irMuted!30, draw=irMuted!60!black, minimum width=1.85cm, font=\tiny, minimum height=0.5cm] (d\i) at (\xpos, -1.8) {\label};
+    \fi
+}
+
+% Positive doc annotation
+\draw[irHybrid, thick, rounded corners] ([xshift=-0.1cm, yshift=-0.06cm]d1.south west) rectangle ([xshift=0.1cm, yshift=0.06cm]d1.north east);
+\node[font=\tiny\bfseries, text=irHybrid!80!black, anchor=south west] at (d1.north east) {$\vd^+$};
+
+% N classes brace
+\draw[decorate, decoration={brace, amplitude=4pt, mirror}, irInfra, thick]
+    ([yshift=-0.08cm]d1.south west) -- ([yshift=-0.08cm]d6.south east)
+    node[midway, below=5pt, font=\tiny\sffamily, text=irInfra] {$N$ classes (corpus size)};
+
+% Arrow from document row to similarity
+\draw[arr, draw=irInfra!70] (5, -2.4) -- (5, -3.2)
+    node[midway, right, font=\tiny\sffamily, text=irInfra] {dot product};
+
+% --- Row 3: Similarity layer ---
+\node[box, fill=irDense!12, draw=irDense, minimum width=8.5cm, minimum height=0.6cm] (sim) at (5, -3.6)
+     {Similarity: \; $s_j = \vq^\top \vd_j \;/\; \tau \quad \forall\, j \in \{1,\ldots,N\}$};
+
+% Arrow from similarity to softmax
+\draw[arr, draw=irDense!70] (sim.south) -- ++(0, -0.6)
+    node[midway, right, font=\tiny\sffamily, text=irInfra] {normalize};
+
+% --- Row 4: Softmax layer ---
+\node[box, fill=irRerank!10, draw=irRerank, minimum width=8.5cm, minimum height=0.6cm] (softmax) at (5, -5.1)
+     {Softmax: \; $P(\vd_j \mid \vq) = \dfrac{\exp(s_j)}{\sum_{k=1}^{N} \exp(s_k)}$};
+
+% Arrow from softmax to scores
+\draw[arr, draw=irRerank!70] (softmax.south) -- ++(0, -0.6)
+    node[midway, right, font=\tiny\sffamily, text=irInfra] {class probabilities};
+
+% --- Row 5: Probability outputs ---
+\foreach \i/\prob/\rel in {1/\textbf{0.51}/1, 2/0.08/0, 3/0.06/0, 4/0.12/0, 5/0.09/0, 6/0.14/0}{
+    \pgfmathsetmacro{\xpos}{(\i-1)*2.15}
+    \ifnum\rel=1
+        \node[font=\footnotesize\bfseries, text=irHybrid!80!black] (p\i) at (\xpos, -6.2) {\prob};
+    \else
+        \node[font=\footnotesize, text=irInfra] (p\i) at (\xpos, -6.2) {\prob};
+    \fi
+}
+
+\end{tikzpicture}

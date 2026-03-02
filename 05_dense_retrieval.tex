@@ -86,8 +86,8 @@
 \begin{block}{What We've Built So Far}
 \begin{itemize}
     \item \textbf{Lecture 2:} Inverted indexes and ANN indexes (IVF+PQ, HNSW)
-    \item \textbf{Lecture 3:} BM25, Language Models, RM3 for scoring and expansion
-    \item \textbf{Lecture 4:} BERT cross-encoders for re-ranking (monoBERT, monoT5)
+    \item \textbf{Lecture 5:} BM25, Language Models, RM3 for scoring and expansion
+    \item \textbf{Lecture 6:} BERT cross-encoders for re-ranking (monoBERT, monoT5)
 \end{itemize}\cpause
 \end{block}
 
@@ -98,8 +98,8 @@ Cross-encoders are \textbf{too slow for retrieval}:
 \begin{itemize}
     \item Re-ranking 100 docs: 0.5s \textcolor{green}{\checkmark} \quad Full corpus (8.8M): 12+ hours \textcolor{red}{\ding{55}}
     \item BM25 misses semantic matches: ``automobile issues'' vs.\ ``car problems''
-    \item Recall ceiling: if BM25 misses a relevant doc, the cross-encoder can \textbf{never} recover it
-\end{itemize}\cpause
+    \item Bounded Recall: if retriever misses a relevant doc, the cross-encoder can \textbf{never} recover it
+\end{itemize}
 \end{alertblock}
 \end{frame}
 
@@ -129,6 +129,7 @@ Bi-encoders are \textbf{less accurate} than cross-encoders (no query-document in
 \begin{frame}{The Dense Retrieval Pipeline}
 \begin{center}
 \begin{tikzpicture}[
+    scale=0.85, transform shape,
     box/.style={draw, rounded corners, minimum height=1cm, minimum width=2.5cm, align=center, font=\small},
     arr/.style={-{Stealth[length=3mm]}, thick}
 ]
@@ -150,7 +151,7 @@ Bi-encoders are \textbf{less accurate} than cross-encoders (no query-document in
 \end{tikzpicture}
 \end{center}
 
-\vspace{0.5em}
+\vspace{0.2em}
 
 \begin{columns}
 \begin{column}{0.48\textwidth}
@@ -167,12 +168,12 @@ Bi-encoders are \textbf{less accurate} than cross-encoders (no query-document in
     \item Encode query: $\sim$5 ms
     \item ANN search: $\sim$10 ms
     \item Total: $\sim$15 ms \textcolor{green}{\checkmark}
-\end{itemize}\cpause
+\end{itemize}
 \end{column}
 \end{columns}
 \end{frame}
 
-\begin{frame}{Cross-Encoder vs.\ Bi-Encoder}
+\begin{frame}{Cross-Encoder vs.\ Bi-Encoder: Architecture}
 \begin{center}
 \begin{tikzpicture}[
     box/.style={draw, rounded corners, minimum height=0.8cm, minimum width=2cm, align=center, font=\small},
@@ -181,18 +182,22 @@ Bi-encoders are \textbf{less accurate} than cross-encoders (no query-document in
 % Cross-encoder
 \node[font=\small\bfseries] at (-0.5, 2.5) {Cross-Encoder:};
 \node[box, fill=dense!15, minimum width=6cm] (ce) at (3.5, 2.5) {BERT([CLS] query [SEP] doc [SEP])};
-\node[below=0.3cm of ce, font=\small] {$\to$ relevance score};
+\node[below=0.3cm of ce, font=\small] {gets relevance score from output layer};
 
 % Bi-encoder
 \node[font=\small\bfseries] at (-0.5, 0.3) {Bi-Encoder:};
 \node[box, fill=sparse!15] (bq) at (2, 0.3) {$\text{BERT}_Q$(query)};
 \node[box, fill=sparse!15] (bd) at (6, 0.3) {$\text{BERT}_D$(doc)};
-\node[below=0.3cm of $(bq)!0.5!(bd)$, font=\small] {$\to$ $\vq^\top \vd$};
+\node[below=0.3cm of $(bq)!0.5!(bd)$, font=\small] {have to compute $\vq^\top \vd$};
 \end{tikzpicture}
 \end{center}
 
-\vspace{0.5em}
+\begin{exampleblock}{Key Question}
+How do we \textbf{train} the bi-encoder so the dot product captures relevance?
+\end{exampleblock}
+\end{frame}
 
+\begin{frame}{Cross-Encoder vs.\ Bi-Encoder: Comparison}
 \begin{table}
 \centering
 \footnotesize
@@ -208,10 +213,6 @@ Speed at inference & $\sim$5 ms/pair & $\sim$15 ms total \\
 \bottomrule
 \end{tabular}
 \end{table}
-
-\begin{exampleblock}{Key Question}
-How do we \textbf{train} the bi-encoder so the dot product captures relevance?
-\end{exampleblock}
 \end{frame}
 
 % ====================================================================
@@ -222,7 +223,7 @@ How do we \textbf{train} the bi-encoder so the dot product captures relevance?
 \sectionpage
 \end{frame}
 
-\begin{frame}{Contrastive Learning: Core Principle}
+\begin{frame}[shrink=15]{Contrastive Learning: Core Principle}
 \begin{block}{Objective}
 Learn embeddings such that:
 $$\text{score}(\vq, \vd^+) \;\gg\; \text{score}(\vq, \vd^-)$$
@@ -230,7 +231,7 @@ for relevant pair $(\vq, \vd^+)$ and irrelevant pair $(\vq, \vd^-)$.
 \end{block}
 
 \cpause
-\vspace{1em}
+\vspace{0.5em}
 
 \textbf{Intuition:} The embedding space is a \textbf{map of meaning}.
 \begin{itemize}
@@ -238,163 +239,91 @@ for relevant pair $(\vq, \vd^+)$ and irrelevant pair $(\vq, \vd^-)$.
     \item ``car problems'' and ``car racing'' $\to$ far apart
 \end{itemize}\cpause
 
-\cpause
-\vspace{0.5em}
+% \vspace{0.5em}
 
-\begin{exampleblock}{Connection to Metric Learning}
-Define distance $d(\vq, \vd) = 1 - \cos(\vq, \vd)$ and require:
-$$d(\vq, \vd^+) + \text{margin} < d(\vq, \vd^-)$$
-This is exactly \textbf{deep metric learning} with a learned encoder.
+% \begin{exampleblock}{Connection to Metric Learning}
+% Define distance $d(\vq, \vd) = 1 - \cos(\vq, \vd)$ and require:
+% $$d(\vq, \vd^+) + \text{margin} < d(\vq, \vd^-)$$
+% This is exactly \textbf{deep metric learning} with a learned encoder.
+% \end{exampleblock}
+\end{frame}
+
+\begin{frame}[shrink=20]{InfoNCE: Noise Contrastive Estimation --- The Classification View}
+\begin{center}
+\input{tikz/infonce_classification.tex}
+\end{center}
+
+\begin{exampleblock}{Key Insight}
+InfoNCE frames retrieval as \textbf{$N$-way classification}: given query $\vq$, classify which of the $N$ documents in the corpus is the relevant one, using dot-product similarity as the logit.
 \end{exampleblock}
 \end{frame}
 
-\begin{frame}{The InfoNCE Loss}
-\begin{block}{InfoNCE / In-Batch Contrastive Loss}
-Given query $\vq_i$, positive passage $\vp_i^+$, and $B-1$ in-batch negatives:
-$$\mathcal{L} = -\log \frac{\exp\!\bigl(\vq_i^\top \vp_i^+ / \tau\bigr)}{\displaystyle\sum_{j=1}^{B} \exp\!\bigl(\vq_i^\top \vp_j / \tau\bigr)}$$
+\begin{frame}{Theoretical InfoNCE: The Global View}
+\begin{block}{The Goal: Contrastive Estimation}
+Given query $\vq$ and its relevant document $\vd^+$, we want to maximize the probability:
+$$P(\vd^+ | \vq) = \frac{\exp(\vq^\top \vd^+ / \tau)}{\sum_{\vd \in \mathcal{D}} \exp(\vq^\top \vd / \tau)}$$
+where $\mathcal{D}$ is the \textbf{entire corpus} (e.g., 8.8M passages).
+\end{block}
+
+\cpause
+
+\begin{block}{The InfoNCE Loss}
+The loss minimizes the negative log-probability of the positive document:
+$$\mathcal{L}_{\text{InfoNCE}} = -\log P(\vd^+ | \vq) = -\log \frac{\exp(\vq^\top \vd^+ / \tau)}{\sum_{\vd \in \mathcal{D}} \exp(\vq^\top \vd / \tau)}$$
 \end{block}
 
 \cpause
 \vspace{0.5em}
+
+\end{frame}
+
+
+\begin{frame}{InfoNCE: The Computational Bottleneck}
+
+\begin{block}{The InfoNCE Loss}
+The loss minimizes the negative log-probability of the positive document:
+$$\mathcal{L}_{\text{InfoNCE}} = -\log P(\vd^+ | \vq) = -\log \frac{\exp(\vq^\top \vd^+ / \tau)}{\sum_{\vd \in \mathcal{D}} \exp(\vq^\top \vd / \tau)}$$
+\end{block}
+
+\cpause
+\vspace{0.5em}
+
+\begin{alertblock}{The Computational Bottleneck}
+The denominator requires computing the dot product for \textbf{every single document} in the corpus for every gradient step. 
+\begin{itemize}
+    \item 8.8M documents $\times$ 128 queries per batch $\approx$ 1.1 Billion dot products.
+    \item Numerically and computationally \textbf{impossible} to do directly.
+\end{itemize}
+\end{alertblock}
+\end{frame}
+
+
+\begin{frame}[shrink=10]{The InfoNCE Loss: Practical Approximation}
+\begin{block}{In-Batch Contrastive Loss}
+We approximate the global sum with a sum over the current \textbf{training batch} of size $B$:
+$$\mathcal{L} = -\log \frac{\exp\!\bigl(\vq_i^\top \vp_i^+ / \tau\bigr)}{\displaystyle\sum_{j=1}^{B} \exp\!\bigl(\vq_i^\top \vp_j / \tau\bigr)}$$
+\end{block}
+
+\cpause
+\vspace{0.3em}
 
 \textbf{Key components:}
 \begin{itemize}
     \item $B$: batch size --- provides $B-1$ \textbf{free} negatives per query
     \item $\tau$: temperature --- controls sharpness of the softmax
-    \item This is $B$-way classification: ``which passage is relevant?''
-\end{itemize}\cpause
-
-\cpause
-\vspace{0.5em}
-
-\begin{alertblock}{No Negative Sampling Needed!}
-Unlike traditional LTR, all negatives come for free from the batch. A batch of 128 queries gives 127 negatives per query.
-\end{alertblock}
+\end{itemize}
 \end{frame}
 
-\begin{frame}{Worked Example: InfoNCE Computation (1/2)}
-\textbf{Batch of 3 queries}, each with 1 positive passage ($\tau = 1$):
+\begin{frame}[shrink=20]{InfoNCE: From $N$ Classes to $B$ Classes}
+\begin{center}
+\input{tikz/infonce_batch_approx.tex}
+\end{center}
 
-\vspace{0.5em}
-
-\begin{table}
-\centering
-\footnotesize
-\begin{tabular}{lccc}
-\toprule
-& $\vp_1$ (``aspirin effects'') & $\vp_2$ (``Tesla founding'') & $\vp_3$ (``Python loops'') \\
-\midrule
-$\vq_1$ (``aspirin side effects'') & \textbf{0.9} \textcolor{green}{\checkmark} & 0.1 & 0.2 \\
-$\vq_2$ (``who founded Tesla'') & 0.15 & \textbf{0.85} \textcolor{green}{\checkmark} & 0.1 \\
-$\vq_3$ (``for loops in Python'') & 0.05 & 0.1 & \textbf{0.8} \textcolor{green}{\checkmark} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\vspace{0.5em}
-
-\textbf{Similarity matrix} (dot products between query and passage embeddings).
-
-\cpause
-\vspace{0.5em}
-
-\textbf{Goal:} Diagonal entries (positives) should dominate each row.
-\end{frame}
-
-\begin{frame}{Worked Example: InfoNCE Computation (2/2)}
-\textbf{For query $\vq_1$} (``aspirin side effects''):
-
-\vspace{0.5em}
-
-\textbf{Step 1: Exponentiate} ($\tau = 1$):
-$$e^{0.9} = 2.46, \quad e^{0.1} = 1.11, \quad e^{0.2} = 1.22$$
-
-\cpause
-\vspace{0.5em}
-
-\textbf{Step 2: Softmax} (normalize):
-$$P(\vp_1 | \vq_1) = \frac{2.46}{2.46 + 1.11 + 1.22} = \frac{2.46}{4.79} = \mathbf{0.51}$$
-
-\cpause
-\vspace{0.5em}
-
-\textbf{Step 3: Loss} (negative log):
-$$\mathcal{L}_1 = -\log(0.51) = 0.67$$
-
-\vspace{0.5em}
-
-\begin{exampleblock}{Interpretation}
-The model assigns 51\% probability to the correct passage. Training will push this higher by increasing $\vq_1^\top \vp_1$ and decreasing $\vq_1^\top \vp_2$, $\vq_1^\top \vp_3$.
+\begin{exampleblock}{Batch Approximation}
+Instead of classifying over the \textbf{entire corpus} ($N$ classes), we classify over only the \textbf{batch} ($B$ classes). Each batch provides $B{-}1$ in-batch negatives for free.
 \end{exampleblock}
 \end{frame}
 
-\begin{frame}{Temperature Scaling: Why It Matters}
-$$p_j = \frac{\exp(s_j / \tau)}{\sum_k \exp(s_k / \tau)}$$
-
-\vspace{0.5em}
-
-\begin{columns}
-\begin{column}{0.48\textwidth}
-\textbf{Small $\tau$ (e.g., 0.07):}
-\begin{itemize}
-    \item Distribution becomes \textbf{sharp}
-    \item Strong gradients
-    \item Risk: training instability
-    \item Used by: DPR
-\end{itemize}\cpause
-\end{column}
-\begin{column}{0.48\textwidth}
-\textbf{Large $\tau$ (e.g., 1.0):}
-\begin{itemize}
-    \item Distribution becomes \textbf{smooth}
-    \item Weaker gradients, more stable
-    \item Risk: slow convergence
-    \item Used by: ColBERT
-\end{itemize}\cpause
-\end{column}
-\end{columns}
-
-\cpause
-\vspace{1em}
-
-\begin{alertblock}{Gradient Magnitude}
-$\|\nabla \mathcal{L}\| \propto 1/\tau$. Smaller temperature $\to$ stronger signal but training can diverge. This is a critical hyperparameter.
-\end{alertblock}
-\end{frame}
-
-\begin{frame}{Triplet Loss: The Alternative}
-\begin{block}{Triplet Margin Loss}
-$$\mathcal{L}_{\text{triplet}} = \max\!\bigl(0,\; d(\vq, \vd^+) - d(\vq, \vd^-) + m\bigr)$$
-\end{block}
-
-\vspace{0.5em}
-
-\begin{columns}
-\begin{column}{0.48\textwidth}
-\textbf{\textcolor{green}{\checkmark} Advantages:}
-\begin{itemize}
-    \item Explicit margin $m$ enforces separation
-    \item Easy to implement
-    \item Fast convergence with hard triplets
-\end{itemize}\cpause
-\end{column}
-\begin{column}{0.48\textwidth}
-\textbf{\textcolor{red}{\ding{55}} Disadvantages:}
-\begin{itemize}
-    \item Only \textbf{one} negative per anchor
-    \item Margin $m$ is a sensitive hyperparameter
-    \item Wastes batch information
-\end{itemize}\cpause
-\end{column}
-\end{columns}
-
-\cpause
-\vspace{1em}
-
-\begin{exampleblock}{In Practice}
-InfoNCE dominates because it uses \textbf{all} $B-1$ batch passages as negatives simultaneously --- much richer training signal per step.
-\end{exampleblock}
-\end{frame}
 
 % ====================================================================
 \section{Dense Passage Retrieval (DPR)}
@@ -426,56 +355,33 @@ InfoNCE dominates because it uses \textbf{all} $B-1$ batch passages as negatives
 
 \begin{block}{Key Design Choices}
 \begin{itemize}
-    \item \textbf{Separate encoders:} $\text{BERT}_Q \neq \text{BERT}_D$ (different weights, can specialize)
+    % \item \textbf{Separate encoders:} $\text{BERT}_Q \neq \text{BERT}_D$ (different weights, can specialize)
     \item \textbf{Representation:} \texttt{[CLS]} token output --- single vector per text
     \item \textbf{Similarity:} $\text{score}(\vq, \vp) = \vq^\top \vp$ (dot product)
-    \item \textbf{No interaction:} Query and passage never ``see'' each other during encoding
-\end{itemize}\cpause
+    % \item \textbf{No interaction:} Query and passage never ``see'' each other during encoding
+\end{itemize}
 \end{block}
 \end{frame}
 
-\begin{frame}{DPR: Training Recipe}
-\begin{columns}[T]
-\begin{column}{0.55\textwidth}
+\begin{frame}{DPR: Training Recipe --- Loss \& Negatives}
 \textbf{Loss:} InfoNCE with in-batch negatives
 $$\mathcal{L} = -\log \frac{e^{\vq_i^\top \vp_i^+/\tau}}{\sum_{j=1}^{B} e^{\vq_i^\top \vp_j / \tau}}$$
 
-\vspace{0.5em}
+\vspace{0.8em}
 
 \textbf{Negatives per query:}
 \begin{enumerate}
     \item $B-1$ in-batch negatives (free!)
     \item 1 BM25 hard negative (precomputed)
 \end{enumerate}
-\end{column}
 
-\begin{column}{0.42\textwidth}
-\begin{table}
-\footnotesize
-\begin{tabular}{ll}
-\toprule
-\textbf{Param} & \textbf{Value} \\
-\midrule
-Batch size & 128 \\
-Temperature $\tau$ & 1.0 \\
-Learning rate & $10^{-5}$ \\
-Epochs & 40 \\
-Optimizer & Adam \\
-Max $|q|$ & 64 tokens \\
-Max $|p|$ & 256 tokens \\
-\bottomrule
-\end{tabular}
-\end{table}
-\end{column}
-\end{columns}
-
-\cpause
-\vspace{0.5em}
+\vspace{1em}
 
 \begin{exampleblock}{Key Insight}
 Mixing \textbf{one} BM25 hard negative with in-batch random negatives is surprisingly effective. The BM25 negative is lexically similar but not relevant --- forces the model beyond surface matching.
 \end{exampleblock}
 \end{frame}
+
 
 \begin{frame}{DPR: Why BM25 Hard Negatives?}
 \textbf{Query:} ``side effects of aspirin''
@@ -517,7 +423,7 @@ BM25 & 59.1 & 18.7 & --- \\
 \end{tabular}
 \end{center}
 
-\vspace{1em}
+\vspace{0.5em}
 
 \begin{block}{Why DPR Matters}
 \begin{itemize}
@@ -543,7 +449,7 @@ A single 768-dim vector for the entire document? That's a severe \textbf{informa
 \sectionpage
 \end{frame}
 
-\begin{frame}{The Single-Vector Bottleneck}
+\begin{frame}[shrink=10]{The Single-Vector Bottleneck}
 \begin{alertblock}{Problem with DPR}
 The \textbf{entire} document is compressed into a single 768-dim vector.
 \end{alertblock}
@@ -551,8 +457,8 @@ The \textbf{entire} document is compressed into a single 768-dim vector.
 \vspace{0.5em}
 
 \begin{center}
-\begin{tikzpicture}[font=\small]
-\node[draw, fill=sparse!10, rounded corners, minimum width=9cm, minimum height=1cm, align=center] (doc) {
+\begin{tikzpicture}[font=\small, scale=0.9, transform shape]
+\node[draw, fill=sparse!10, rounded corners, minimum width=9cm, minimum height=0.6cm, align=center] (doc) {
     ``Wikipedia was founded by Jimmy Wales and Larry Sanger in January 2001''
 };
 \node[draw, fill=dense!15, rounded corners, minimum width=2cm, below=0.5cm of doc] (vec) {$\vd \in \mathbb{R}^{768}$};
@@ -561,7 +467,7 @@ The \textbf{entire} document is compressed into a single 768-dim vector.
 \end{center}
 
 \cpause
-\vspace{0.5em}
+\vspace{0.2em}
 
 \textbf{Consequences:}
 \begin{itemize}
@@ -570,8 +476,7 @@ The \textbf{entire} document is compressed into a single 768-dim vector.
     \item Long documents lose information
 \end{itemize}\cpause
 
-\cpause
-\vspace{0.5em}
+\vspace{0.2em}
 
 \begin{exampleblock}{Solution}
 Keep \textbf{all} token embeddings, not just \texttt{[CLS]}. Compare at the token level.
@@ -583,7 +488,7 @@ Keep \textbf{all} token embeddings, not just \texttt{[CLS]}. Compare at the toke
 Encode query and document \textbf{separately} (like bi-encoder), but compare at the \textbf{token level} using MaxSim.
 \end{block}
 
-\vspace{0.5em}
+\vspace{0.2em}
 
 \begin{center}
 \begin{tikzpicture}[
@@ -591,9 +496,9 @@ Encode query and document \textbf{separately} (like bi-encoder), but compare at 
     arr/.style={-{Stealth[length=2mm]}, thin, gray}
 ]
 % Query tokens
-\node[font=\small\bfseries] at (-1.2, 2.2) {Query:};
+\node[font=\small\bfseries] at (-1.2, 1.8) {Query:};
 \foreach \i/\w/\c in {0/who/sparse!30, 1/founded/sparse!30, 2/wikipedia/sparse!30} {
-    \node[tok=\c] (q\i) at (1.3*\i + 0.5, 2.2) {\w};
+    \node[tok=\c] (q\i) at (1.3*\i + 0.5, 1.8) {\w};
     \node[font=\tiny, below=0.08cm of q\i] (qe\i) {$\vq_{\the\numexpr\i+1}$};
 }
 
@@ -621,12 +526,12 @@ Documents are encoded \textbf{offline} (token-level embeddings stored). The ``in
 \end{exampleblock}
 \end{frame}
 
-\begin{frame}{ColBERT: MaxSim Scoring}
+\begin{frame}[shrink=10]{ColBERT: MaxSim Scoring}
 \begin{block}{MaxSim Definition}
 $$\text{MaxSim}(\vq, \vd) = \sum_{i=1}^{|\vq|} \max_{j=1}^{|\vd|}\; \cos(\vq_i, \vd_j)$$
 \end{block}
 
-\vspace{0.5em}
+\vspace{0.3em}
 
 \textbf{Step by step:}
 \begin{enumerate}
@@ -643,10 +548,10 @@ $$\text{MaxSim}(\vq, \vd) = \sum_{i=1}^{|\vq|} \max_{j=1}^{|\vd|}\; \cos(\vq_i, 
     \item \textbf{Asymmetric:} Every query token must find a match; document tokens can be ignored
     \item \textbf{Decomposable:} Document embeddings precomputed and stored offline
     \item Token embeddings: $\vq_i, \vd_j \in \mathbb{R}^{128}$ (projected down from 768)
-\end{itemize}\cpause
+\end{itemize}
 \end{frame}
 
-\begin{frame}{Worked Example: MaxSim Scoring}
+\begin{frame}[shrink=10]{Worked Example: MaxSim Scoring}
 \textbf{Query:} ``who founded wikipedia'' (3 tokens)\\
 \textbf{Document:} ``wikipedia was founded by jimmy wales'' (6 tokens)
 
@@ -712,31 +617,125 @@ ColBERT gives near-cross-encoder accuracy at bi-encoder-like speed. Trade-off: \
 \sectionpage
 \end{frame}
 
-\begin{frame}{The Hard Negative Problem (Xiong et al., 2021)}
-\begin{alertblock}{Observation}
-Most in-batch negatives are \textbf{trivially easy}. The model separates them instantly and stops learning.
-\end{alertblock}
+\begin{frame}{The Evolving Encoder and Negative Quality}
+\begin{block}{Key Insight: What Counts as ``Hard'' Changes Over Training}
+The encoder's understanding of relevance \textbf{evolves} across training epochs. This changes which negatives are informative:
+\end{block}
 
+\cpause
 \vspace{0.5em}
 
-\begin{center}
-\begin{tikzpicture}[font=\small]
-\draw[-{Stealth}, thick] (0,0) -- (9,0) node[right] {Training steps};
-\draw[-{Stealth}, thick] (0,0) -- (0,3.5) node[above] {$\|\nabla \mathcal{L}\|$};
+\textbf{Early training:} The encoder has no notion of relevance.
+\begin{itemize}
+    \item BM25 negatives (lexically similar but irrelevant) are \textbf{not yet hard} --- the model cannot even distinguish basic relevance.
+    \item Random negatives provide sufficient learning signal.
+\end{itemize}
 
-\draw[sparse, thick] plot[smooth] coordinates {(0.5,3) (1.5,1.8) (3,0.7) (5,0.25) (7,0.1) (8.5,0.05)};
-\node[sparse, font=\footnotesize, anchor=west] at (6.5,0.7) {Random negatives};
+\cpause
+\vspace{0.5em}
 
-\draw[dense, thick] plot[smooth] coordinates {(0.5,3) (1.5,2.5) (3,2) (5,1.4) (7,0.9) (8.5,0.6)};
-\node[dense, font=\footnotesize, anchor=west] at (6.5,1.6) {Hard negatives (ANCE)};
-\end{tikzpicture}
-\end{center}
+\textbf{Later training:} The encoder understands basic relevance.
+\begin{itemize}
+    \item Random negatives become \textbf{trivially easy} --- zero gradient.
+    \item BM25 negatives now become \textbf{genuinely hard} --- the model must learn to distinguish lexical overlap from true relevance.
+\end{itemize}
+
+% \begin{alertblock}{Implication}
+% The optimal negative sampling strategy is \textbf{not fixed} --- it should adapt to the encoder's current capability.
+% \end{alertblock}
+\end{frame}
+
+
+\begin{frame}{The Evolving Encoder and Negative Quality}
+\begin{block}{Key Insight: What Counts as ``Hard'' Changes Over Training}
+The encoder's understanding of relevance \textbf{evolves} across training epochs. This changes which negatives are informative:
+\end{block}
+
+\begin{alertblock}{Implication}
+The optimal negative sampling strategy is \textbf{not fixed} --- it should adapt to the encoder's current capability.
+\end{alertblock}
+
+\cpause
+\vspace{0.5em}
+
+\textbf{We need Hard Negative Mining strategy that adapts to the encoder's current capability.}
+
+\end{frame}
+
+
+\begin{frame}{From Static to Dynamic Negatives}
+\begin{block}{Static Negatives (e.g., BM25)}
+Negatives are chosen \textbf{once, before training} and remain fixed:
+\begin{itemize}
+    \item Cheap to compute (run BM25 once).
+    \item Eventually become too easy as the encoder improves.
+\end{itemize}
+\end{block}
+
+\cpause
+\vspace{0.5em}
+
+\begin{exampleblock}{Dynamic Negatives (e.g., ANCE)}
+Negatives are defined by the \textbf{current encoder state}:
+\begin{itemize}
+    \item A \textbf{hard negative} = a document the model \textbf{currently} scores high, but is \textbf{not} the ground-truth relevant document.
+    \item These are the most confusing examples \emph{right now} --- maximally informative gradients.
+    \item Requires periodically re-encoding the corpus and refreshing the index.
+\end{itemize}
+\end{exampleblock}
 
 \cpause
 \vspace{0.3em}
 
-Random negatives $\Rightarrow$ gradients vanish early $\Rightarrow$ \textbf{slow convergence, wasted compute}.
+\begin{center}
+\textbf{Static:} fixed before training \quad $\longrightarrow$ \quad \textbf{Dynamic:} adapts with the model
+\end{center}
 \end{frame}
+
+\begin{frame}[shrink=15]{Hard vs.\ Easy Negatives: Why It Matters}
+\begin{center}
+\input{tikz/hard_negatives_viz.tex}
+\end{center}
+\end{frame}
+
+\begin{frame}{The Landscape of Negative Sampling}
+\textbf{The Challenge:} The denominator in InfoNCE over $\mathcal{D}$ is the bottleneck. The quality of our approximation depends on the \textbf{negatives} we choose.
+
+\vspace{1em}
+
+\begin{itemize}
+    \item \textbf{Random Negatives:} Passages sampled uniformly from the corpus. Usually too easy (e.g., query ``Python'' vs document ``Aspirin'').
+    \item \textbf{In-Batch Negatives:} Using documents from other queries in the same batch. Computationally efficient (``free'').
+    \item \textbf{BM25 Hard Negatives:} Passages that contain query terms but are not relevant. Forces model to learn fine-grained semantics.
+    \item \textbf{Dynamic Hard Negatives (ANCE):} Passages that the model \textbf{currently} thinks are relevant (top predictions). Most effective but requires periodic index refreshes.
+\end{itemize}
+\end{frame}
+
+% \begin{frame}[shrink=5]{The Hard Negative Problem (Xiong et al., 2021)}
+% \begin{alertblock}{Observation}
+% Most in-batch negatives are \textbf{trivially easy}. The model separates them instantly and stops learning.
+% \end{alertblock}
+
+% \vspace{0.5em}
+
+% \begin{center}
+% \begin{tikzpicture}[font=\small]
+% \draw[-{Stealth}, thick] (0,0) -- (9,0) node[right] {Training steps};
+% \draw[-{Stealth}, thick] (0,0) -- (0,3) node[above] {$\|\nabla \mathcal{L}\|$};
+
+% \draw[sparse, thick] plot[smooth] coordinates {(0.5,2.5) (1.5,1.5) (3,0.5) (5,0.2) (7,0.1) (8.5,0.05)};
+% \node[sparse, font=\footnotesize, anchor=west] at (6.5,0.4) {Random negatives};
+
+% \draw[dense, thick] plot[smooth] coordinates {(0.5,2.5) (1.5,2.1) (3,1.7) (5,1.2) (7,0.8) (8.5,0.5)};
+% \node[dense, font=\footnotesize, anchor=west] at (6.5,2.2) {Hard negatives (ANCE)};
+% \end{tikzpicture}
+% \end{center}
+
+% \cpause
+% \vspace{0.3em}
+
+% Random negatives $\Rightarrow$ gradients vanish early $\Rightarrow$ \textbf{slow convergence}.
+% \end{frame}
 
 \begin{frame}[fragile]{ANCE: Asynchronous Index Refresh}
 \begin{block}{Core Innovation}
@@ -751,11 +750,11 @@ Maintain an ANN index during training. Use the model's \textbf{own} top-$k$ near
     arr/.style={-{Stealth[length=2.5mm]}, thick}
 ]
 \node[box=sparse!15] (enc) {Bi-Encoder\\(updated every step)};
-\node[box=hybrid!15, right=2cm of enc] (idx) {ANN Index\\(refreshed every $N$ steps)};
-\node[box=dense!15, below=1cm of $(enc)!0.5!(idx)$] (neg) {Hard Negatives\\(top-$k$ from stale index)};
+\node[box=hybrid!15, right=3.5cm of enc] (idx) {ANN Index\\(refreshed every $N$ steps)};
+\node[box=dense!15, below=1.5cm of $(enc)!0.5!(idx)$] (neg) {Hard Negatives\\(top-$k$ from stale index)};
 
 \draw[arr] (enc) -- (idx) node[midway, above, font=\footnotesize] {new embeddings};
-\draw[arr] (idx) -- (neg) node[midway, right, font=\footnotesize] {query index};
+\draw[arr] (idx) -- (neg) node[midway, right, font=\footnotesize, xshift=0.3cm] {query index};
 \draw[arr] (neg) -| (enc) node[midway, below, font=\footnotesize] {train with};
 \end{tikzpicture}
 \end{center}
@@ -763,42 +762,14 @@ Maintain an ANN index during training. Use the model's \textbf{own} top-$k$ near
 \cpause
 \vspace{0.3em}
 
-\begin{exampleblock}{Why the Lag is a Feature}
-The index lags by $N$ steps. Negatives are hard (from a recent model) but not \textbf{impossibly} hard (from the current model). This stabilizes training.
-\end{exampleblock}
+% \begin{exampleblock}{Why the Lag is a Feature}
+% The index lags by $N$ steps. Negatives are hard (from a recent model) but not \textbf{impossibly} hard (from the current model). This stabilizes training.
+% \end{exampleblock}
 \end{frame}
 
-\begin{frame}{ANCE: Gradient Analysis}
-\begin{block}{Why Hard Negatives Produce Better Gradients}
-The gradient of InfoNCE w.r.t.\ $\vq$ decomposes as:
-$$\frac{\partial \mathcal{L}}{\partial \vq} = \underbrace{(p^+ - 1) \cdot \vp^+}_{\text{pull toward positive}} + \underbrace{\sum_{j \neq +} p_j \cdot \vp_j}_{\text{push from negatives}}$$
-where $p_j = \text{softmax}(\vq^\top \vp_j / \tau)$.
-\end{block}
 
-\cpause
-\vspace{0.5em}
 
-\begin{columns}
-\begin{column}{0.48\textwidth}
-\textbf{Easy negatives:}
-\begin{itemize}
-    \item $p_j \approx 0$ for all $j \neq +$
-    \item Push terms \textbf{vanish}
-    \item No learning signal
-\end{itemize}\cpause
-\end{column}
-\begin{column}{0.48\textwidth}
-\textbf{Hard negatives:}
-\begin{itemize}
-    \item $p_j > 0$ for confusing $j$
-    \item Push terms are \textbf{large}
-    \item Strong, informative gradient
-\end{itemize}\cpause
-\end{column}
-\end{columns}
-\end{frame}
-
-\begin{frame}{ANCE: Results}
+\begin{frame}[shrink=15]{ANCE: Results}
 \begin{center}
 \begin{tabular}{lccc}
 \toprule
@@ -819,174 +790,11 @@ The \textbf{only} difference between DPR and ANCE is the negative sampling strat
 \end{exampleblock}
 
 \begin{alertblock}{Implication}
-Negative sampling is a \textbf{first-order concern} in dense retrieval. The model, the loss, and the architecture are the same --- it's the negatives that matter most.
+Negative sampling is a \textbf{first-order concern} in dense retrieval. \\The model and architecture stay the same --- the negatives matter most.
 \end{alertblock}
 \end{frame}
 
-% ====================================================================
-\section{Training Dense Retrievers in Practice}
-% ====================================================================
 
-\begin{frame}[plain]
-\sectionpage
-\end{frame}
-
-\begin{frame}{Negative Sampling Strategies}
-\begin{block}{The Core Question}
-Query has 1 labeled positive. Where do the negatives come from?
-\end{block}
-
-\vspace{0.5em}
-
-\begin{enumerate}
-    \item \textbf{Random negatives}
-    \begin{itemize}
-        \item Sample random passage from corpus
-        \item Easy to distinguish $\to$ weak training signal
-        \item \textcolor{red}{\ding{55}} Not recommended for production
-    \end{itemize}\cpause
-
-    \cpause
-    \vspace{0.3em}
-
-    \item \textbf{BM25 hard negatives} \textcolor{green}{\checkmark} \textit{Good starting point}
-    \begin{itemize}
-        \item Top-$k$ BM25 results that are \textit{not} labeled relevant
-        \item Lexically similar but semantically different $\to$ strong signal
-    \end{itemize}\cpause
-
-    \cpause
-    \vspace{0.3em}
-
-    \item \textbf{ANN hard negatives (ANCE)} \textcolor{green}{\checkmark} \textit{Best quality}
-    \begin{itemize}
-        \item Top-$k$ from model's own index (refreshed periodically)
-        \item Semantically hard --- forces fine-grained distinctions
-    \end{itemize}\cpause
-\end{enumerate}
-\end{frame}
-
-\begin{frame}{The False Negative Problem}
-\begin{alertblock}{Issue}
-In-batch negatives may actually be \textbf{relevant} (but unlabeled).
-\end{alertblock}
-
-\vspace{0.5em}
-
-\textbf{Example:} Query ``Who founded Wikipedia?''
-\begin{itemize}
-    \item \textbf{Labeled positive:} ``Wikipedia was founded by Jimmy Wales and Larry Sanger\ldots''
-    \item \textbf{In-batch ``negative'':} ``Jimmy Wales co-founded Wikipedia in 2001\ldots''\\
-    $\leftarrow$ \textcolor{dense}{Actually relevant! But treated as negative.}
-\end{itemize}\cpause
-
-\cpause
-\vspace{0.5em}
-
-\textbf{Consequence:} Model penalized for correctly ranking a relevant passage high.
-
-\vspace{0.5em}
-
-\begin{exampleblock}{Mitigations}
-\begin{itemize}
-    \item Confidence regularization: down-weight uncertain negatives
-    \item Larger corpora reduce false negative probability
-    \item Cross-encoder denoising (re-score negatives, remove false ones)
-\end{itemize}\cpause
-\end{exampleblock}
-\end{frame}
-
-\begin{frame}{Training Hyperparameters}
-\begin{columns}
-\begin{column}{0.48\textwidth}
-\textbf{Batching \& Memory}
-\begin{itemize}
-    \item Max sequence: 256 tokens (passage)
-    \item Batch size: 128 (critical!)
-    \item \textbf{Larger batch = more negatives = better}
-    \item Gradient accumulation to simulate larger batches
-    \item Mixed precision (fp16) saves $\sim$50\% memory
-\end{itemize}\cpause
-\end{column}
-
-\begin{column}{0.48\textwidth}
-\textbf{Optimization}
-\begin{itemize}
-    \item Learning rate: $1$--$3 \times 10^{-5}$
-    \item Warmup: 10\% of steps
-    \item Scheduler: linear decay
-    \item Epochs: 20--40
-    \item Temperature $\tau$: 0.05--1.0
-    \item Evaluate every 5K steps
-\end{itemize}\cpause
-\end{column}
-\end{columns}
-
-\cpause
-\vspace{1em}
-
-\begin{alertblock}{Key Difference from Cross-Encoder Training}
-Batch size matters \textbf{much more} for bi-encoders. Each additional batch element provides a free negative. Going from batch 32 to 128 can improve MRR by 2--3 points.
-\end{alertblock}
-\end{frame}
-
-\begin{frame}{Common Training Mistakes}
-\begin{alertblock}{Avoid These Pitfalls}
-\begin{enumerate}
-    \item \textbf{Batch size too small}
-    \begin{itemize}
-        \item Batch 16 = only 15 negatives per query
-        \item Use gradient accumulation to simulate larger batches
-    \end{itemize}\cpause
-
-    \item \textbf{Only random negatives}
-    \begin{itemize}
-        \item Model never sees hard cases $\to$ weak representations
-        \item Always include BM25 or ANN hard negatives
-    \end{itemize}\cpause
-
-    \item \textbf{Wrong temperature}
-    \begin{itemize}
-        \item Too small: training diverges
-        \item Too large: convergence too slow
-        \item Start with $\tau = 0.05$, tune on dev set
-    \end{itemize}\cpause
-
-    \item \textbf{Not normalizing embeddings}
-    \begin{itemize}
-        \item Without L2 normalization, embedding magnitudes grow unbounded
-        \item Always normalize before computing similarity
-    \end{itemize}\cpause
-\end{enumerate}
-\end{alertblock}
-\end{frame}
-
-\begin{frame}[fragile]{Training Code Sketch (Hugging Face + Sentence-Transformers)}
-\begin{lstlisting}[language=Python]
-from sentence_transformers import SentenceTransformer
-from sentence_transformers import InputExample, losses
-
-# Load pre-trained bi-encoder
-model = SentenceTransformer('bert-base-uncased')
-
-# Create training pairs
-train_examples = [
-    InputExample(texts=[query, pos_passage, neg_passage])
-    for query, pos_passage, neg_passage in triples
-]
-
-# MultipleNegativesRankingLoss = InfoNCE
-train_loss = losses.MultipleNegativesRankingLoss(model)
-
-# Train
-model.fit(
-    train_objectives=[(train_dataloader, train_loss)],
-    epochs=10,
-    warmup_steps=1000,
-    evaluation_steps=5000,
-)
-\end{lstlisting}
-\end{frame}
 
 % ====================================================================
 \section{Evaluation \& The Zero-Shot Challenge}
@@ -1020,7 +828,7 @@ TREC-DL 2019/20 & 8.8M passages & 43/54 & nDCG@10 \\
     \item MS MARCO / NQ: \textbf{In-domain} (train \& test same distribution)
     \item BEIR: \textbf{Zero-shot} (train on MS MARCO, test on 18 diverse tasks)
     \item Dense methods excel in-domain but often struggle on BEIR!
-\end{itemize}\cpause
+\end{itemize}
 \end{alertblock}
 \end{frame}
 
@@ -1035,8 +843,8 @@ BEIR Avg nDCG@10 & 47.3 & 33.2 & 41.5 & 37.7 & 48.5 \\
 \end{tabular}
 \end{center}
 
+\vspace{1em}
 \cpause
-\vspace{0.5em}
 
 \begin{alertblock}{Surprising Finding}
 \textbf{BM25 outperforms} most dense models on zero-shot BEIR!
@@ -1044,20 +852,30 @@ BEIR Avg nDCG@10 & 47.3 & 33.2 & 41.5 & 37.7 & 48.5 \\
 
 \textbf{Why?}
 \begin{itemize}
-    \item Dense models overfit to NQ/MS MARCO query structure
-    \item BM25 is distribution-agnostic (just uses term statistics)
-    \item BEIR includes fact-checking, citation prediction, argument retrieval
-\end{itemize}\cpause
+    \item Dense models overfit to MS MARCO query structure.
+    \item BM25 is distribution-agnostic (just term statistics).
+    \item BEIR includes diverse tasks (fact-checking, etc.) where semantic matching isn't always enough.
+\end{itemize}
+\end{frame}
 
+\begin{frame}{Solving Zero-Shot: Contriever}
+\begin{block}{Contriever (Izacard et al., 2022)}
+\begin{itemize}
+    \item Uses unsupervised contrastive pre-training on diverse Web data.
+    \item Does \textbf{not} require manual relevance labels for the first stage.
+    \item Learns robust semantic representations that generalize across domains.
+\end{itemize}
+\end{block}
+
+\vspace{1em}
 \cpause
-\vspace{0.5em}
 
-\begin{exampleblock}{Solution: Contriever (Izacard et al., 2022)}
-Unsupervised contrastive pre-training on diverse data \textbf{before} fine-tuning. Achieves 48.5 --- finally beating BM25 on BEIR.
+\begin{exampleblock}{Result}
+Contriever (48.5) finally beats BM25 (47.3) on average across BEIR, showing that domain-agnostic dense retrieval is possible.
 \end{exampleblock}
 \end{frame}
 
-\begin{frame}{Hybrid Retrieval: Dense + Sparse}
+\begin{frame}[shrink=10]{Hybrid Retrieval: Dense + Sparse}
 \begin{block}{Key Finding}
 Combining BM25 and dense retrieval \textbf{outperforms either alone}.
 \end{block}
@@ -1088,6 +906,61 @@ Sparse captures \textbf{exact matches} (named entities, rare terms). Dense captu
 \end{exampleblock}
 \end{frame}
 
+% ====================================================================
+\section{Retrieval-Augmented Generation (RAG)}
+% ====================================================================
+
+\begin{frame}[plain]
+\sectionpage
+\end{frame}
+
+\begin{frame}{Beyond Ranking: Retrieval-Augmented Generation (RAG)}
+\begin{block}{The Paradigm Shift}
+In modern AI applications, retrieval is not the final step. It is the \textbf{foundation} for Large Language Models (LLMs).
+\end{block}
+
+\vspace{1em}
+\cpause
+
+\begin{itemize}
+    \item \textbf{Problem:} LLMs hallucinate and have a fixed knowledge cutoff.
+    \item \textbf{Solution:} Retrieve relevant, up-to-date passages and provide them as \textbf{grounding context} in the model's prompt.
+    \item \textbf{Impact:} Retrieval expands the model's memory and enables it to cite its sources.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{The Modern IR Pipeline with RAG}
+\begin{center}
+\begin{tikzpicture}[
+    scale=0.8, transform shape,
+    box/.style={draw, rounded corners, fill=#1, minimum height=0.7cm, minimum width=3.2cm, align=center, font=\scriptsize\sffamily},
+    arr/.style={-{Stealth[length=2mm]}, thick}
+]
+\node[box=gray!15] (q) {User Query};
+\node[box=sparse!15, below=0.5cm of q] (ret) {Dense/Hybrid Retrieval\\(Full Corpus)};
+\node[box=dense!15, below=0.5cm of ret] (rr) {CE Re-ranking\\(Top 50)};
+\node[box=hybrid!15, below=0.5cm of rr] (rag) {LLM Generation\\(Augmented Prompt)};
+\node[box=orange!15, below=0.5cm of rag] (ans) {Final Correct Answer};
+
+\draw[arr] (q) -- (ret);
+\draw[arr] (ret) -- (rr) node[midway, right, font=\tiny] {Candidates};
+\draw[arr] (rr) -- (rag) node[midway, right, font=\tiny] {Grounding context};
+\draw[arr] (rag) -- (ans);
+
+\node[left=0.5cm of ret, font=\tiny\itshape, text=sparse] {Recall};
+\node[left=0.5cm of rr, font=\tiny\itshape, text=dense] {Precision};
+\node[left=0.5cm of rag, font=\tiny\itshape, text=hybrid] {Reasoning};
+\end{tikzpicture}
+\end{center}
+
+\vspace{0.5em}
+\cpause
+
+\begin{block}{Retrieval as the "Eyes" of the LLM}
+If the retriever (bi-encoder) or re-ranker (cross-encoder) fails, the generator \textbf{cannot} produce a factual answer. High-quality IR is the bottleneck for RAG accuracy.
+\end{block}
+\end{frame}
+
 
 % ====================================================================
 \section{Connections and Summary}
@@ -1100,6 +973,7 @@ Sparse captures \textbf{exact matches} (named entities, rare terms). Dense captu
 \begin{frame}[fragile]{The Complete Modern Retrieval Stack}
 \begin{center}
 \begin{tikzpicture}[
+    scale=0.75, transform shape,
     box/.style={draw, rounded corners, fill=#1, minimum height=0.8cm, minimum width=4cm, align=center, font=\small},
     arr/.style={-{Stealth[length=2.5mm]}, thick}
 ]
@@ -1136,7 +1010,7 @@ Each lecture adds a component. Dense retrieval (today) gives us semantic first-s
 \sectionpage
 \end{frame}
 
-\begin{frame}{Key Takeaways}
+\begin{frame}[shrink=5]{Key Takeaways}
 \begin{block}{1. Bi-Encoders Enable Semantic Retrieval at Scale}
 Encode documents offline, search with ANN indexes from Lecture 2. Solves the vocabulary mismatch problem that BM25 cannot.
 \end{block}
@@ -1154,282 +1028,52 @@ Dense + sparse complementary. BM25 for exact match, dense for semantics. Cross-e
 \end{block}
 \end{frame}
 
-\begin{frame}{Assignment}
-\textbf{Continues from Lecture 4 assignment. Additional tasks:}
 
-\vspace{0.5em}
 
-\begin{block}{Part 7: Dense Retrieval (30 pts)}
-\begin{itemize}
-    \item Implement dense retrieval pipeline (DPR or TCT-ColBERT)
-    \item Compare against BM25 baseline on the same queries
-    \item Build hybrid pipeline (BM25 + dense)
-    \item Report Recall@100, MRR@10, and NDCG@10
-\end{itemize}\cpause
-\end{block}
 
-\begin{block}{Part 8: Analysis (20 pts)}
-\begin{itemize}
-    \item Identify 3 queries where dense beats BM25 (explain why: vocabulary mismatch?)
-    \item Identify 2 queries where BM25 beats dense (explain why: entity matching?)
-    \item Compare the full pipeline: hybrid + monoT5 vs.\ BM25 + monoT5
-    \item Discuss: does the hybrid first stage improve the cross-encoder ceiling?
-\end{itemize}\cpause
-\end{block}
 
-\begin{block}{Deliverable}
-Extended Jupyter notebook. Bring your best pipeline to Lecture 6.
-\end{block}
-\end{frame}
+
 
 \begin{frame}{Questions?}
 \begin{center}
 \Huge Questions?
 
 \normalsize
-\textbf{Key formula to remember:}
-$$\mathcal{L}_{\text{InfoNCE}} = -\log \frac{\exp(\vq^\top \vp^+ / \tau)}{\sum_{j} \exp(\vq^\top \vp_j / \tau)}$$
+\vspace{1em}
+\textbf{Preview:} Next class we solve the \textit{Recall Ceiling} with \textbf{Dense Retrieval}.
 \end{center}
 \end{frame}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 % ====================================================================
 % APPENDIX / BACKUP SLIDES
 % ====================================================================
 \appendix
 
-\begin{frame}{Backup: Sentence-BERT (Reimers \& Gurevych, 2019)}
-\begin{block}{Key Contribution}
-First to show that fine-tuning BERT as a \textbf{Siamese network} produces high-quality sentence embeddings. Predates DPR.
-\end{block}
 
-\vspace{0.5em}
 
-\textbf{Differences from DPR:}
-\begin{itemize}
-    \item \textbf{Shared} encoder (same weights for query and passage)
-    \item Trained on NLI data (natural language inference), not IR data
-    \item Originally for sentence similarity, not retrieval
-    \item Good general-purpose embeddings, but DPR better for open-domain QA
-\end{itemize}\cpause
 
-\vspace{0.5em}
 
-\begin{exampleblock}{Legacy}
-SBERT established the bi-encoder paradigm. DPR adapted it specifically for passage retrieval with better negatives and separate encoders.
-\end{exampleblock}
-\end{frame}
-
-\begin{frame}{Backup: Batch Size Effects}
-\textbf{Why does batch size matter so much for InfoNCE?}
-
-\vspace{0.5em}
-
-\begin{table}
-\centering
-\begin{tabular}{lccl}
-\toprule
-\textbf{Batch Size} & \textbf{Negatives/Query} & \textbf{MI Bound} & \textbf{Quality} \\
-\midrule
-32 & 31 & $\leq \log(32) = 3.5$ & Moderate \\
-128 & 127 & $\leq \log(128) = 4.9$ & Good \\
-512 & 511 & $\leq \log(512) = 6.2$ & Excellent \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\vspace{0.5em}
-
-\begin{block}{Theoretical Justification}
-$I(\vq; \vd^+) \geq \log(B) - \mathcal{L}$. Larger $B$ gives a tighter bound on mutual information. More negatives = richer gradient signal = better representations.
-\end{block}
-
-\vspace{0.5em}
-
-\textbf{Practical tip:} Use gradient accumulation if GPU memory is limited. 4 steps $\times$ batch 32 $\approx$ effective batch 128.
-\end{frame}
-
-\begin{frame}[fragile]{Backup: Knowledge Distillation from Cross-Encoders}
-\begin{center}
-\begin{tikzpicture}[
-    box/.style={draw, rounded corners, fill=#1, minimum height=0.8cm, minimum width=2.5cm, align=center, font=\small},
-    arr/.style={-{Stealth[length=2.5mm]}, thick}
-]
-\node[box=dense!20] (ce) {Cross-Encoder\\(Teacher)};
-\node[box=sparse!20, below=1.2cm of ce] (be) {Bi-Encoder\\(Student)};
-
-\draw[arr] (ce) -- (be) node[midway, right, font=\footnotesize, xshift=0.3cm] {$\mathcal{L}_{\text{KD}} = \text{KL}(p^{\text{CE}} \| p^{\text{BE}})$};
-\end{tikzpicture}
-\end{center}
-
-\vspace{0.5em}
-
-\begin{block}{Process}
-\begin{enumerate}
-    \item Train cross-encoder on MS MARCO (high accuracy)
-    \item Use cross-encoder to score top-$k$ BM25 passages for each query
-    \item Train bi-encoder to \textbf{mimic} cross-encoder's ranking (soft labels)
-\end{enumerate}
-\end{block}
-
-\textbf{Result:} Bi-encoder approaches cross-encoder quality at bi-encoder speed. This is how production systems like TAS-B are trained.
-\end{frame}
-
-\begin{frame}{Backup: Open Research Frontiers}
-\begin{enumerate}
-    \item \textbf{Closing the BEIR gap}
-    \begin{itemize}
-        \item Contriever, RetroMAE: unsupervised pre-training
-        \item E5, GTE: instruction-tuned retrievers
-    \end{itemize}\cpause
-
-    \vspace{0.3em}
-
-    \item \textbf{Scaling to billions of documents}
-    \begin{itemize}
-        \item Binary quantization, product quantization
-        \item Matryoshka representations (flexible dimensionality)
-    \end{itemize}\cpause
-
-    \vspace{0.3em}
-
-    \item \textbf{Multimodal retrieval}
-    \begin{itemize}
-        \item CLIP for image--text retrieval
-        \item ColPali: late interaction for document images
-    \end{itemize}\cpause
-
-    \vspace{0.3em}
-
-    \item \textbf{Integration with LLMs}
-    \begin{itemize}
-        \item Retrieval-augmented generation (RAG)
-        \item LLM-based re-ranking (RankGPT from Lecture 4 backup)
-    \end{itemize}\cpause
-\end{enumerate}
-\end{frame}
-
-\begin{frame}{References}
-\footnotesize
-\begin{itemize}
-    \item Karpukhin et al.\ (2020). Dense Passage Retrieval for Open-Domain QA. \textit{EMNLP}.
-    \item Khattab \& Zaharia (2020). ColBERT: Efficient and Effective Passage Search. \textit{SIGIR}.
-    \item Xiong et al.\ (2021). Approximate Nearest Neighbor Negative Contrastive Learning for Dense Text Retrieval. \textit{ICLR}.
-    \item Reimers \& Gurevych (2019). Sentence-BERT. \textit{EMNLP}.
-    \item Oord et al.\ (2018). Representation Learning with Contrastive Predictive Coding. \textit{arXiv}.
-    \item Izacard et al.\ (2022). Unsupervised Dense Information Retrieval with Contrastive Learning. \textit{TMLR}.
-    \item Thakur et al.\ (2021). BEIR: A Heterogeneous Benchmark for Zero-shot IR. \textit{NeurIPS Datasets}.
-    \item Papyan et al.\ (2020). Prevalence of Neural Collapse. \textit{PNAS}.
-    \item Tishby et al.\ (2000). The Information Bottleneck Method. \textit{Allerton}.
-    \item Hofst\"atter et al.\ (2021). Efficiently Teaching an Effective Dense Retriever. \textit{SIGIR}.
-\end{itemize}\cpause
-\end{frame}
-
-% ====================================================================
-\section{Hands-On with PyTerrier}
-% ====================================================================
-
-\begin{frame}[plain]
-\sectionpage
-\end{frame}
-
-\begin{frame}[fragile]{Setup: Dense Retrieval with PyTerrier}
-\begin{lstlisting}[language=Python]
-import pyterrier as pt
-if not pt.started():
-    pt.init()
-
-dataset = pt.get_dataset('irds:msmarco-passage/dev/small')
-topics = dataset.get_topics().head(50)
-qrels = dataset.get_qrels()
-
-# BM25 baseline
-index = pt.IndexFactory.of("./msmarco_index")
-bm25 = pt.BatchRetrieve(index, wmodel="BM25")
-
-# Dense retrieval with ANCE
-from pyterrier_dr import FlexIndex, TctColBert
-
-# Load pre-trained dense encoder
-encoder = TctColBert()  # or ANCE, DPR, etc.
-flex_index = FlexIndex("./dense_index")
-
-# Dense retriever
-dense = encoder >> flex_index
-\end{lstlisting}
-\end{frame}
-
-\begin{frame}[fragile]{Exercise 1: BM25 vs.\ Dense Retrieval}
-\begin{lstlisting}[language=Python]
-# Compare BM25 vs. Dense vs. Hybrid
-hybrid = (bm25 % 1000) | (dense % 1000)  # union
-
-comparison = pt.Experiment(
-    [bm25, dense, hybrid],
-    topics, qrels,
-    eval_metrics=["map", "ndcg_cut_10", "recall_100"],
-    names=["BM25", "Dense (ANCE)", "Hybrid"]
-)
-print(comparison)
-\end{lstlisting}
-
-\vspace{0.5em}
-
-\textbf{Questions to explore:}
-\begin{itemize}
-    \item Which queries does dense retrieval improve on?
-    \item Which queries does BM25 still win?
-    \item How much does hybrid add over each individual method?
-\end{itemize}\cpause
-\end{frame}
-
-\begin{frame}[fragile]{Exercise 2: Dense + Cross-Encoder Pipeline}
-\begin{lstlisting}[language=Python]
-from pyterrier_t5 import MonoT5ReRanker
-
-monoT5 = MonoT5ReRanker(model='castorini/monot5-base-msmarco')
-
-# Three-stage pipeline: Dense -> Cross-Encoder
-pipeline_dense_ce = (dense % 100) >> monoT5
-
-# Compare all variants
-results = pt.Experiment(
-    [bm25,
-     (bm25 % 100) >> monoT5,       # L4 pipeline
-     dense,
-     pipeline_dense_ce,              # New: dense + CE
-     (hybrid % 100) >> monoT5],     # Best of all worlds
-    topics, qrels,
-    eval_metrics=["ndcg_cut_10", "recall_100"],
-    names=["BM25", "BM25+monoT5", "Dense",
-           "Dense+monoT5", "Hybrid+monoT5"]
-)
-\end{lstlisting}
-\end{frame}
-
-\begin{frame}{Fun Exercises}
-\begin{block}{Exercise A: Semantic vs.\ Lexical Analysis (10 min)}
-\begin{itemize}
-    \item Find a query where dense retrieval finds relevant docs that BM25 missed
-    \item Inspect: is it vocabulary mismatch? Paraphrase? Different phrasing?
-    \item Compare the top-5 results from each
-\end{itemize}\cpause
-\end{block}
-
-\begin{block}{Fun Exercise B: When Dense Fails (10 min)}
-\begin{itemize}
-    \item Find a query where BM25 beats dense retrieval
-    \item Check: is it an entity name? Rare technical term? Exact match needed?
-    \item Would hybrid retrieval fix it?
-\end{itemize}\cpause
-\end{block}
-
-\begin{block}{Fun Exercise C: Recall Ceiling (5 min)}
-\begin{itemize}
-    \item Compare Recall@1000 of BM25 vs.\ dense vs.\ hybrid
-    \item Which gives the best ceiling for the cross-encoder re-ranker?
-    \item Connect back to Lecture 4: the recall ceiling determines the pipeline's upper bound
-\end{itemize}\cpause
-\end{block}
-\end{frame}
 
 \end{document}

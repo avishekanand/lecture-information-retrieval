@@ -1,10 +1,10 @@
-\begin{tikzpicture}
+\begin{tikzpicture}[scale=0.6, transform shape]
     \node[sparse, minimum width=4.5cm] (input) at (0, 0) {Input Embeddings + Position};
-    \node[dense, minimum width=4.5cm] (attn) at (0, 1.2) {\textbf{Multi-Head Self-Attention}};
-    \node[infra, minimum width=4.5cm] (add1) at (0, 2.2) {Add \& Layer Norm};
-    \node[dense, minimum width=4.5cm] (ffn) at (0, 3.2) {\textbf{Feed-Forward Network}};
-    \node[infra, minimum width=4.5cm] (add2) at (0, 4.2) {Add \& Layer Norm};
-    \node[dense, minimum width=4.5cm] (out) at (0, 5.2) {Output Contextual Embeddings};
+    \node[dense, minimum width=4.5cm] (attn) at (0, 1.5) {\textbf{Multi-Head Self-Attention}};
+    \node[infra, minimum width=4.5cm] (add1) at (0, 2.8) {Add \& Layer Norm};
+    \node[dense, minimum width=4.5cm] (ffn) at (0, 4.1) {\textbf{Feed-Forward Network}};
+    \node[infra, minimum width=4.5cm] (add2) at (0, 5.4) {Add \& Layer Norm};
+    \node[dense, minimum width=4.5cm] (out) at (0, 6.7) {Output Contextual Embeddings};
 
     \draw[irArrowBase] (input) -- (attn);
     \draw[irArrowBase] (attn) -- (add1);
@@ -15,17 +15,4 @@
     % Residual connections
     \draw[irArrowBase, dashed, irInfra!50] (input.east) -- ++(1,0) |- (add1.east);
     \draw[irArrowBase, dashed, irInfra!50] (add1.east) -- ++(1.4,0) |- (add2.east);
-
-    \node[right=2.2cm of add1, irLabel, text width=3cm] {
-        \textbf{Residual connections}\\
-        Allow gradients to flow through deep layers.
-    };
-
-    \node[left=1cm of attn, irLabel, text width=2.5cm, align=right] {
-        \textbf{BERT Base:}\\
-        12 Layers\\
-        768 Dimensions\\
-        12 Heads\\
-        110M Params
-    };
 \end{tikzpicture}

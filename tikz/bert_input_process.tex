@@ -1,0 +1,76 @@
+\begin{tikzpicture}[
+    scale=0.8, transform shape,
+    node distance=0cm,
+    box/.style={rectangle, draw=black!50, minimum width=1.4cm, minimum height=0.6cm, font=\scriptsize, align=center},
+    plus/.style={font=\small, inner sep=2pt},
+    token/.style={fill=blue!10},
+    posE/.style={fill=green!10},
+    seg/.style={fill=orange!10},
+    sum/.style={fill=purple!10, thick}
+]
+
+% Tokens
+\node[box, token] (t0) {[CLS]};
+\node[box, token, right=of t0] (t1) {the};
+\node[box, token, right=of t1] (t2) {cat};
+\node[box, token, right=of t2] (t3) {[SEP]};
+\node[box, token, right=of t3] (t4) {sat};
+\node[box, token, right=of t4] (t5) {[SEP]};
+
+\node[left=0.5cm of t0, font=\scriptsize\bfseries] {Tokens};
+
+% Plus sign 1
+\node[plus, below=0.2cm of t0] (p1) {+};
+\node[plus, below=0.2cm of t1] {+};
+\node[plus, below=0.2cm of t2] {+};
+\node[plus, below=0.2cm of t3] {+};
+\node[plus, below=0.2cm of t4] {+};
+\node[plus, below=0.2cm of t5] {+};
+
+% Position Embeddings
+\node[box, posE, below=0.2cm of p1] (pos0) {$E_0$};
+\node[box, posE, right=of pos0] (pos1) {$E_1$};
+\node[box, posE, right=of pos1] (pos2) {$E_2$};
+\node[box, posE, right=of pos2] (pos3) {$E_3$};
+\node[box, posE, right=of pos3] (pos4) {$E_4$};
+\node[box, posE, right=of pos4] (pos5) {$E_5$};
+
+\node[left=0.5cm of pos0, font=\scriptsize\bfseries] {Position};
+
+% Plus sign 2
+\node[plus, below=0.2cm of pos0] (p2) {+};
+\node[plus, below=0.2cm of pos1] {+};
+\node[plus, below=0.2cm of pos2] {+};
+\node[plus, below=0.2cm of pos3] {+};
+\node[plus, below=0.2cm of pos4] {+};
+\node[plus, below=0.2cm of pos5] {+};
+
+% Segment Embeddings
+\node[box, seg, below=0.2cm of p2] (seg0) {$S_A$};
+\node[box, seg, right=of seg0] (seg1) {$S_A$};
+\node[box, seg, right=of seg1] (seg2) {$S_A$};
+\node[box, seg, right=of seg2] (seg3) {$S_A$};
+\node[box, seg, right=of seg3] (seg4) {$S_B$};
+\node[box, seg, right=of seg4] (seg5) {$S_B$};
+
+\node[left=0.5cm of seg0, font=\scriptsize\bfseries] {Segment};
+
+% Equal sign
+\node[below=0.2cm of seg0] (eq) {$\Downarrow$};
+\node[below=0.2cm of seg1] {$\Downarrow$};
+\node[below=0.2cm of seg2] {$\Downarrow$};
+\node[below=0.2cm of seg3] {$\Downarrow$};
+\node[below=0.2cm of seg4] {$\Downarrow$};
+\node[below=0.2cm of seg5] {$\Downarrow$};
+
+% Final Input
+\node[box, sum, below=0.2cm of eq] (in0) {Input 0};
+\node[box, sum, right=of in0] (in1) {Input 1};
+\node[box, sum, right=of in1] (in2) {Input 2};
+\node[box, sum, right=of in2] (in3) {Input 3};
+\node[box, sum, right=of in3] (in4) {Input 4};
+\node[box, sum, right=of in4] (in5) {Input 5};
+
+\node[left=0.5cm of in0, font=\scriptsize\bfseries] {Sum};
+
+\end{tikzpicture}

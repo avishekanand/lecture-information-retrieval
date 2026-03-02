@@ -19,12 +19,13 @@ $(BUILD_DIR):
 $(BUILD_DIR)/%_animated.pdf: %.tex | $(BUILD_DIR)
 	pdflatex -jobname=$(basename $(notdir $@)) -output-directory=$(BUILD_DIR) -interaction=nonstopmode $<
 	pdflatex -jobname=$(basename $(notdir $@)) -output-directory=$(BUILD_DIR) -interaction=nonstopmode $<
-
+	@find $(BUILD_DIR) -type f ! -name '*.pdf' -delete
 
 # Static version
 $(BUILD_DIR)/%_static.pdf: %.tex | $(BUILD_DIR)
 	pdflatex -jobname=$(basename $(notdir $@)) -output-directory=$(BUILD_DIR) -interaction=nonstopmode "\PassOptionsToClass{handout}{beamer} \def\staticmode{1} \input{$<}"
 	pdflatex -jobname=$(basename $(notdir $@)) -output-directory=$(BUILD_DIR) -interaction=nonstopmode "\PassOptionsToClass{handout}{beamer} \def\staticmode{1} \input{$<}"
+	@find $(BUILD_DIR) -type f ! -name '*.pdf' -delete
 
 clean:
 	rm -rf $(BUILD_DIR)

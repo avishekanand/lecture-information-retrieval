@@ -1,0 +1,46 @@
+\begin{tikzpicture}[
+    scale=0.8, transform shape,
+    block/.style={rectangle, draw=black!50, fill=blue!5, minimum width=5cm, minimum height=0.6cm, font=\scriptsize, align=center, rounded corners=1pt},
+    token/.style={rectangle, draw=black!30, fill=blue!10, minimum size=0.7cm, font=\tiny, rounded corners=2pt},
+    cls_token/.style={rectangle, draw=orange!50, fill=orange!10, minimum size=0.7cm, font=\tiny\bfseries, rounded corners=2pt},
+    cls_path/.style={orange, ultra thick, ->, >=stealth}
+]
+
+% Input tokens
+\node[cls_token] (t0) at (-2.2, -1.5) {[CLS]};
+\node[token] (t1) at (-1.3, -1.5) {$q_1$};
+\node[token] (t2) at (-0.4, -1.5) {$q_2$};
+\node[token] (t3) at (0.5, -1.5) {[SEP]};
+\node[token] (t4) at (1.4, -1.5) {$d_1$};
+\node[token] (t5) at (2.3, -1.5) {[SEP]};
+
+\node[anchor=east, font=\tiny\bfseries] at (-2.8, -1.5) {Input};
+
+% Transformer blocks
+\node[block] (b1) at (0, 0) {Transformer Block 1};
+\node[block] (b2) at (0, 0.9) {Transformer Block 2};
+\node[block, fill=none, draw=none] (dots) at (0, 1.6) {\dots};
+\node[block] (b12) at (0, 2.3) {Transformer Block 12};
+
+% Base arrows from tokens to Block 1
+\foreach \i in {0,...,5} {
+    \draw[->, gray!50, thin] (t\i.north) -- (t\i.north |- b1.south);
+}
+
+% Arrows between blocks
+\draw[->, gray!60] (b1) -- (b2);
+\draw[->, gray!60] (b2) -- (dots);
+\draw[->, gray!60] (dots) -- (b12);
+
+% Highlight CLS path (through the layers)
+\draw[cls_path] (t0.north) -- (-2.2, -0.3);
+\draw[cls_path] (-2.2, 0.3) -- (-2.2, 0.6);
+\draw[cls_path] (-2.2, 1.2) -- (-2.2, 2.0);
+\draw[cls_path] (-2.2, 2.6) -- (-2.2, 3.2) node[above, font=\scriptsize\bfseries, color=orange!80!black] {$\vec{h}_{[CLS]}$};
+
+% Pooling to Vector
+\node[draw=orange!50, fill=orange!5, rounded corners, right=1.2cm of b12, align=center, font=\tiny\bfseries] (vec) {Pooled\\Representation\\$\in \mathbb{R}^{768}$};
+
+\draw[cls_path, rounded corners=5pt] (-2.2, 3.3) -| (vec.north);
+
+\end{tikzpicture}

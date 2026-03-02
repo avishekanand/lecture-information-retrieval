@@ -1,8 +1,12 @@
-\begin{tikzpicture}[node distance=1.8cm]
-    \node[infra] (corpus) {Document Corpus\\$N \approx 10^6$};
-    \node[sparse, below of=corpus] (bm25) {\textbf{Stage 1: Sparse Retrieval}\\BM25 / LM\\Retrieve top-$k$ ($k \approx 1000$)};
-    \node[rerank, below of=bm25] (rerank) {\textbf{Stage 2: Neural Re-ranking}\\Cross-Encoder (BERT)\\Re-rank top-$n$ ($n \approx 100$)};
-    \node[hybrid, below of=rerank] (result) {Final Ranked List\\Top candidates to user};
+\begin{tikzpicture}[
+    scale=0.7, transform shape,
+    node distance=1.4cm,
+    block/.style={rectangle, draw, rounded corners=2pt, minimum height=0.7cm, minimum width=3.5cm, align=center, font=\scriptsize\sffamily}
+]
+    \node[infra, block] (corpus) {Document Corpus\\$N \approx 10^6$};
+    \node[sparse, block, below=of corpus] (bm25) {\textbf{Stage 1: Sparse Retrieval}\\BM25 / LM\\Retrieve top-$k$ ($k \approx 1000$)};
+    \node[rerank, block, below=of bm25] (rerank) {\textbf{Stage 2: Neural Re-ranking}\\Cross-Encoder (BERT)\\Re-rank top-$n$ ($n \approx 100$)};
+    \node[hybrid, block, below=of rerank] (result) {Final Ranked List\\Top candidates to user};
 
     \draw[irArrowBase] (corpus) -- (bm25) node[midway, right, font=\tiny] {All Docs};
     \draw[irArrowBase] (bm25) -- (rerank) node[midway, right, font=\tiny] {1000 docs};

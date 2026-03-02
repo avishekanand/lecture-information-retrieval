@@ -1,0 +1,90 @@
+% InfoNCE Batch Approximation: N classes → B classes
+% Shows how the full corpus classification is approximated by batch classification
+\begin{tikzpicture}[
+    scale=0.78, transform shape,
+    box/.style={draw, rounded corners=2pt, minimum height=0.55cm, align=center, font=\small, drop shadow={opacity=0.1}},
+    arr/.style={-{Stealth[length=2.5mm]}, thick},
+    faded/.style={opacity=0.25},
+]
+
+% ===== LEFT SIDE: Full corpus (N classes, faded) =====
+\node[font=\small\bfseries, text=irInfra] at (-1.5, 0.8) {Full Corpus ($N$ classes)};
+
+% Query
+\node[box, fill=irSparse!15, draw=irSparse, minimum width=2.2cm, minimum height=0.7cm, faded] (qL) at (-1.5, 0) {Query $\vq$};
+
+% Documents (faded, compact)
+\foreach \i/\xoff in {1/-3.5, 2/-2.3, 3/-1.1, 4/0.1, 5/1.3}{
+    \node[box, fill=irMuted!30, draw=irMuted!60!black, minimum width=1cm, font=\tiny, faded] (dL\i) at (\xoff, -1.4) {$\vd_{\i}$};
+}
+\node[font=\tiny, faded, text=irInfra] at (2.3, -1.4) {$\cdots$};
+\node[box, fill=irMuted!30, draw=irMuted!60!black, minimum width=1cm, font=\tiny, faded] (dLN) at (3.1, -1.4) {$\vd_N$};
+
+\draw[arr, draw=irSparse, faded] (qL.south) -- ++(0, -0.35);
+
+% Brace
+\draw[decorate, decoration={brace, amplitude=3pt, mirror}, irInfra, faded]
+    ([yshift=-0.06cm]dL1.south west) -- ([yshift=-0.06cm]dLN.south east)
+    node[midway, below=4pt, font=\tiny\sffamily, text=irInfra, faded] {$N = 8.8$M};
+
+% Crossed out / intractable label
+\node[font=\large\bfseries, text=red!70!black, rotate=15] at (-1.5, -0.7) {\ding{55} intractable};
+
+% ===== BIG ARROW =====
+\draw[-{Stealth[length=4mm]}, ultra thick, draw=irDense!80!black] (4.0, -0.5) -- (5.5, -0.5)
+    node[midway, above, font=\small\sffamily\bfseries, text=irDense!80!black] {approx.};
+
+% ===== RIGHT SIDE: Batch (B classes) =====
+\node[font=\small\bfseries, text=irHybrid!80!black] at (9, 0.8) {Batch ($B$ classes)};
+
+% Query
+\node[box, fill=irSparse!15, draw=irSparse, minimum width=2.2cm, minimum height=0.7cm] (qR) at (9, 0) {Query $\vq$};
+
+\draw[arr, draw=irSparse] (qR.south) -- ++(0, -0.55)
+    node[midway, right, font=\tiny\sffamily, text=irInfra] {encode};
+
+% Documents (batch, fewer, vivid)
+\node[box, fill=irHybrid!20, draw=irHybrid, minimum width=1.5cm, font=\tiny] (dR1) at (6.8, -1.6) {$\vp_1^+$};
+\node[box, fill=irMuted!30, draw=irMuted!60!black, minimum width=1.5cm, font=\tiny] (dR2) at (8.2, -1.6) {$\vp_2$};
+\node[box, fill=irMuted!30, draw=irMuted!60!black, minimum width=1.5cm, font=\tiny] (dR3) at (9.6, -1.6) {$\vp_3$};
+\node[box, fill=irMuted!30, draw=irMuted!60!black, minimum width=1.5cm, font=\tiny] (dR4) at (11.0, -1.6) {$\vp_B$};
+
+% Positive doc highlight
+\draw[irHybrid, thick, rounded corners] ([xshift=-0.08cm, yshift=-0.05cm]dR1.south west) rectangle ([xshift=0.08cm, yshift=0.05cm]dR1.north east);
+\node[font=\tiny\bfseries, text=irHybrid!80!black, anchor=south west] at (dR1.north east) {$\vd^+$};
+
+% ellipsis between p3 and pB
+\node[font=\small, text=irInfra] at (10.3, -1.6) {$\cdots$};
+
+% Brace
+\draw[decorate, decoration={brace, amplitude=3pt, mirror}, irInfra, thick]
+    ([yshift=-0.06cm]dR1.south west) -- ([yshift=-0.06cm]dR4.south east)
+    node[midway, below=4pt, font=\tiny\sffamily, text=irInfra] {$B$ classes (batch size, e.g.\ 128)};
+
+% Arrow to similarity
+\draw[arr, draw=irInfra!70] (9, -2.3) -- (9, -2.9)
+    node[midway, right, font=\tiny\sffamily, text=irInfra] {dot product};
+
+% Similarity
+\node[box, fill=irDense!12, draw=irDense, minimum width=5.5cm, minimum height=0.55cm] (simR) at (9, -3.2)
+     {$s_j = \vq^\top \vp_j / \tau \quad j \in \{1,\ldots,B\}$};
+
+% Arrow to softmax
+\draw[arr, draw=irDense!70] (simR.south) -- ++(0, -0.55)
+    node[midway, right, font=\tiny\sffamily, text=irInfra] {normalize};
+
+% Softmax
+\node[box, fill=irRerank!10, draw=irRerank, minimum width=5.5cm, minimum height=0.55cm] (softR) at (9, -4.35)
+     {$P(\vp_j | \vq) = \dfrac{\exp(s_j)}{\sum_{k=1}^{B} \exp(s_k)}$};
+
+% Arrow to scores
+\draw[arr, draw=irRerank!70] (softR.south) -- ++(0, -0.55)
+    node[midway, right, font=\tiny\sffamily, text=irInfra] {loss};
+
+% Scores
+\node[font=\footnotesize\bfseries, text=irHybrid!80!black] at (7.2, -5.5) {\textbf{0.65}};
+\node[font=\footnotesize, text=irInfra] at (8.5, -5.5) {0.12};
+\node[font=\footnotesize, text=irInfra] at (9.8, -5.5) {0.09};
+\node[font=\footnotesize, text=irInfra] at (11.0, -5.5) {0.14};
+
+\end{tikzpicture}

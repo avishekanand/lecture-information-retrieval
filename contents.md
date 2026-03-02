@@ -20,6 +20,8 @@
 - **Term-Document Incidence Matrix:** A binary matrix where rows are terms, columns are documents, and entry $(t, d) = 1$ if term $t$ appears in document $d$.
 - **Boolean Operators:** AND (intersection of posting lists), OR (union), NOT (complement).
 - **Limitations of Boolean Retrieval:** No ranking, feast-or-famine results (too many or zero), hard for users to formulate good Boolean queries.
+- **IR vs. Database Systems:** Databases handle structured data with exact matches; IR handles unstructured or semi-structured data with graded relevance.
+- **IR vs. Natural Language Processing (NLP):** NLP focuses on semantic understanding of individual sentences; IR focuses on retrieval and ranking at massive scale across millions of documents.
 
 ### Vector Space Model (VSM)
 
@@ -49,6 +51,7 @@
 - **Retrieval-Augmented Generation (RAG):** A paradigm where a retrieval system fetches relevant passages, augments an LLM prompt, and the LLM generates a synthesized answer. *(Lewis et al., 2020)*
 - **Candidate Generation:** The first stage of a retrieval pipeline that reduces millions of documents to hundreds of candidates for downstream re-ranking or LLM consumption.
 - **Recall Ceiling:** The maximum recall achievable by any downstream component; determined entirely by the indexing/candidate-generation stage.
+- **Retrieval $\to$ Re-ranking $\to$ Reasoning:** The modern 3-stage paradigm where IR (Search) fetches candidates, Re-ranking (Cross-Encoders) refines them, and Reasoning (LLMs/RAG) synthesizes the answer.
 - **"Retrieval serves models, not just users":** In RAG, the retrieval component acts as the LLM's "eyes" into the document collection.
 
 ### Sparse Indexing (Classical)
@@ -173,8 +176,9 @@
 - **BM25 Parameters:** 
   - $k_1$: Controls TF saturation (usually 1.2). $k_1=0$ is Boolean; large $k_1$ is linear.
   - $b$: Controls length normalization (usually 0.75). $b=1$ is full; $b=0$ is none.
+- **Saturating TF:** Unlike VSM's log-linear TF, BM25 TF has an upper bound, preventing a single term's high frequency from dominating the entire score.
+- **Length Normalization:** Penalizes long documents that might contain a term many times by chance; uses the document length relative to the average document length ($\text{avgdl}$).
 - **BM25 IDF:** $\log\frac{N - \text{df}_t + 0.5}{\text{df}_t + 0.5}$. Can be negative for terms appearing in >50% of docs.
-- **BM25F (Fielded):** Weighted TF across fields (title, body, URL). Standard in production.
 
 ### Query Expansion
 
@@ -187,10 +191,12 @@
 
 ### LLM-Based Query Expansion
 
-- **LLM Synonym Generation:** Prompt LLM for synonyms/paraphrases. Zero-shot, no retrieval needed.
-- **HyDE:** LLM generates hypothetical relevant document; use for expansion or embedding. *(Gao et al., 2023)*
-- **Query Decomposition:** LLM breaks complex query into sub-queries; retrieve for each; merge.
-- **Query2Doc:** Prepend LLM-generated pseudo-document to query; run BM25. *(Wang et al., 2023)*
+- **Parametric Knowledge:** Unlike PRF, LLMs use knowledge baked into their weights ("parametric") rather than external documents to generate expansion terms.
+- **LLM Synonym Generation:** Prompt LLM for synonyms/paraphrases. Zero-shot, no retrieval needed ("heart attack" $\to$ "myocardial infarction").
+- **HyDE (Hypothetical Document Embeddings):** LLM generates a "fake" answer/document for a query; retrieval is then performed using this rich hypothetical text instead of the short query. *(Gao et al., 2023)*
+- **CoT Query Decomposition:** LLM breaks a complex, multi-faceted query into several atomic sub-queries; retrieve for each independently and merge.
+- **GenQR (Generative Query Reformulation):** LLM rewrites the query itself into high-quality paraphrases to improve first-stage recall. *(Wang et al., 2023)*
+- **Classical vs. LLM Expansion:** Classical (RM3) depends on the index and risks drift if the top-$k$ is bad; LLMs work zero-shot but risk hallucinations and add latency.
 
 ### Statistical Language Models for Ranking
 
@@ -230,18 +236,22 @@
 - **Query, Key, Value projections:** Q = "what am I looking for?", K = "what do I contain?", V = "what info do I provide?". Attention weights = softmax of Q·K dot products; output = weighted sum of V.
 - **Multi-head attention:** $h$ parallel heads (BERT: $h = 12$); each captures different relationship types. Concat + project.
 - **Positional encoding:** Sinusoidal or learned vectors added to embeddings to inject word-order information (attention is permutation-invariant without it).
-- **Transformer encoder block:** Multi-Head Attention → Add & LayerNorm → FFN → Add & LayerNorm. Residual connections for gradient flow.
-- **BERT-base:** 12 layers, 768 hidden dims, 12 heads, 110M parameters.
+- **Transformer Encoder Block:** Multi-Head Attention $\to$ Add & LayerNorm $\to$ FFN $\to$ Add & LayerNorm. Residual connections allow for deep stacking without vanishing gradients.
+- **BERT-base Spec:** 12 layers, 768 hidden dims, 12 heads, 110M parameters.
 
 ### BERT
 
 - **BERT:** Transformer encoder pre-trained bidirectionally on BooksCorpus + Wikipedia. *(Devlin et al., 2019)*
 - **Masked Language Modeling (MLM):** Mask 15% of tokens; predict from bidirectional context.
 - **Next Sentence Prediction (NSP):** Binary classification: is sentence B the actual continuation of A?
-- **Fine-tuning:** Add task-specific head on pre-trained BERT; train on MS MARCO with low learning rate ($2 \times 10^{-5}$).
-- **monoBERT:** Encoder-only; uses [CLS] token for binary classification. *(Nogueira & Cho, 2019)*
-- **monoT5:** Encoder-Decoder; uses generative prompts (``Is document relevant?'') $\to$ ``true/false''. More flexible and often more accurate. *(Nogueira et al., 2020)*
-- **RankGPT:** Multi-document listwise ranking via LLM prompts. No fine-tuning. *(Sun et al., 2023)*
+- **Fine-tuning:** Add a task-specific head (e.g., a linear layer on [CLS]) and train on ranking data like MS MARCO with low learning rates ($2 \times 10^{-5}$).
+- **Token-wise Representations:** Alternative to using only [CLS]; outputs a vector for every token in the sequence. Used for NER, QA, and Late Interaction (ColBERT).
+- **What BERT Knows (Layer Hierarchy):** 
+  - *Lower Layers:* Surface features (POS, syntax).
+  - *Middle Layers:* Semantics and coreference.
+  - *Upper Layers:* Abstract logic and world knowledge (critical for ranking).
+- **monoBERT:** Encoder-only BERT that classifies the concat of $[Q, D]$ via the [CLS] token. *(Nogueira & Cho, 2019)*
+- **monoT5:** Encoder-Decoder T5 that generates "true" or "false" to rank documents. Often more robust than monoBERT. *(Nogueira et al., 2020)*
 
 ### ColBERT (Late Interaction, Preview)
 
@@ -278,9 +288,9 @@
 - **"Contextualized embeddings solve both synonymy and polysemy."**
 - **"Cross-encoders are the most accurate rankers but cannot retrieve."**
 - **"The two-stage pipeline is the standard."** BM25 (recall) → Cross-encoder (precision).
-- **"The Recall Ceiling."** Re-ranking can only sort what retrieval finds; a missed document is lost forever.
-- **"Negative sampling is critical."** BM25 hard negatives are essential to force the model to learn beyond surface term matching.
-- **"Train on MS MARCO, Evaluate on TREC DL."** 
+- **"The Recall Ceiling."** Re-ranking is a zero-sum game of sorting; if retrieval misses the document, it's gone forever.
+- **Representation Spectrum:** The trade-off space from **Sparse** (fast, exact) $\to$ **Late Interaction** (semantic, token-level) $\to$ **Dense** (fast ANN, semantic) $\to$ **Cross-Encoder** (ultra-accurate, slow).
+- **Train on MS MARCO, Evaluate on TREC DL.** 
 
 ---
 
@@ -302,18 +312,24 @@
 - **ANCE:** Asymmetric negative contrastive learning; dynamically mines "hard" negatives by refreshing the ANN index during training. *(Xiong et al., 2021)*
 - **Contriever:** Unsupervised contrastive pre-training tailored for retrieval. *(Izacard et al., 2022)*
 
-### Evaluation & Hybrid Systems
+### Evaluation & The Zero-Shot Challenge
 
-- **BEIR Benchmark:** A collection of 18 diverse IR tasks used to evaluate **zero-shot** generalization of retrieval models. *(Thakur et al., 2021)*
-- **Zero-Shot Gap:** The phenomenon where dense models excel on training data (MS MARCO) but struggle against BM25 on unseen domains.
-- **Hybrid Retrieval:** Linear fusion of sparse (BM25) and dense scores. Captures both exact entity matches and deep semantic similarity.
-- **Reciprocal Rank Fusion (RRF):** A robust method for combining ranked lists without needing score normalization.
+- **BEIR Benchmark:** A collection of 18 diverse IR tasks used to evaluate **zero-shot** generalization. *(Thakur et al., 2021)*
+- **The Zero-Shot Gap:** Dense models often struggle against BM25 on unseen domains because they overfit to the query distribution of the training set (e.g., MS MARCO).
+- **Hybrid Retrieval:** Linearly combining sparse (BM25) and dense scores to capture both exact terminology and semantic similarity.
+
+### Retrieval-Augmented Generation (RAG)
+
+- **Grounding Tool:** Retrieval acts as the "eyes" of the LLM, providing external, verifiable evidence to the generator.
+- **Factuality vs. Hallucination:** IR is the bottleneck for RAG; if the retriever misses the document, the generator cannot provide a factual answer.
+- **Compound Pipeline:** User Query $\to$ Retrieval $\to$ Re-ranking $\to$ Augmented Prompt $\to$ Answer.
 
 ### Key Principles (Lecture 5)
 
-- **"Negative sampling is a first-order concern."** The quality of the negatives often matters more than the model architecture.
-- **"Dense and Sparse are complementary."** Hybrid systems consistently outperform single-modality retrievers.
-- **"Batch size is a hyperparameter for quality."** Larger batch = more negatives = better representations.
+- **"Negative sampling is a first-order concern."** The quality of negatives (random vs. hard) matters as much as the encoder architecture.
+- **"Batch size is a hyperparameter for quality."** Larger batch = more in-batch negatives = tighter bound on mutual information.
+- **"Dense and Sparse are complementary."** Hybrid systems consistently outperform single-modality retrievers in production.
+- **"Retrieval serves models, not just users."** The modern IR engine is the grounding layer for RAG.
 
 ---
 

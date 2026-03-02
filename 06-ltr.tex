@@ -65,7 +65,7 @@
 \end{frame}
 
 \begin{frame}{Relevance is Multi-faceted}
-\irStage{BACKGROUND}
+% \irStage{BACKGROUND}
 \textbf{Industrial search engines must optimize for more than just "topical" relevance.}
 
 \vspace{0.8em}
@@ -86,7 +86,7 @@
 \end{frame}
 
 \begin{frame}{The Scale of Industrial Ranking}
-\irStage{BACKGROUND}
+% \irStage{BACKGROUND}
 \textbf{Modern search giants handle a massive explosion of signals.}
 
 \vspace{0.8em}
@@ -104,7 +104,7 @@ We need a principled, automated way to learn the optimal "recipe" for combining 
 \end{frame}
 
 \begin{frame}{A Document as a Feature Vector}
-\irStage{BACKGROUND}
+% \irStage{BACKGROUND}
 \textbf{Learning to Rank represents each query-document pair as a vector $\vx$.}
 
 \vspace{1em}
@@ -139,7 +139,7 @@ We need a principled, automated way to learn the optimal "recipe" for combining 
 \end{frame}
 
 \begin{frame}{Where LTR Fits: The Multi-Stage Pipeline}
-\irStage{SYSTEM ARCHITECTURE}
+% \irStage{SYSTEM ARCHITECTURE}
 \textbf{LTR is usually the final "re-ranking" stage in a complete stack.}
 
 \vspace{0.5em}
@@ -157,7 +157,7 @@ Sparse/Dense retrieval retrieves thousands; LTR perfectly orders the top 100.
 \end{frame}
 
 \begin{frame}{Recap: Why LTR is Necessary}
-\irStage{BACKGROUND}
+% \irStage{BACKGROUND}
 \textbf{Our journey moved from hand-crafted matchers to complex neural-classical ensembles.}
 
 \vspace{0.8em}
@@ -175,7 +175,7 @@ How do we \textbf{train} these components together to optimize for the final ran
 \end{frame}
 
 \begin{frame}{Today's Goal: Directly Optimizing Rankings}
-\irStage{OBJECTIVE}
+% \irStage{OBJECTIVE}
 \textbf{The core problem is learning a scoring function that respects document ordering.}
 
 \vspace{0.8em}
@@ -193,7 +193,7 @@ Ranking metrics depend on \textbf{sorting}, which is discrete. We must find diff
 \end{frame}
 
 \begin{frame}{The Learning to Rank Pipeline}
-\irStage{SYSTEM ARCHITECTURE}
+% \irStage{SYSTEM ARCHITECTURE}
 \textbf{LTR separates feature extraction from the learned scoring and optimization logic.}
 
 \vspace{0.8em}
@@ -218,7 +218,7 @@ Ranking metrics depend on \textbf{sorting}, which is discrete. We must find diff
 \end{frame}
 
 \begin{frame}{Recap: Binary Metrics}
-\irStage{EVALUATION}
+% \irStage{EVALUATION}
 \textbf{Traditional metrics focus on whether a document is "relevant" or not.}
 
 \vspace{0.8em}
@@ -236,7 +236,7 @@ Binary metrics ignore the \textbf{intensity} of relevance. In modern search, we 
 \end{frame}
 
 \begin{frame}{NDCG: The Gold Standard for LTR}
-\irStage{EVALUATION}
+% \irStage{EVALUATION}
 \textbf{NDCG handles graded relevance and prioritizes top-heavy rankings.}
 
 \vspace{0.8em}
@@ -254,7 +254,7 @@ Binary metrics ignore the \textbf{intensity} of relevance. In modern search, we 
 \end{frame}
 
 \begin{frame}{Worked Example: Computing NDCG@5}
-\irStage{EVALUATION}
+% \irStage{EVALUATION}
 \textbf{Let's calculate the cost of a "miss" in the top positions.}
 
 \vspace{0.8em}
@@ -280,7 +280,7 @@ Notice that moving the "3" from position 1 to 2 caused an 8\% drop in score. NDC
 \end{frame}
 
 \begin{frame}{Pointwise: Ranking as Classification/Regression}
-\irStage{PARADIGMS}
+% \irStage{PARADIGMS}
 \textbf{The simplest approach treats each document-query pair as an isolated task.}
 
 \vspace{0.8em}
@@ -298,7 +298,7 @@ Pointwise models ignore the \textbf{relative order} between documents. They don'
 \end{frame}
 
 \begin{frame}{Pointwise in Disguise: Standard Cross-Encoders}
-\irStage{RE-RANKING}
+% \irStage{RE-RANKING}
 \textbf{Recall monoBERT from Lecture 4 is technically a pointwise ranker.}
 
 \vspace{0.8em}
@@ -324,7 +324,7 @@ With enough data and model capacity (like LLMs), simplistic pointwise losses oft
 \end{frame}
 
 \begin{frame}{Pairwise: Relative Preferences}
-\irStage{PARADIGMS}
+% \irStage{PARADIGMS}
 \textbf{Instead of absolute scores, we learn which document is "better" in a pair.}
 
 \vspace{0.8em}
@@ -341,7 +341,7 @@ With enough data and model capacity (like LLMs), simplistic pointwise losses oft
 \end{frame}
 
 \begin{frame}{RankNet: Learning from Pairs}
-\irStage{MODELS}
+% \irStage{MODELS}
 \textbf{RankNet models the preference probability between two documents.}
 
 \vspace{0.8em}
@@ -359,7 +359,7 @@ With enough data and model capacity (like LLMs), simplistic pointwise losses oft
 \end{frame}
 
 \begin{frame}{Worked Example: RankNet Misstep}
-\irStage{MODELS}
+% \irStage{MODELS}
 \textbf{Suppose a Blog (rel=1) is scored at 2.5, while a Tier-1 list (rel=3) is at 2.1.}
 
 \vspace{0.8em}
@@ -377,7 +377,7 @@ Swapping docs at positions 1--2 should be "more important" than positions 99--10
 \end{frame}
 
 \begin{frame}{RankSVM: Margin-Based Ranking}
-\irStage{MODELS}
+% \irStage{MODELS}
 \textbf{Historical significance: First to use implicit feedback (clicks) for LTR.}
 
 \vspace{0.8em}
@@ -403,7 +403,7 @@ Joachims (2002) showed that even noisy implicit signals (clicks) can train a com
 \end{frame}
 
 \begin{frame}{LambdaRank: Metric-Aware Gradients}
-\irStage{MODELS}
+% \irStage{MODELS}
 \textbf{The breakthrough: Weighting pair updates by their impact on NDCG.}
 
 \vspace{0.8em}
@@ -421,7 +421,7 @@ Joachims (2002) showed that even noisy implicit signals (clicks) can train a com
 \end{frame}
 
 \begin{frame}{The Lambda Insight}
-\irStage{THEORY}
+% \irStage{THEORY}
 \textbf{LambdaRank defines gradients directly, without an explicit loss function.}
 
 \vspace{0.8em}
@@ -439,7 +439,7 @@ Surprisingly, optimizing these gradients leads to a local optimum for the target
 \end{frame}
 
 \begin{frame}{Worked Example: Lambda Power}
-\irStage{THEORY}
+% \irStage{THEORY}
 \textbf{Correcting errors at the top yields much higher "gravitational" force.}
 
 \vspace{0.8em}
@@ -457,7 +457,7 @@ This weighting causes the model to "give up" on tail documents and focus exclusi
 \end{frame}
 
 \begin{frame}{LambdaMART: Industry Workhorse}
-\irStage{MODELS}
+% \irStage{MODELS}
 \textbf{Combines Lambda gradients with Gradient Boosted Regression Trees.}
 
 \vspace{0.8em}
@@ -475,7 +475,7 @@ Non-neural trees handle \textbf{heterogeneous features} (BM25 score + PageRank +
 \end{frame}
 
 \begin{frame}{LTR Features: What the Model "Sees"}
-\irStage{DATA}
+% \irStage{DATA}
 \textbf{Traditional LTR models use a large bank of query-document features.}
 
 \vspace{0.8em}
@@ -501,7 +501,7 @@ LambdaMART doesn't replace BM25; it uses BM25 as \textbf{one of many inputs}. It
 \end{frame}
 
 \begin{frame}{Listwise: Optimising the Distribution}
-\irStage{PARADIGMS}
+% \irStage{PARADIGMS}
 \textbf{Listwise models treat the entire set of documents as a single unit.}
 
 \vspace{0.8em}
@@ -518,7 +518,7 @@ LambdaMART doesn't replace BM25; it uses BM25 as \textbf{one of many inputs}. It
 \end{frame}
 
 \begin{frame}{ListNet: Top-One Probabilities}
-\irStage{MODELS}
+% \irStage{MODELS}
 \textbf{ListNet models the probability that document $i$ is ranked at position 1.}
 
 \vspace{0.8em}
@@ -536,7 +536,7 @@ Pushing one document to position 1 automatically lowers the "Top-1" probability 
 \end{frame}
 
 \begin{frame}{Connection: Knowledge Distillation as LTR}
-\irStage{RE-RANKING}
+% \irStage{RE-RANKING}
 \textbf{Teaching a Bi-Encoder (Student) to mimic a Cross-Encoder (Teacher) is a ranking task.}
 
 \vspace{0.8em}
@@ -554,7 +554,7 @@ Using pairwise/listwise distillation significantly outperforms simple MSE on the
 \end{frame}
 
 \begin{frame}{The Modern Retrieve-Then-Rerank Stack}
-\irStage{SYSTEM ARCHITECTURE}
+% \irStage{SYSTEM ARCHITECTURE}
 \textbf{Modern search engines are multi-stage ensembles of different LTR paradigms.}
 
 \vspace{0.8em}
@@ -578,7 +578,7 @@ Using pairwise/listwise distillation significantly outperforms simple MSE on the
 \end{frame}
 
 \begin{frame}[fragile]{Practical LTR: LightGBM \& PyTerrier}
-\irStage{HANDS-ON}
+% \irStage{HANDS-ON}
 \textbf{Standardized libraries make it easy to train metric-aware rankers.}
 
 \vspace{0.8em}
@@ -596,7 +596,7 @@ The power of LambdaMART comes from its ability to use \textbf{50+ features}: BM2
 \end{frame}
 
 \begin{frame}{Summary: Choosing Your Paradigm}
-\irStage{SUMMARY}
+% \irStage{SUMMARY}
 \textbf{The trade-off is between ranking awareness and computational complexity.}
 
 \vspace{0.8em}
@@ -614,7 +614,7 @@ Remember: A perfect re-ranker cannot fix what the first stage missed. LTR is mos
 \end{frame}
 
 \begin{frame}{Next Class: Evaluation \& Large Scale Systems}
-\irStage{SUMMARY}
+% \irStage{SUMMARY}
 \textbf{Next week, we move into the "wild" --- how to evaluate systems with real users.}
 
 \vspace{0.8em}
@@ -633,7 +633,7 @@ Review the PyTerrier documentation for the Learning to Rank module.
 
 \appendix
 \begin{frame}{Backup: Smooth Ranks (ApproxNDCG)}
-\irStage{MODELS}
+% \irStage{MODELS}
 \textbf{ApproxNDCG makes sorting differentiable by using sigmoids.}
 
 \vspace{0.8em}
