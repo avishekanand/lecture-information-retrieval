@@ -612,9 +612,15 @@ ColBERT gives near-cross-encoder accuracy at bi-encoder-like speed. Trade-off: \
 % ====================================================================
 \section{Hard Negatives Mining}
 % ====================================================================
-
 \begin{frame}[plain]
 \sectionpage
+\end{frame}
+
+
+\begin{frame}[shrink=15]{Hard vs.\ Easy Negatives: Why It Matters}
+\begin{center}
+\input{tikz/hard_negatives_viz.tex}
+\end{center}
 \end{frame}
 
 \begin{frame}{The Evolving Encoder and Negative Quality}
@@ -646,20 +652,17 @@ The encoder's understanding of relevance \textbf{evolves} across training epochs
 \end{frame}
 
 
-\begin{frame}{The Evolving Encoder and Negative Quality}
-\begin{block}{Key Insight: What Counts as ``Hard'' Changes Over Training}
-The encoder's understanding of relevance \textbf{evolves} across training epochs. This changes which negatives are informative:
-\end{block}
+\begin{frame}[shrink=15]{The Evolving Encoder: Representations Shift Over Training}
+\begin{center}
+\input{tikz/evolving_encoder.tex}
+\end{center}
+
+\cpause
+\vspace{0.3em}
 
 \begin{alertblock}{Implication}
 The optimal negative sampling strategy is \textbf{not fixed} --- it should adapt to the encoder's current capability.
 \end{alertblock}
-
-\cpause
-\vspace{0.5em}
-
-\textbf{We need Hard Negative Mining strategy that adapts to the encoder's current capability.}
-
 \end{frame}
 
 
@@ -692,24 +695,19 @@ Negatives are defined by the \textbf{current encoder state}:
 \end{center}
 \end{frame}
 
-\begin{frame}[shrink=15]{Hard vs.\ Easy Negatives: Why It Matters}
-\begin{center}
-\input{tikz/hard_negatives_viz.tex}
-\end{center}
-\end{frame}
 
-\begin{frame}{The Landscape of Negative Sampling}
-\textbf{The Challenge:} The denominator in InfoNCE over $\mathcal{D}$ is the bottleneck. The quality of our approximation depends on the \textbf{negatives} we choose.
+% \begin{frame}{The Landscape of Negative Sampling}
+% \textbf{The Challenge:} The denominator in InfoNCE over $\mathcal{D}$ is the bottleneck. The quality of our approximation depends on the \textbf{negatives} we choose.
 
-\vspace{1em}
+% \vspace{1em}
 
-\begin{itemize}
-    \item \textbf{Random Negatives:} Passages sampled uniformly from the corpus. Usually too easy (e.g., query ``Python'' vs document ``Aspirin'').
-    \item \textbf{In-Batch Negatives:} Using documents from other queries in the same batch. Computationally efficient (``free'').
-    \item \textbf{BM25 Hard Negatives:} Passages that contain query terms but are not relevant. Forces model to learn fine-grained semantics.
-    \item \textbf{Dynamic Hard Negatives (ANCE):} Passages that the model \textbf{currently} thinks are relevant (top predictions). Most effective but requires periodic index refreshes.
-\end{itemize}
-\end{frame}
+% \begin{itemize}
+%     \item \textbf{Random Negatives:} Passages sampled uniformly from the corpus. Usually too easy (e.g., query ``Python'' vs document ``Aspirin'').
+%     \item \textbf{In-Batch Negatives:} Using documents from other queries in the same batch. Computationally efficient (``free'').
+%     \item \textbf{BM25 Hard Negatives:} Passages that contain query terms but are not relevant. Forces model to learn fine-grained semantics.
+%     \item \textbf{Dynamic Hard Negatives (ANCE):} Passages that the model \textbf{currently} thinks are relevant (top predictions). Most effective but requires periodic index refreshes.
+% \end{itemize}
+% \end{frame}
 
 % \begin{frame}[shrink=5]{The Hard Negative Problem (Xiong et al., 2021)}
 % \begin{alertblock}{Observation}
@@ -793,8 +791,6 @@ The \textbf{only} difference between DPR and ANCE is the negative sampling strat
 Negative sampling is a \textbf{first-order concern} in dense retrieval. \\The model and architecture stay the same --- the negatives matter most.
 \end{alertblock}
 \end{frame}
-
-
 
 % ====================================================================
 \section{Evaluation \& The Zero-Shot Challenge}
