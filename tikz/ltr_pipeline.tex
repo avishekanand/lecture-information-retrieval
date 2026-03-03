@@ -3,11 +3,11 @@
     arr/.style={irArrowBase, thick}
 ]
 \node[sparse] (feat) {Feature\\Extraction};
-\node[pairwise, right=2cm of feat] (model) {Learned\\Ranker $f(\vx)$};
+\node[rerank, right=2cm of feat] (model) {Learned\\Ranker $f(\mathbf{x})$};
 \node[hybrid, right=2cm of model] (rank) {Ranked\\List};
 \node[rerank, below=1.5cm of model] (loss) {Ranking\\Loss $\mathcal{L}$};
 
-\draw[arr] (feat) -- node[above, irLabel, pos=0.5] {$\vx_{q,d}$} (model);
+\draw[arr] (feat) -- node[above, irLabel, pos=0.5] {$\mathbf{x}_{q,d}$} (model);
 \draw[arr] (model) -- node[above, irLabel, pos=0.5] {scores} (rank);
 \draw[arr] (rank) |- (loss);
 \draw[arr, dashed, irArrowBase] (loss) -- node[right, irLabel, pos=0.5] {$\nabla_\theta \mathcal{L}$} (model);

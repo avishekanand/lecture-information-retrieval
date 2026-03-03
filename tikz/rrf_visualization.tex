@@ -1,0 +1,43 @@
+% RRF: Reciprocal Rank Fusion Visualization
+% Shows two ranked lists and their merged result based on ranks
+\begin{tikzpicture}[
+    scale=0.85, transform shape,
+    doc/.style={draw, rounded corners=2pt, minimum width=2.2cm, minimum height=0.6cm, font=\footnotesize, align=center, fill=white},
+    rank/.style={circle, draw, inner sep=1pt, font=\tiny, fill=irInfra!10},
+    formula/.style={draw=yellow!60!black, fill=yellow!10, rounded corners=3pt, inner sep=6pt, font=\small}
+]
+
+% ===== LIST 1 (BM25) =====
+\node[font=\small\bfseries, text=irSparse] at (0, 0.8) {BM25 Ranking};
+\node[doc, draw=irSparse] (L1_1) at (0, 0) {Doc A}; \node[rank, left=2pt of L1_1] {1};
+\node[doc, draw=irSparse] (L1_2) at (0, -0.8) {Doc B}; \node[rank, left=2pt of L1_2] {2};
+\node[doc, draw=irSparse] (L1_3) at (0, -1.6) {Doc C}; \node[rank, left=2pt of L1_3] {3};
+\node[font=\tiny, gray] at (0, -2.2) {rank-based (no scores)};
+
+% ===== LIST 2 (Dense) =====
+\node[font=\small\bfseries, text=irDense] at (4.5, 0.8) {Dense Ranking};
+\node[doc, draw=irDense] (L2_1) at (4.5, 0) {Doc C}; \node[rank, right=2pt of L2_1] {1};
+\node[doc, draw=irDense] (L2_2) at (4.5, -0.8) {Doc A}; \node[rank, right=2pt of L2_2] {2};
+\node[doc, draw=irDense] (L2_3) at (4.5, -1.6) {Doc D}; \node[rank, right=2pt of L2_3] {3};
+\node[font=\tiny, gray] at (4.5, -2.2) {rank-based (no scores)};
+
+% ===== MERGING PROCESS =====
+\node[formula] (eq) at (2.25, -3.5) {$Score(d) = \displaystyle\sum_{r \in R} \frac{1}{k + rank(d, r)}$};
+\node[font=\tiny, below=2pt of eq, gray] {typically $k=60$};
+
+% ===== FINAL RANKING =====
+\node[font=\small\bfseries, text=irHybrid!80!black] at (9, 0.8) {Final RRF Rank};
+
+% Doc A: 1/61 + 1/62
+\node[doc, fill=irHybrid!10, draw=irHybrid] (M1) at (9, 0) {Doc A}; 
+\node[font=\tiny, anchor=west] at (M1.east) {\ $\frac{1}{k+1} + \frac{1}{k+2}$};
+
+% Doc C: 1/63 + 1/61
+\node[doc, fill=irHybrid!10, draw=irHybrid] (M2) at (9, -0.8) {Doc C};
+\node[font=\tiny, anchor=west] at (M2.east) {\ $\frac{1}{k+3} + \frac{1}{k+1}$};
+
+% Doc B: 1/62
+\node[doc, fill=irHybrid!10, draw=irHybrid] (M3) at (9, -1.6) {Doc B};
+\node[font=\tiny, anchor=west] at (M3.east) {\ $\frac{1}{k+2}$};
+
+\end{tikzpicture}

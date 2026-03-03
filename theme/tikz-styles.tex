@@ -13,6 +13,9 @@
 \definecolor{irPrimary}{HTML}{3498DB}  % Primary: Blue (same as irSparse)
 \definecolor{irSecondary}{HTML}{E67E22} % Secondary: Orange (same as irDense)
 
+\definecolor{irPointwise}{HTML}{3498DB} % Derived from v0
+\definecolor{irPairwise}{HTML}{E74C3C}  % Derived from v0
+\definecolor{irListwise}{HTML}{1ABC9C}  % Derived from v0
 
 % Base Styles - Consistent Diagram Grammar
 \tikzset{
@@ -46,6 +49,10 @@
     hybrid/.style={irBoxBase, fill=irHybrid!10, draw=irHybrid},
     ann/.style={irBoxBase, fill=irANN!10, draw=irANN},
     infra/.style={irBoxBase, fill=irInfra!10, draw=irInfra},
+    pointwise/.style={irBoxBase, fill=irPointwise!10, draw=irPointwise},
+    pairwise/.style={irBoxBase, fill=irPairwise!10, draw=irPairwise},
+    listwise/.style={irBoxBase, fill=irListwise!10, draw=irListwise},
+    info/.style={font=\scriptsize\itshape, text=gray},
     % Legacy support / Utility
     primary/.style={sparse},
     secondary/.style={rerank},

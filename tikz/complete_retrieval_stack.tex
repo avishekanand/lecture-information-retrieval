@@ -1,8 +1,8 @@
 \begin{tikzpicture}[node distance=1.1cm]
     \node[sparse, minimum width=10cm] (s1) {Stage 1: Sparse Retrieval (L3) \textit{or} Dense Retrieval (L5)};
     \node[hybrid, minimum width=10cm, below of=s1] (s1b) {Optional: Query Expansion / PRF improves recall (L3)};
-    \node[rerank, minimum width=10cm, below of=s1b, thick] (s2) {\textbf{Stage 2: Neural Re-ranking / Cross-Encoder (Today)}};
-    \node[hybrid, fill=irHybrid!20, minimum width=10cm, below of=s2] (s3) {Stage 3: Learning to Rank (LTR) combines all signals (L6)};
+    \node[rerank, minimum width=10cm, below of=s1b] (s2) {Stage 2: Neural Re-ranking / Cross-Encoder};
+    \node[hybrid, fill=irHybrid!20, minimum width=10cm, below of=s2] (s3) {Stage 3: Learning to Rank (LTR) combines all signals (L6) (Today)};
     \node[infra, minimum width=10cm, below of=s3] (out) {Final Ranked List $\to$ User or RAG Application};
 
     \draw[irArrowBase] (s1) -- (s1b);

@@ -4,7 +4,7 @@
 ]
 \node[hybrid] (d1) {$d_i$\\ \tiny (rel=3)};
 \node[rerank, right=3cm of d1] (d2) {$d_j$\\ \tiny (rel=1)};
-\node[below=1.2cm of $(d1)!0.5!(d2)$, info] (pred) {$f(\vx_i) > f(\vx_j)$ ?};
+\node[below=1.2cm of $(d1)!0.5!(d2)$, info] (pred) {$f(\mathbf{x}_i) > f(\mathbf{x}_j)$ ?};
 
 \draw[arr, irHybrid] (d1) -- node[above, irLabel, pos=0.5] {should rank higher} (d2);
 \draw[arr, dashed, irInfra] (d1) |- (pred);
