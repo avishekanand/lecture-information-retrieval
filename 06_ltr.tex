@@ -21,7 +21,7 @@
 
 \title{Learning to Rank}
 \author{Avishek Anand}
-\date{}
+\date{\today}
 
 % Automatic Roadmap/Outline slide at the start of each section
 \AtBeginSection[]
@@ -78,6 +78,7 @@
 
 \begin{itemize}
     \item \textbf{Objectives:} Relevance, Revenue / margin, Customer satisfaction, Sponsored constraints
+    \cpause
     \item \textbf{Features:} Text match (BM25/embeddings), Price + discounts, Ratings / reviews, Shipping speed, stock, Seller quality
     \item \textbf{Feedback:} Clicks, add-to-cart, Purchases/returns, Position bias, Promo effects
 \end{itemize}
@@ -97,6 +98,7 @@
 
 \begin{itemize}
     \item \textbf{Objectives:} Relevance, Authority / impact, Recency (sometimes), Diversity of viewpoints
+    \cpause
     \item \textbf{Features:} Text similarity, Citations, PageRank-like, Venue / author signals, Year, topicality
     \item \textbf{Feedback:} Clicks / saves, Citations (delayed), Popularity bias, Interface position bias
 \end{itemize}
@@ -116,6 +118,7 @@
 
 \begin{itemize}
     \item \textbf{Objectives:} Engagement (watch time), Retention (long-term), Novelty / diversity, Platform strategy
+    \cpause
     \item \textbf{Features:} User/item embeddings, Recent interactions, Context (time/device), Similar-user patterns
     \item \textbf{Feedback:} Plays, skips, Watch completion, Dwell time is noisy, Exposure bias
 \end{itemize}
@@ -202,7 +205,7 @@ where $x_{q,d}$ can have hundreds of components.
 
 \bigskip
 \centering
-\alert{\Large Learning to Rank is the engineering solution.}
+% \alert{\Large Learning to Rank is the engineering solution.}
 \end{frame}
 
 % \begin{frame}[shrink=15]{Where LTR Fits: The Multi-Stage Pipeline}
@@ -262,7 +265,7 @@ where $x_{q,d}$ can have hundreds of components.
 \end{itemize}\cpause
 
 \vspace{1em}
-\cpause
+% \cpause
 \begin{alertblock}{The Limitation}
 Binary metrics ignore the \textbf{intensity} of relevance. In modern search, we often have graded labels (e.g., Perfect, Good, Fair, Bad).
 \end{alertblock}
@@ -280,7 +283,7 @@ Binary metrics ignore the \textbf{intensity} of relevance. In modern search, we 
 \end{itemize}\cpause
 
 \vspace{0.5em}
-\cpause
+% \cpause
 \begin{center}
 \mathhl{\text{NDCG@}k = \frac{\sum_{i=1}^{k} \frac{2^{\text{rel}_i}-1}{\log_2(i+1)}}{\text{IDCG@}k}}
 \end{center}
@@ -295,7 +298,7 @@ Binary metrics ignore the \textbf{intensity} of relevance. In modern search, we 
     \item \textbf{Current}: Grades $[2, 3, 1, 0, 0] \to \text{DCG} \approx 4.39$.
     \item \textbf{Ideal}: Grades $[3, 2, 1, 0, 0] \to \text{DCG} \approx 4.76$.
     \item \textbf{Result}: $\text{NDCG} = 4.39 / 4.76 \approx \mathbf{0.92}$.
-\end{itemize}\cpause
+\end{itemize}
 
 \vspace{1em}
 \cpause
@@ -365,8 +368,6 @@ Tiny score swap $\Rightarrow$ big metric jump.
 \end{tabular}
 \end{center}
 
-\vspace{1.5em}
-\alert{In this lecture, we shift focus to the most powerful of these: the Listwise approach.}
 \end{frame}
 
 % =====================================================
@@ -388,6 +389,7 @@ Tiny score swap $\Rightarrow$ big metric jump.
 \vspace{0.8em}
 \begin{itemize}
     \item \textbf{Explicit Ratings}: Human judges grade relevance (e.g., 0=Bad to 4=Perfect). Expensive but high quality.
+    \cpause
     \item \textbf{Implicit Feedback}: User behavior parsed from logs.
     \begin{itemize}
         \item \textbf{Clicks}: Did the user click? (Binary)
@@ -419,6 +421,7 @@ $q_2$ & $d_X$ & 5.5 & 0.44 & \dots & \textcolor{red}{\textbf{0 (Skip)}} \\
 \bottomrule
 \end{tabular}
 \end{center}
+\cpause
 \vspace{0.5em}
 \begin{exampleblock}{Key Insight}
 The model sees rows independently. It does not know that $d_A, d_B, d_C$ belong to the same query $q_1$ during the forward pass.
@@ -537,6 +540,7 @@ For $q_1, d_A$, the loss penalizes the model if $\hat{y}$ is far from $1$. It up
 \end{column}
 \end{columns}
 
+\cpause
 \vspace{1em}
 \textbf{Mismatch}: Ranking is fundamentally about the \textbf{relative order} of documents, not fitting a curve.
 \end{frame}
@@ -553,7 +557,6 @@ For $q_1, d_A$, the loss penalizes the model if $\hat{y}$ is far from $1$. It up
 \end{itemize}\cpause
 
 \vspace{1em}
-\cpause
 \begin{exampleblock}{The Capacity Paradox}
 With enough data and model capacity (like LLMs), simplistic pointwise losses often reach surprisingly high performance.
 \end{exampleblock}
@@ -650,6 +653,7 @@ For all pairs where $y_i > y_j$:
 \end{column}
 \end{columns}
 
+\cpause
 \vspace{1em}
 \textbf{Mismatch}: It's much more important to get the correct ordering of top documents than bottom ones. Pairwise treats all pairs equally.
 \end{frame}
@@ -663,7 +667,7 @@ For all pairs where $y_i > y_j$:
     \item \textbf{Conflict}: $P(\text{Tier-1} \succ \text{Blog}) \approx 0.40$ (Model is wrong).
     \item \textbf{Gradient}: Pushes Tier-1 score up ($+0.60$) and Blog down ($-0.60$).
     \item \textbf{Observation}: RankNet weights all swaps equally, regardless of position.
-\end{itemize}\cpause
+\end{itemize}
 
 \vspace{1em}
 \cpause
@@ -681,10 +685,10 @@ Swapping docs at positions 1--2 should be "more important" than positions 99--10
     \item \textbf{Margin}: Force $\mathbf{w}^\top (\mathbf{x}_i - \mathbf{x}_j) \geq 1$ for correctly ordered pairs.
     \item \textbf{Feed}: Users clicking result $i$ after skipping $j \implies d_i \succ d_j$.
     \item \textbf{Legacy}: Solid theory (max-margin) but less scalable than boosting.
-\end{itemize}\cpause
+\end{itemize}
+% \cpause
 
 \vspace{1em}
-\cpause
 \begin{exampleblock}{Key Contribution}
 Joachims (2002) showed that even noisy implicit signals (clicks) can train a competitive ranker when framed as a pairwise problem.
 \end{exampleblock}
@@ -713,6 +717,34 @@ Joachims (2002) showed that even noisy implicit signals (clicks) can train a com
 \begin{center}
 \input{tikz/listwise_visualization.tex}
 \end{center}
+\end{frame}
+
+\begin{frame}[shrink=5]{2. The Training Table}
+% \irStage{DATA}
+\textbf{We flatten the data into a standard machine learning dataset.}
+
+\vspace{0.8em}
+Each row is an isolated instance: a Query $q$, a Document $d$, their extracted features $\mathbf{x}$, and the target label $y$.
+
+\vspace{1em}
+\begin{center}
+\small
+\begin{tabular}{cc | ccc | c}
+\toprule
+\textbf{Query ID} & \textbf{Doc ID} & \textbf{BM25 ($x_1$)} & \textbf{PageRank ($x_2$)} & \dots & \textbf{Label ($y$)} \\
+\midrule
+$q_1$ & $d_A$ & 12.4 & 0.85 & \dots & \textcolor{green!70!black}{\textbf{1 (Click)}} \\
+$q_1$ & $d_B$ & 8.1 & 0.92 & \dots & \textcolor{red}{\textbf{0 (Skip)}} \\
+$q_1$ & $d_C$ & 15.2 & 0.12 & \dots & \textcolor{green!70!black}{\textbf{1 (Click)}} \\
+\midrule
+$q_2$ & $d_X$ & 5.5 & 0.44 & \dots & \textcolor{red}{\textbf{0 (Skip)}} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\vspace{0.5em}
+\begin{exampleblock}{Key Insight}
+The model sees rows independently. It does not know that $d_A, d_B, d_C$ belong to the same query $q_1$ during the forward pass.
+\end{exampleblock}
 \end{frame}
 
 \begin{frame}{Training Data for Listwise Ranking}
@@ -760,44 +792,44 @@ P_s(d_i) = \frac{e^{s_i}}{\sum_j e^{s_j}}, \qquad P_y(d_i) = \frac{e^{y_i}}{\sum
 \end{itemize}
 \end{frame}
 
-\begin{frame}{ListMLE: Plackett-Luce Likelihood}
-% \irStage{MODELS}
-\textbf{ListMLE maximizes the likelihood of observing the ground-truth permutation.}
+% \begin{frame}{ListMLE: Plackett-Luce Likelihood}
+% % \irStage{MODELS}
+% \textbf{ListMLE maximizes the likelihood of observing the ground-truth permutation.}
 
-\vspace{0.8em}
-The probability of a permutation $\pi$ given scores $s$ is the product of sequential choices:
-\[
-P(\pi \mid s) = \prod_{k=1}^{n} \frac{e^{s_{\pi(k)}}}{\sum_{j=k}^{n} e^{s_{\pi(j)}}}
-\]
+% \vspace{0.8em}
+% The probability of a permutation $\pi$ given scores $s$ is the product of sequential choices:
+% \[
+% P(\pi \mid s) = \prod_{k=1}^{n} \frac{e^{s_{\pi(k)}}}{\sum_{j=k}^{n} e^{s_{\pi(j)}}}
+% \]
 
-\vspace{0.8em}
-\begin{itemize}
-    \item \textbf{Loss}: Negative log-likelihood $-\log P(\pi^* \mid s)$.
-    \item \textbf{Intuition}: The model is trained so that the correct order is the most likely outcome of a sequential sampling process.
-    \item The training object is the \textbf{entire ranking} simultaneously.
-\end{itemize}
-\end{frame}
+% \vspace{0.8em}
+% \begin{itemize}
+%     \item \textbf{Loss}: Negative log-likelihood $-\log P(\pi^* \mid s)$.
+%     \item \textbf{Intuition}: The model is trained so that the correct order is the most likely outcome of a sequential sampling process.
+%     \item The training object is the \textbf{entire ranking} simultaneously.
+% \end{itemize}
+% \end{frame}
 
-% =====================================================
+% % =====================================================
 
-\begin{frame}{Limitation of Early Listwise Surrogates}
-% \irStage{THEORY}
-\textbf{ListNet and ListMLE optimize smooth proxies, not the actual ranking metrics.}
+% \begin{frame}{Limitation of Early Listwise Surrogates}
+% % \irStage{THEORY}
+% \textbf{ListNet and ListMLE optimize smooth proxies, not the actual ranking metrics.}
 
-\vspace{0.8em}
-\begin{alertblock}{The Metric GAP}
-Likelihood maximization and cross-entropy are "surrogate" losses.
-\end{alertblock}
+% \vspace{0.8em}
+% \begin{alertblock}{The Metric GAP}
+% Likelihood maximization and cross-entropy are "surrogate" losses.
+% \end{alertblock}
 
-\vspace{0.8em}
-\begin{itemize}
-    \item \textbf{Discordance}: Improving surrogate loss does not always improve NDCG or MAP.
-    \item \textbf{Uniformity}: These losses often treat all positions as equally important in the probability space.
-\end{itemize}
+% \vspace{0.8em}
+% \begin{itemize}
+%     \item \textbf{Discordance}: Improving surrogate loss does not always improve NDCG or MAP.
+%     \item \textbf{Uniformity}: These losses often treat all positions as equally important in the probability space.
+% \end{itemize}
 
-\vspace{0.8em}
-\alert{To fix this, we need "metric-aware" listwise optimization.}
-\end{frame}
+% \vspace{0.8em}
+% \alert{To fix this, we need "metric-aware" listwise optimization.}
+% \end{frame}
 
 % % =====================================================
 % \section{Metric-Based Methods \& LambdaMART}
@@ -1009,23 +1041,6 @@ Remember: A perfect re-ranker cannot fix what the first stage missed. LTR is mos
 \end{alertblock}
 \end{frame}
 
-\begin{frame}{Next Class: Evaluation \& Large Scale Systems}
-% \irStage{SUMMARY}
-\textbf{Next week, we move into the "wild" --- how to evaluate systems with real users.}
-
-\vspace{0.8em}
-\begin{itemize}
-    \item \textbf{Offline}: Benchmarks like TREC and the limits of static labels.
-    \item \textbf{Online}: A/B testing, Interleaving, and Click-through analysis.
-    \item \textbf{Deployment}: Building low-latency production pipelines.
-\end{itemize}\cpause
-
-\vspace{1em}
-\cpause
-\begin{block}{Preparation}
-Review the PyTerrier documentation for the Learning to Rank module.
-\end{block}
-\end{frame}
 
 % =====================================================
 
