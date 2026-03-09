@@ -3,8 +3,8 @@
     arr/.style={irArrowBase, thick}
 ]
 \node[sparse] (feat) {Feature\\Extraction};
-\node[rerank, right=2cm of feat] (model) {Learned\\Ranker $f(\mathbf{x})$};
-\node[hybrid, right=2cm of model] (rank) {Ranked\\List};
+\node[rerank, right=1.5cm of feat] (model) {Learned\\Ranker $f(\mathbf{x})$};
+\node[hybrid, right=1.5cm of model] (rank) {Ranked\\List};
 \node[rerank, below=1.5cm of model] (loss) {Ranking\\Loss $\mathcal{L}$};
 
 \draw[arr] (feat) -- node[above, irLabel, pos=0.5] {$\mathbf{x}_{q,d}$} (model);

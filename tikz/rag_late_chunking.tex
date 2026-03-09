@@ -1,0 +1,61 @@
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners, thick, align=center, font=\scriptsize,
+              minimum height=0.5cm},
+  arr/.style={-{Stealth[length=2mm]}, thick, draw=irInfra},
+  head/.style={font=\small\bfseries, text=irInfra}
+]
+
+% Vertical separator
+\draw[gray!35, dashed, thick] (0.1, -2.5) -- (0.1, 2.2);
+
+% ===== LEFT: Standard approach =====
+\node[head] at (-3.6, 2.1) {Standard: Chunk $\to$ Encode};
+
+\node[box, fill=gray!12, minimum width=6.5cm] (doc1) at (-3.6, 1.5) {Document $D$};
+
+\node[box, fill=irSparse!15, minimum width=1.7cm] (ch1) at (-5.4, 0.7) {ch$_1$};
+\node[box, fill=irSparse!15, minimum width=1.7cm] (ch2) at (-3.6, 0.7) {ch$_2$};
+\node[box, fill=irSparse!15, minimum width=1.7cm] (ch3) at (-1.8, 0.7) {ch$_3$};
+
+\node[box, fill=irDense!20, minimum width=1.7cm, font=\tiny] (e1) at (-5.4,-0.1) {Enc(ch$_1$)};
+\node[box, fill=irDense!20, minimum width=1.7cm, font=\tiny] (e2) at (-3.6,-0.1) {Enc(ch$_2$)};
+\node[box, fill=irDense!20, minimum width=1.7cm, font=\tiny] (e3) at (-1.8,-0.1) {Enc(ch$_3$)};
+
+\node[box, fill=irDense!40, minimum width=1.7cm, font=\tiny] (v1) at (-5.4,-0.85) {$\mathbf{v}_1$};
+\node[box, fill=irDense!40, minimum width=1.7cm, font=\tiny] (v2) at (-3.6,-0.85) {$\mathbf{v}_2$};
+\node[box, fill=irDense!40, minimum width=1.7cm, font=\tiny] (v3) at (-1.8,-0.85) {$\mathbf{v}_3$};
+
+\draw[arr] (doc1) -- (-5.4, 1.05);
+\draw[arr] (doc1) -- (-3.6, 1.05);
+\draw[arr] (doc1) -- (-1.8, 1.05);
+\draw[arr] (ch1)--(e1); \draw[arr] (ch2)--(e2); \draw[arr] (ch3)--(e3);
+\draw[arr] (e1)--(v1); \draw[arr] (e2)--(v2); \draw[arr] (e3)--(v3);
+
+\node[font=\tiny\itshape, text=irRerank!80, align=center] at (-3.6,-1.5)
+      {$\times$ isolated: ``Paris'' in ch$_2$ unaware ch$_1$ says ``capital of France''};
+
+% ===== RIGHT: Late Chunking =====
+\node[head] at (4.2, 2.1) {Late Chunking: Encode $\to$ Pool};
+
+\node[box, fill=gray!12, minimum width=6.5cm] (doc2) at (4.2, 1.5) {Document $D$};
+\node[box, fill=irRerank!15, minimum width=6.5cm] (enc) at (4.2, 0.7)
+      {Contextual Encoder (all tokens)};
+
+\node[box, fill=irDense!40, minimum width=1.7cm, font=\tiny] (p1) at (2.4,-0.85) {pool$\!\to\!\mathbf{v}_1$};
+\node[box, fill=irDense!40, minimum width=1.7cm, font=\tiny] (p2) at (4.2,-0.85) {pool$\!\to\!\mathbf{v}_2$};
+\node[box, fill=irDense!40, minimum width=1.7cm, font=\tiny] (p3) at (6.0,-0.85) {pool$\!\to\!\mathbf{v}_3$};
+
+\draw[decorate, decoration={brace, amplitude=3pt, mirror}]
+      (1.55, 0.35) -- (3.25, 0.35) node[midway, below=3pt, font=\tiny] (b1) {ch$_1$};
+\draw[decorate, decoration={brace, amplitude=3pt, mirror}]
+      (3.35, 0.35) -- (5.05, 0.35) node[midway, below=3pt, font=\tiny] (b2) {ch$_2$};
+\draw[decorate, decoration={brace, amplitude=3pt, mirror}]
+      (5.15, 0.35) -- (6.85, 0.35) node[midway, below=3pt, font=\tiny] (b3) {ch$_3$};
+
+\draw[arr] (doc2) -- (enc);
+\draw[arr] (b1) -- (p1); \draw[arr] (b2) -- (p2); \draw[arr] (b3) -- (p3);
+
+\node[font=\tiny\itshape, text=irHybrid!80!black, align=center] at (4.2,-1.5)
+      {$\checkmark$ full document context; same index granularity as standard chunking};
+
+\end{tikzpicture}

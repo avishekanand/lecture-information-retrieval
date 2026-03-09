@@ -18,5 +18,5 @@
 \draw[arr] (llm) -- (obs);
 \draw[arr] (obs) -- (eval);
 
-\draw[arr] (eval) |- (idx) node[pos=0.25, font=\scriptsize, above] {tuning};
+\draw[arr, rounded corners] (eval.south) -- ++(0,-0.4) -| ++(-5.5,0) |- (idx.west) node[pos=0.25, font=\scriptsize, left] {tuning};
 \end{tikzpicture}

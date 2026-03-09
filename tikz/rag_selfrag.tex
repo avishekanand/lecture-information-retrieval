@@ -1,0 +1,67 @@
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners, thick, align=center, font=\scriptsize,
+              minimum height=0.6cm, minimum width=2.6cm},
+  tok/.style={draw, rounded corners=1pt, font=\tiny\bfseries, inner sep=3pt},
+  arr/.style={-{Stealth[length=2mm]}, thick, draw=irInfra},
+  lab/.style={font=\tiny\itshape, text=gray}
+]
+
+% ===== LEFT: Retrieve-or-not decision =====
+\node[font=\small\bfseries, text=irInfra] at (-3.0, 3.4) {Adaptive Retrieval};
+
+\node[box, fill=gray!12] (inp) at (-3.0, 2.6) {Input + Instruction};
+\node[box, fill=irRerank!15] (lm)  at (-3.0, 1.6) {LM Generate};
+
+\node[tok, fill=irANN!20, draw=irANN]       (ret)  at (-4.4, 0.5) {[RETRIEVE]};
+\node[tok, fill=irMuted!40, draw=irInfra!60] (nret) at (-1.6, 0.5) {[NO-RETRIEVE]};
+
+\node[box, fill=irSparse!12] (retr) at (-4.4, -0.7) {Retrieve passages};
+\node[box, fill=gray!12]     (gen2) at (-1.6, -0.7) {Generate directly};
+
+\draw[arr] (inp) -- (lm);
+\draw[arr] (lm)  -- (-4.4, 1.0);
+\draw[arr] (lm)  -- (-1.6, 1.0);
+\draw[arr] (ret)  -- (retr);
+\draw[arr] (nret) -- (gen2);
+
+\node[lab] at (-3.0, -1.35)
+      {Model decides \emph{when} to retrieve};
+
+% vertical separator
+\draw[gray!35, thick, dashed] (0, -2.8) -- (0, 3.6);
+
+% ===== RIGHT: Critique token grading =====
+\node[font=\small\bfseries, text=irInfra] at (3.4, 3.4) {Critique Tokens};
+
+\node[box, fill=irSparse!12] (pass) at (3.4, 2.6)
+      {Retrieved passage $d$};
+\node[box, fill=irRerank!15] (gen3) at (3.4, 1.6)
+      {Generate output $y \mid x, d$};
+
+\node[tok, fill=irSparse!25, draw=irSparse] (isrel) at (1.8, 0.5)
+      {[ISREL]};
+\node[tok, fill=irDense!25, draw=irDense]   (issup) at (3.4, 0.5)
+      {[ISSUP]};
+\node[tok, fill=irHybrid!25, draw=irHybrid] (isuse) at (5.0, 0.5)
+      {[ISUSE]};
+
+\node[box, fill=irRerank!10] (sel)  at (3.4, -0.7) {Score \& select best $y$};
+\node[box, fill=gray!12]     (out)  at (3.4, -1.8) {Final Output};
+
+\draw[arr] (pass) -- (gen3);
+\draw[arr] (gen3) -- (isrel);
+\draw[arr] (gen3) -- (issup);
+\draw[arr] (gen3) -- (isuse);
+\draw[arr] (isrel) |- (sel);
+\draw[arr] (issup) -- (sel);
+\draw[arr] (isuse) |- (sel);
+\draw[arr] (sel)   -- (out);
+
+% Token legend
+\node[lab, align=left, anchor=north west] at (0.2, -2.0) {
+  \textbf{ISREL}: is passage relevant to $x$? \\
+  \textbf{ISSUP}: does passage support $y$? \\
+  \textbf{ISUSE}: is overall response useful?
+};
+
+\end{tikzpicture}

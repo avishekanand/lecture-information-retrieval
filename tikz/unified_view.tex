@@ -16,14 +16,14 @@
     \IRBox{res}{(16,0)}{Ranked Candidates}{Top-$k$ List}{emph}
     
     % Sparse Connections
-    \IRArrow{text.north}{tokens.west}{Sparse Pipeline}
+    \IRArrowPath{text.north}{tokens.west}{Sparse Pipeline}
     \IRArrow{tokens}{ids}{}
     \IRArrow{ids}{sindex}{}
-    \IRArrow{sindex}{res.north}{}
+    \IRArrowPath{sindex.east}{res.north}{}
     
     % Dense Connections
-    \IRArrow{text.south}{mtoken.west}{Dense Pipeline}
+    \IRArrowPath{text.south}{mtoken.west}{Dense Pipeline}
     \IRArrow{mtoken}{embed}{}
     \IRArrow{embed}{dindex}{}
-    \IRArrow{dindex}{res.south}{}
+    \IRArrowPath{dindex.east}{res.south}{}
 \end{tikzpicture}

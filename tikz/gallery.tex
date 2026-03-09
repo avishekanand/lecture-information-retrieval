@@ -1,0 +1,51 @@
+% Gallery of IR TikZ Figures
+% Compile this standalone or include in a beamer frame.
+
+\begin{tikzpicture}[node distance=1.5cm and 3cm]
+    % 1. Simple Sparse-to-Dense Pipeline
+    \node[anchor=west, font=\bfseries] at (-2, 2.5) {1. Multi-Stage Retrieval Pipeline};
+    
+    \IRDocStack{docs}{(-2,0)}{Corpus}
+    \IRDatabase{index}{(1.5,0)}{Inverted Index}
+    \IRBox{bm25}{(0,0)}{BM25}{Lexical retrieval}{sparse}[right=2.2cm of index]
+    \IRBox{ce}{(0,0)}{Cross-Encoder}{Joint re-ranking}{rerank}[right=2.8cm of bm25]
+    
+    \IRArrowLR{docs}{index}{}
+    \IRArrowLR{index}{bm25}{top-k}
+    \IRArrowLR{bm25}{ce}{top-100}
+    
+    % 2. Grouped Hybrid System
+    \begin{scope}[yshift=-5cm]
+        \node[anchor=west, font=\bfseries] at (-2, 2.5) {2. Hybrid Ranking System};
+        
+        \IRBox{lexical}{(0,0)}{BM25}{Keywords}{sparse}[]
+        \IRBox{semantic}{(0,0)}{Bi-Encoder}{Embeddings}{dense}[below=1.8cm of lexical]
+        
+        \IRBox{fusion}{(0,0)}{RRF}{Reciprocal Rank Fusion}{hybrid}[right=3cm of $(lexical.east)!0.5!(semantic.east)$]
+        
+        \IRArrowPath{lexical.east}{fusion.160}{scores}
+        \IRArrowPath{semantic.east}{fusion.200}{scores}
+        
+        \IRGroup{(lexical)(semantic)}{First Stage}{muted}
+    \end{scope}
+
+    % 3. ANN Architecture
+    \begin{scope}[xshift=12cm]
+        \node[anchor=west, font=\bfseries] at (-1, 2.5) {3. ANN Index Structure};
+        
+        \IRTelescopeTier{t1}{(0,2.0)}{4.5cm}{Corpus (Sparse Stage)}{muted}
+        \IRTelescopeTier{t2}{(0,0.5)}{3.0cm}{Candidate Set}{dense}
+        \IRTelescopeTier{t3}{(0,-1.0)}{1.5cm}{Top-k}{rerank}
+        
+        \IRBadge{(2.0, 0.5)}{HNSW}
+    \end{scope}
+    
+    % 4. Numbered Steps
+    \begin{scope}[yshift=-11cm]
+        \node[anchor=west, font=\bfseries] at (-2, 1.5) {4. Numbered Process};
+        
+        \IRStep{1}{(0,0)}{Pick Document}{From collection}{infra}
+        \IRStep{2}{(0,-2.5)}{Tokenize}{BERT vocabulary}{dense}
+    \end{scope}
+
+\end{tikzpicture}

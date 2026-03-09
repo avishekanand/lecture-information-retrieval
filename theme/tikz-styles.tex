@@ -1,72 +1,262 @@
 \usepackage{tikz}
-\usetikzlibrary{positioning, shapes, arrows, shadows, fit, calc, decorations.pathreplacing}
+\usepackage{xparse}
+% =========================================================
+% Required TikZ Libraries
+% =========================================================
+\usetikzlibrary{
+    positioning,
+    fit,
+    calc,
+    arrows.meta,
+    arrows,
+    decorations.pathreplacing,
+    shapes.geometric,
+    shapes.symbols,
+    shadows
+}
 
-% Semantic Colors - One meaning per color
-\definecolor{irSparse}{HTML}{3498DB}   % Sparse/BM25: Blue
-\definecolor{irDense}{HTML}{E67E22}    % Dense/Embeddings: Orange
-\definecolor{irRerank}{HTML}{C0392B}   % Rerank/Cross-encoder: Red
-\definecolor{irHybrid}{HTML}{2ECC71}   % Hybrid/Fusion: Green
-\definecolor{irANN}{HTML}{9B59B6}      % ANN/Infra: Purple
-\definecolor{irInfra}{HTML}{58595B}    % General Infra: Dark Gray
-\definecolor{irMuted}{HTML}{D9D9D9}    % Faint Gray
-\definecolor{irAccent}{HTML}{E74C3C}   % Accent: Bright Red (same as irRerank)
-\definecolor{irPrimary}{HTML}{3498DB}  % Primary: Blue (same as irSparse)
-\definecolor{irSecondary}{HTML}{E67E22} % Secondary: Orange (same as irDense)
+% Fallback for Stealth arrows if arrows.meta has issues
+\tikzset{>=stealth}
 
-\definecolor{irPointwise}{HTML}{3498DB} % Derived from v0
-\definecolor{irPairwise}{HTML}{E74C3C}  % Derived from v0
-\definecolor{irListwise}{HTML}{1ABC9C}  % Derived from v0
+% =========================================================
+% Semantic Colors
+% =========================================================
+\definecolor{irSparse}{HTML}{3498DB}
+\definecolor{irDense}{HTML}{E67E22}
+\definecolor{irRerank}{HTML}{C0392B}
+\definecolor{irHybrid}{HTML}{2ECC71}
+\definecolor{irANN}{HTML}{9B59B6}
+\definecolor{irInfra}{HTML}{58595B}
+\definecolor{irPrimary}{HTML}{3498DB}
+\definecolor{irAccent}{HTML}{E67E22}
+\definecolor{irSecondary}{HTML}{C0392B}
 
-% Base Styles - Consistent Diagram Grammar
+% Accent can be changed globally if needed
+\colorlet{irAccent}{irDense}
+
+% =========================================================
+% Base TikZ Styles
+% =========================================================
+\tikzset{
+    >=Latex,
+    font=\small,
+    node distance=1.7cm and 2.2cm
+}
+
+% =========================================================
+% Base Box Style
+% =========================================================
 \tikzset{
     irBoxBase/.style={
-        rectangle, 
-        draw, 
-        rounded corners=2pt, 
-        minimum height=0.8cm, 
-        minimum width=2cm,
-        font=\small\sffamily,
+        draw,
+        rounded corners=2pt,
+        thick,
+        minimum height=1.2cm,
+        text width=3.5cm,
         align=center,
-        drop shadow={opacity=0.15},
-        inner sep=5pt
-    },
-    irDatabase/.style={
-        cylinder, 
-        draw, 
-        shape border rotate=90, 
-        aspect=0.25, 
-        minimum height=1.2cm, 
-        minimum width=1cm,
-        fill=irMuted!20,
-        draw=irInfra,
-        font=\tiny\sffamily,
-        align=center
-    },
-    % Semantic Variants
-    sparse/.style={irBoxBase, fill=irSparse!10, draw=irSparse},
-    dense/.style={irBoxBase, fill=irDense!10, draw=irDense},
-    rerank/.style={irBoxBase, fill=irRerank!10, draw=irRerank},
-    hybrid/.style={irBoxBase, fill=irHybrid!10, draw=irHybrid},
-    ann/.style={irBoxBase, fill=irANN!10, draw=irANN},
-    infra/.style={irBoxBase, fill=irInfra!10, draw=irInfra},
-    pointwise/.style={irBoxBase, fill=irPointwise!10, draw=irPointwise},
-    pairwise/.style={irBoxBase, fill=irPairwise!10, draw=irPairwise},
-    listwise/.style={irBoxBase, fill=irListwise!10, draw=irListwise},
-    info/.style={font=\scriptsize\itshape, text=gray},
-    % Legacy support / Utility
-    primary/.style={sparse},
-    secondary/.style={rerank},
-    accent/.style={dense},
-    muted/.style={irBoxBase, fill=irMuted!20, draw=irMuted!80!black, text=irMuted!50!black},
-    ghost/.style={irBoxBase, fill=white, draw=irMuted!50, text=irMuted, dashed, drop shadow={opacity=0}},
-    emph/.style={draw=irRerank, thick, drop shadow={shadow xshift=0mm, shadow yshift=0mm, fill=irRerank, opacity=0.3}},
-    % Arrows
-    irArrowBase/.style={->, thick, >=latex, draw=irInfra},
-    irLabel/.style={
-        font=\tiny\itshape, 
-        text=irInfra, 
-        align=center, 
-        text width=2.5cm, 
-        inner sep=3pt
+        inner sep=5pt,
+        outer sep=2pt,
+        font=\small
     }
 }
+
+% =========================================================
+% Semantic Variants
+% =========================================================
+\tikzset{
+    sparse/.style={
+        irBoxBase,
+        draw=irSparse,
+        fill=irSparse!10,
+        text=black
+    },
+    dense/.style={
+        irBoxBase,
+        draw=irDense,
+        fill=irDense!12,
+        text=black
+    },
+    rerank/.style={
+        irBoxBase,
+        draw=irRerank,
+        fill=irRerank!10,
+        text=black
+    },
+    hybrid/.style={
+        irBoxBase,
+        draw=irHybrid!70!black,
+        fill=irHybrid!12,
+        text=black
+    },
+    ann/.style={
+        irBoxBase,
+        draw=irANN,
+        fill=irANN!12,
+        text=black
+    },
+    infra/.style={
+        irBoxBase,
+        draw=irInfra,
+        fill=irInfra!10,
+        text=black
+    },
+    muted/.style={
+        irBoxBase,
+        draw=irInfra!45,
+        fill=irInfra!6,
+        text=irInfra
+    },
+    ghost/.style={
+        irBoxBase,
+        draw=irInfra!20,
+        fill=white,
+        text=irInfra!80
+    },
+    emph/.style={
+        irBoxBase,
+        draw=black,
+        fill=yellow!15,
+        line width=1.1pt,
+        text=black
+    }
+}
+
+% =========================================================
+% Labels
+% =========================================================
+\tikzset{
+    irLabel/.style={
+        font=\scriptsize,
+        text=irInfra,
+        align=center
+    },
+    irArrowLabelAbove/.style={
+        above,
+        pos=0.5,
+        font=\scriptsize,
+        text=irInfra,
+        fill=white,
+        inner sep=1pt,
+        align=center
+    },
+    irArrowLabelRight/.style={
+        right,
+        pos=0.5,
+        font=\scriptsize,
+        text=irInfra,
+        fill=white,
+        inner sep=1pt,
+        align=center
+    },
+    irArrowLabelBox/.style={
+        pos=0.55,
+        font=\scriptsize,
+        text=irInfra,
+        fill=white,
+        inner sep=1pt,
+        align=center
+    }
+}
+
+% =========================================================
+% Arrow Styles
+% =========================================================
+\tikzset{
+    irArrowBase/.style={
+        -{Stealth[length=3mm]},
+        draw=irInfra,
+        line width=0.8pt,
+        shorten >=2pt,
+        shorten <=2pt
+    },
+    irArrowMuted/.style={
+        -{Latex[length=2mm,width=1.4mm]},
+        draw=irInfra!50,
+        line width=0.7pt,
+        shorten >=2pt,
+        shorten <=2pt
+    }
+}
+
+% =========================================================
+% Group Containers
+% =========================================================
+\tikzset{
+    irGroupBase/.style={
+        draw,
+        dashed,
+        rounded corners,
+        inner sep=0.45cm
+    }
+}
+
+% =========================================================
+% Document Stack
+% =========================================================
+\tikzset{
+    irDocStack/.style={
+        irBoxBase,
+        draw=irInfra,
+        fill=white,
+        text width=2.5cm,
+        minimum height=0.85cm,
+        double copy shadow={shadow xshift=2pt, shadow yshift=-2pt}
+    }
+}
+
+% =========================================================
+% Database Shape
+% =========================================================
+\tikzset{
+    irDatabase/.style={
+        cylinder,
+        shape border rotate=90,
+        aspect=0.3,
+        draw=irInfra,
+        fill=irInfra!8,
+        minimum height=1.1cm,
+        minimum width=1.6cm,
+        align=center,
+        font=\small
+    }
+}
+
+% =========================================================
+% Telescope / Funnel Tier
+% =========================================================
+\tikzset{
+    irTelescopeBase/.style={
+        trapezium,
+        trapezium stretches body,
+        trapezium left angle=120,
+        trapezium right angle=120,
+        draw,
+        minimum height=0.7cm,
+        inner sep=2pt,
+        align=center,
+        font=\small
+    }
+}
+
+% =========================================================
+% Legacy & LTR Compatibility
+% =========================================================
+% These are kept to avoid breaking existing lecture slides (e.g. 06_ltr.tex)
+\definecolor{irPointwise}{HTML}{3498DB}
+\definecolor{irPairwise}{HTML}{C0392B}
+\definecolor{irListwise}{HTML}{1ABC9C}
+
+\tikzset{
+    pointwise/.style={sparse},
+    pairwise/.style={rerank},
+    listwise/.style={hybrid, draw=irListwise, fill=irListwise!10},
+    primary/.style={sparse},
+    accent/.style={dense},
+    secondary/.style={rerank},
+    info/.style={font=\scriptsize\itshape, text=irInfra!80},
+    % Helper for legacy arrows
+    arr/.style={irArrowBase}
+}
+
+% Additional missing colors from legacy
+\definecolor{irMuted}{HTML}{D9D9D9}

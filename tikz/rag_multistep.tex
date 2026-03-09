@@ -14,5 +14,5 @@
 \draw[arr] (r2) -| (ans);
 \draw[arr] (think) -- (ans);
 
-\draw[arr] (ans) |- (think) node[pos=0.25, font=\scriptsize, left] {stop?};
+\draw[arr, rounded corners] (ans.south) -- ++(0,-0.4) -| ++(-6.5,0) |- (think.west) node[pos=0.25, font=\scriptsize, left] {stop?};
 \end{tikzpicture}

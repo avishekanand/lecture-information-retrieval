@@ -1,87 +1,185 @@
 \input{theme/tikz-styles.tex}
 
+% =========================================================
 % Stage Badge System
-% \irStage{StageName} - renders a small badge in the top-right corner
-\newcommand{\irStage}[1]{
+% =========================================================
+% \irStage{StageName}
+\newcommand{\irStage}[1]{%
     \begin{tikzpicture}[remember picture, overlay]
-        \node[anchor=north east, 
-              fill=irInfra!10, 
-              text=irInfra, 
-              font=\tiny\bfseries, 
-              inner sep=3pt, 
-              rounded corners=1pt,
-              yshift=-0.5cm, 
-              xshift=-0.5cm] at (current page.north east) {#1};
-    \end{tikzpicture}
+        \node[
+            anchor=north east,
+            fill=irInfra!10,
+            text=irInfra,
+            font=\tiny\bfseries,
+            inner sep=3pt,
+            rounded corners=1pt,
+            yshift=-0.5cm,
+            xshift=-0.5cm
+        ] at (current page.north east) {#1};
+    \end{tikzpicture}%
 }
 
+% =========================================================
 % Math Highlighting
-% \mathhl[color]{content} - highlights math content
-\newcommand{\mathhl}[2][irDense!30]{
-    \colorbox{#1}{$\displaystyle #2$}
+% =========================================================
+% \mathhl[color]{content}
+\newcommand{\mathhl}[2][irDense!30]{%
+    \colorbox{#1}{$\displaystyle #2$}%
 }
 
+% =========================================================
 % Math Vectors
+% =========================================================
 \newcommand{\vs}{\mathbf{s}}
 
-% Primitives
-% \IRBox{id}{at}{title}{subtitle}{variant}
-\newcommand{\IRBox}[5]{
-    \node[#5] (#1) at #2 {
-        \begin{tabular}{c}
-            #3 \\
-            \if\relax\detokenize{#4}\relax \else \tiny #4 \fi
-        \end{tabular}
-    };
+% =========================================================
+% Core Box Primitives
+% =========================================================
+% \IRBox[width]{id}{at}{title}{subtitle}{variant}
+% Default width chosen for lecture slides; override when needed.
+% \IRBox[width]{id}{at}{title}{subtitle}{variant}[extra options]
+\DeclareDocumentCommand{\IRBox}{O{3.5cm} m m m m m O{}}{%
+    \node[#6, text width=#1, #7] (#2) at #3 {%
+        \textbf{#4}%
+        \if\relax\detokenize{#5}\relax
+        \else\\[-1mm]\scriptsize #5%
+        \fi
+    };%
 }
 
+% \IRWideBox{id}{at}{width}{title}{subtitle}{variant}
+\newcommand{\IRWideBox}[6]{%
+    \node[#6, text width=#3] (#1) at #2 {%
+        \textbf{#4}%
+        \if\relax\detokenize{#5}\relax
+        \else\\[-1mm]\scriptsize #5%
+        \fi
+    };%
+}
+
+% =========================================================
+% Arrow Primitives
+% =========================================================
+% Safe default: left-to-right flow
 % \IRArrow{from}{to}{label}
-\newcommand{\IRArrow}[3]{
-    \draw[irArrowBase] (#1) -- node[above, sloped, irLabel, pos=0.5] {#3} (#2);
+\newcommand{\IRArrow}[3]{%
+    \draw[irArrowBase] (#1.east) -- node[irArrowLabelAbove] {#3} (#2.west);%
 }
 
-% \IRArrowSlanted{from}{to}{label}{pos}{width}
-\newcommand{\IRArrowSlanted}[5]{
-    \draw[irArrowBase] (#1) -- node[above, sloped, irLabel, pos=#4, text width=#5] {#3} (#2);
+% Explicit left-to-right
+% \IRArrowLR{from}{to}{label}
+\newcommand{\IRArrowLR}[3]{%
+    \draw[irArrowBase] (#1.east) -- node[irArrowLabelAbove] {#3} (#2.west);%
 }
 
+% Explicit top-to-bottom
+% \IRArrowTB{from}{to}{label}
+\newcommand{\IRArrowTB}[3]{%
+    \draw[irArrowBase] (#1.south) -- node[irArrowLabelRight] {#3} (#2.north);%
+}
+
+% Fully explicit anchor-to-anchor path
+% \IRArrowPath{from anchor}{to anchor}{label}
+% Example: \IRArrowPath{a.east}{b.north}{score}
+\newcommand{\IRArrowPath}[3]{%
+    \draw[irArrowBase] (#1) -- node[irArrowLabelAbove] {#3} (#2);%
+}
+
+% Orthogonal elbow path
+% \IRArrowElbow{from anchor}{to anchor}{label}
+% Example: \IRArrowElbow{a.east}{b.north}{feedback}
+\newcommand{\IRArrowElbow}[3]{%
+    \draw[irArrowBase] (#1) -| node[irArrowLabelBox] {#3} (#2);%
+}
+
+% Slanted arrow for special cases only
+% \IRArrowSlanted{from anchor}{to anchor}{label}{pos}{width}
+\newcommand{\IRArrowSlanted}[5]{%
+    \draw[irArrowBase] (#1) -- node[above, sloped, irLabel, pos=#4, text width=#5, fill=white, inner sep=1pt] {#3} (#2);%
+}
+
+% =========================================================
+% Accent Elements
+% =========================================================
 % \IRBadge{at}{text}
-\newcommand{\IRBadge}[2]{
-    \node[draw=irAccent, fill=irAccent!20, rounded corners=1pt, font=\tiny\bfseries, inner sep=2pt] at #1 {#2};
+\newcommand{\IRBadge}[2]{%
+    \node[
+        draw=irAccent,
+        fill=irAccent!20,
+        rounded corners=1pt,
+        font=\tiny\bfseries,
+        inner sep=2pt
+    ] at #1 {#2};%
 }
 
+% =========================================================
+% Grouping
+% =========================================================
 % \IRGroup{fit nodes}{label}{variant}
-\newcommand{\IRGroup}[3]{
-    \node[draw, dashed, rounded corners, inner sep=0.3cm, #3, fit=#1] (group) {};
-    \node[anchor=north west, font=\tiny\bfseries, #3] at (group.north west) {#2};
+% Example: \IRGroup{(a)(b)(c)}{First-stage retrieval}{muted}
+\newcommand{\IRGroup}[3]{%
+    \node[
+        irGroupBase,
+        #3,
+        fit=#1
+    ] (group) {};
+    \node[
+        anchor=north west,
+        font=\tiny\bfseries,
+        #3
+    ] at ([xshift=2pt,yshift=-2pt] group.north west) {#2};%
 }
 
+% =========================================================
+% Domain-Specific Shapes
+% =========================================================
 % \IRDocStack{id}{at}{label}
-\newcommand{\IRDocStack}[3]{
-    \node[primary, double copy shadow={shadow xshift=2pt, shadow yshift=-2pt}] (#1) at #2 {#3};
+\newcommand{\IRDocStack}[3]{%
+    \node[irDocStack] (#1) at #2 {#3};%
 }
 
 % \IRDatabase{id}{at}{label}
-\newcommand{\IRDatabase}[3]{
-    \node[irDatabase] (#1) at #2 {#3};
+\newcommand{\IRDatabase}[3]{%
+    \node[irDatabase] (#1) at #2 {#3};%
 }
 
+% =========================================================
 % Layout Helpers
+% =========================================================
 % \IRPipelineTier{id}{at}{text}{label}{variant}
-\newcommand{\IRPipelineTier}[5]{
-    \IRBox{#1}{#2}{#3}{}{#5}
-    \node[anchor=west, irLabel, xshift=0.5cm] at (#1.east) {#4};
+\newcommand{\IRPipelineTier}[5]{%
+    \IRBox{#1}{#2}{#3}{}{#5}[]
+    \node[anchor=west, irLabel, xshift=0.5cm] at (#1.east) {#4};%
 }
 
 % \IRTelescopeTier{id}{at}{width}{text}{variant}
-\newcommand{\IRTelescopeTier}[5]{
-    \node[trapezium, trapezium stretches body, trapezium left angle=120, trapezium right angle=120, 
-          draw, #5, minimum width=#3, minimum height=0.7cm, inner sep=2pt] (#1) at #2 {#4};
+\newcommand{\IRTelescopeTier}[5]{%
+    \node[
+        irTelescopeBase,
+        #5,
+        minimum width=#3
+    ] (#1) at #2 {#4};%
 }
 
-% \IRStep{id}{at}{text}{label}{variant}
-\newcommand{\IRStep}[5]{
-    \node[circle, draw, fill=irAccent!20, font=\tiny\bfseries, inner sep=2pt] (#1_num) at #2 {#1};
-    \IRBox{#1}{($#2 + (3, 0)$)}{#3}{#4}{#5}
-    \draw[irArrowBase, thin] (#1_num.east) -- (#1.west);
+% \IRStep{id}{at}{title}{subtitle}{variant}
+% Creates a numbered step badge left of a box.
+\newcommand{\IRStep}[5]{%
+    \node[
+        circle,
+        draw=irAccent,
+        fill=irAccent!20,
+        font=\tiny\bfseries,
+        inner sep=2pt
+    ] (#1_num) at #2 {#1};
+    \node[
+        #5,
+        text width=3.5cm,
+        right=1.5cm of #1_num
+    ] (#1) {%
+        \textbf{#3}%
+        \if\relax\detokenize{#4}\relax
+        \else\\[-1mm]\scriptsize #4%
+        \fi
+    };
+    \draw[irArrowBase, thin] (#1_num.east) -- (#1.west);%
 }
