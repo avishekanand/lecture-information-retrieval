@@ -1,5 +1,5 @@
 \begin{tikzpicture}[
-  box/.style={draw, rounded corners, thick, align=center, font=\small, minimum width=3.9cm, minimum height=0.8cm},
+  box/.style={draw, rounded corners, thick, align=center, font=\small, minimum width=3.2cm, minimum height=0.8cm},
   arr/.style={-{Stealth[length=2.5mm]}, thick}
 ]
 \node[box, fill=gray!12] (api) {RAG API / UI};
@@ -18,5 +18,5 @@
 \draw[arr] (llm) -- (obs);
 \draw[arr] (obs) -- (eval);
 
-\draw[arr, rounded corners] (eval.south) -- ++(0,-0.4) -| ++(-5.5,0) |- (idx.west) node[pos=0.25, font=\scriptsize, left] {tuning};
+\draw[arr, rounded corners] (eval.south) -- ++(0,-0.4) -| ++(-4.8,0) |- (idx.west) node[pos=0.25, font=\scriptsize, left] {tuning};
 \end{tikzpicture}

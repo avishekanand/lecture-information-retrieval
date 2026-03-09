@@ -1,0 +1,108 @@
+\documentclass[aspectratio=169]{beamer}
+\usetheme{TUDelft}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{backgrounds, fit, positioning, calc, arrows.meta, decorations.pathreplacing}
+\usepackage{fontawesome5}
+\usepackage{pifont}
+
+% Standard IR Vector Macros
+\newcommand{\vd}{\mathbf{d}}
+\newcommand{\vq}{\mathbf{q}}
+\newcommand{\vp}{\mathbf{p}}
+\newcommand{\vw}{\mathbf{w}}
+\newcommand{\vx}{\mathbf{x}}
+\newcommand{\vy}{\mathbf{y}}
+
+% Import theme macros
+\input{theme/macros.tex}
+
+\newcommand{\galleryslide}[1]{
+  \begin{frame}{\texttt{\detokenize{#1}}}
+    \centering
+    \input{tikz/#1}
+  \end{frame}
+}
+
+\title{Full TikZ Figure Gallery}
+\author{TikZ Migration System}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}[plain]
+  \titlepage
+\end{frame}
+
+\galleryslide{accuracy_speed_tradeoff.tex}
+\galleryslide{bert_cls_aggregation.tex}
+\galleryslide{bert_input_process.tex}
+\galleryslide{bert_token_representations.tex}
+\galleryslide{bm25_k1_comparison.tex}
+\galleryslide{boolean_query_tree.tex}
+\galleryslide{chunking_tradeoff.tex}
+\galleryslide{classical_modern_pipeline.tex}
+\galleryslide{colbert_late_interaction.tex}
+\galleryslide{complete_retrieval_stack.tex}
+\galleryslide{contriever_training.tex}
+\galleryslide{cross_encoder_architecture.tex}
+\galleryslide{cross_vs_bi_encoder.tex}
+\galleryslide{dense_retrieval_pipeline.tex}
+\galleryslide{embedding_matrix.tex}
+\galleryslide{evolving_encoder.tex}
+\galleryslide{feature_vector.tex}
+\galleryslide{hard_negatives_viz.tex}
+\galleryslide{hyde_pipeline.tex}
+\galleryslide{indexing_controls.tex}
+\galleryslide{infonce_batch_approx.tex}
+\galleryslide{infonce_classification.tex}
+\galleryslide{inverted_index_structure.tex}
+\galleryslide{landscape.tex}
+\galleryslide{listwise_visualization.tex}
+\galleryslide{lm_distribution_viz.tex}
+\galleryslide{ltr_pipeline.tex}
+\galleryslide{modern_interface.tex}
+\galleryslide{modern_retrieval_stack.tex}
+\galleryslide{old_interface.tex}
+\galleryslide{pairwise_concept.tex}
+\galleryslide{preprocessing_pipeline.tex}
+\galleryslide{query_expansion_timeline.tex}
+\galleryslide{rag_dynamic_search.tex}
+\galleryslide{rag_failure_taxonomy.tex}
+\galleryslide{rag_late_chunking.tex}
+\galleryslide{rag_multistep.tex}
+\galleryslide{rag_production_arch.tex}
+\galleryslide{rag_reasoning_chain.tex}
+\galleryslide{rag_search.tex}
+\galleryslide{rag_selfrag.tex}
+\galleryslide{rag_system_view.tex}
+\galleryslide{representation_gap.tex}
+\galleryslide{representation_spectrum.tex}
+\galleryslide{retrieval_reasoning.tex}
+\galleryslide{retrieval_reasoning_flow.tex}
+\galleryslide{retrieval_reasoning_standalone.tex}
+\galleryslide{rocchio_geometric.tex}
+\galleryslide{rrf_visualization.tex}
+\galleryslide{score_aggregation.tex}
+\galleryslide{self_attention_example.tex}
+\galleryslide{self_attention_logic.tex}
+\galleryslide{semantic_gap_mouse.tex}
+\galleryslide{sparse_matrix.tex}
+\galleryslide{sparse_vs_dense_representation.tex}
+\galleryslide{static_vs_contextualized.tex}
+\galleryslide{tf_saturation_comparison.tex}
+\galleryslide{traditional_search.tex}
+\galleryslide{training_pipeline.tex}
+\galleryslide{transformer_encoder_block.tex}
+\galleryslide{two_stage_pipeline.tex}
+\galleryslide{unified_view.tex}
+\galleryslide{vector_projection.tex}
+\galleryslide{vsm_geometric_view.tex}
+\galleryslide{why_indexing.tex}
+\galleryslide{word2vec_skipgram.tex}
+\galleryslide{wordpiece_example.tex}
+
+\end{document}

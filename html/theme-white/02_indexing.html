@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Information Retrieval Slides</title>
+<link rel="stylesheet" href="node_modules/reveal.js/dist/reveal.css">
+<link rel="stylesheet" href="node_modules/reveal.js/dist/theme/serif.css">
+<link rel="stylesheet" href="common.css">
+<style>
+  .reveal h1 { font-size: 1.4em !important; }
+  .reveal h2 { font-size: 1.0em !important; color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 8px; }
+  .reveal h3 { font-size: 0.75em !important; }
+  
+  .nav-hint { 
+    position: fixed; bottom: 8px; left: 8px; z-index: 99; 
+    font-size: 8px; color: #aaa; font-family: sans-serif;
+    background: rgba(255,255,255,0.8); padding: 4px; border-radius: 4px;
+  }
+  .nav-hint a { color: #3498db; text-decoration: none; font-weight: bold; }
+</style>
+</head>
+<body>
+<div class="nav-hint">
+    <a href="index.html">⌂ Index</a> | 
+    Shift + ➔ Next | Shift + ⬅ Prev
+</div>
+<div class="reveal">
+  <div class="slides">
+    <section>
+  <section>
+    <h2>The Inverted Index: Still Relevant in 2024</h2>
+    <div class="content"><div class="block"><h3>What Powers These Systems?</h3><div class="block-content"><ul><li>Google Search</li><li>Elasticsearch / OpenSearch</li><li>Database full-text search (PostgreSQL, MySQL)</li><li>RAG sparse retrieval component</li></ul>
+Answer: <strong>Inverted indexes</strong></div></div>
+
+
+
+
+<strong>Why still relevant in the age of neural networks?</strong>
+<ol><li><strong>Exact matching:</strong> Find "iPhone 15 Pro Max" precisely</li><li><strong>Speed:</strong> 5-10ms queries on millions of documents</li><li><strong>Explainability:</strong> Can see which terms matched</li><li><strong>Hybrid search:</strong> Complements dense retrieval</li></ol></div>
+  </section>
+  <section>
+    <h2>Inverted Index: Core Structure</h2>
+    <div class="content"><strong>Documents:</strong>
+<ul><li>Doc1: ``neural networks for deep learning''</li><li>Doc2: ``deep learning applications''</li><li>Doc3: ``neural machine translation''</li></ul>
+
+
+
+
+
+
+
+
+
+<strong>Query:</strong> ``neural learning'' 
+<strong>Process:</strong> Lookup ``neural'' $\rightarrow$ [1, 3], lookup ``learning'' $\rightarrow$ [1, 2] 
+<strong>Intersection:</strong> [1] $\leftarrow$ Doc 1 contains both terms</div>
+  </section>
+  <section>
+    <h2>Inverted Index: Core Structure (Figure)</h2>
+    <div class="content"><div class="h-center"><img class="tikz-img" src="assets/inverted_index_structure.png" alt="inverted_index_structure"></div></div>
+  </section>
+  <section>
+    <h2>Inverted Index as a Sparse Matrix</h2>
+    <div class="content"><div class="block"><h3>Vector Space Interpretation</h3><div class="block-content"><ul><li>Documents = Rows ($D$)</li><li>Terms = Columns ($V$)</li><li>Values = Weights (TF-IDF, BM25)</li></ul></div></div>
+
+
+
+
+
+
+<div class="example-block"><h3>Key Insight</h3><div class="block-content">The Inverted Index is a <strong>Compressed Sparse Column (CSC)</strong> storage of the Document-Term matrix. We avoid storing zeros!</div></div></div>
+  </section>
+  <section>
+    <h2>Inverted Index as a Sparse Matrix (Figure)</h2>
+    <div class="content"><div class="h-center"><img class="tikz-img" src="assets/sparse_matrix.png" alt="sparse_matrix"></div></div>
+  </section>
+  <section>
+    <h2>Why Inverted Index is Fast</h2>
+    <div class="split-layout">
+      <div class="half"><h3></h3><strong>Naive Approach:</strong>
+<ol><li>Scan all documents</li><li>Check if query terms present</li><li>Rank matches</li></ol>
+
+
+
+
+<strong>Complexity:</strong> $O(N \cdot M)$
+<ul><li>$N$ = number of documents</li><li>$M$ = avg document length</li></ul>
+
+
+
+For 10M docs, 500 words each: 
+5 <strong>billion</strong> comparisons!</div>
+      <div class="half"><h3></h3><strong>Inverted Index:</strong>
+<ol><li>Lookup term in dictionary</li><li>Fetch posting list</li><li>Merge posting lists</li></ol>
+
+
+
+<strong>Complexity:</strong> $O(k \cdot p)$
+<ul><li>$k$ = query terms (typically 2-5)</li><li>$p$ = avg posting list size</li></ul>
+
+
+
+For query ``neural learning'': 
+Lookup 2 terms, merge ~1000 docs 
+$\rightarrow$ <strong>1000$\times$ faster!</strong></div>
+    </div>
+  </section>
+  <section>
+    <h2>Posting List Formats: Evolution</h2>
+    <div class="content"><div class="block"><h3>Level 1: DocID Only (Boolean Retrieval)</h3><div class="block-content"><code>neural: [1, 3, 5, 12, 27, 89]</code>
+<ul><li>Supports: AND, OR, NOT queries</li><li>Cannot: Rank by relevance</li></ul></div></div>
+
+
+<div class="block"><h3>Level 2: With Frequencies (Ranked Retrieval)</h3><div class="block-content"><code>neural: [(1, tf=2), (3, tf=1), (5, tf=3), (12, tf=1), ...]</code>
+<ul><li>Supports: TF-IDF, BM25 scoring</li><li><strong>This is what we use in practice</strong></li></ul></div></div>
+
+
+<div class="block"><h3>Level 3: With Positions (Phrase Queries)</h3><div class="block-content"><code>neural: [(1, tf=2, pos=[5,42]), (3, tf=1, pos=[8]), ...]</code>
+<ul><li>Supports: ``neural networks'' (exact phrase)</li><li>Enables: Proximity scoring</li><li>Cost: 2-3$\times$ larger index</li></ul></div></div></div>
+  </section>
+  <section>
+    <h2>Score Aggregation: Connecting Indexing and VSM</h2>
+    <div class="content"><div class="block"><h3>Vector Space Model Scoring</h3><div class="block-content">\[ (q, d) = _{t  q  d} (t, q)  (t, d) \]</div></div>
+
+
+<strong>How it works in the engine:</strong>
+<ol><li>Initialize <strong>Accumulators</strong> (Doc $\rightarrow$ Score)</li><li>For each term $t$ in query:</li><li>Traverse postings of $t$</li><li>Add contribution to Doc score</li></ol></div>
+  </section>
+  <section>
+    <h2>Text Preprocessing: Key Decisions</h2>
+    <div class="split-layout">
+      <div class="half"><h3></h3><strong>Stemming (Porter):</strong>
+<ul><li>running $\rightarrow$ run</li><li>university $\rightarrow$ univers</li><li>Fast, crude</li></ul></div>
+      <div class="half"><h3></h3><strong>Lemmatization:</strong>
+<ul><li>running $\rightarrow$ run</li><li>better $\rightarrow$ good</li><li>Accurate, slower</li></ul></div>
+    </div>
+  </section>
+  <section>
+    <h2>Stop Words: Modern Perspective</h2>
+    <div class="split-layout">
+      <div class="half"><h3></h3><strong>Traditional View (pre-2010):</strong>
+<ul><li>Remove common words: 
+    the, a, an, is, are, of, in, ...</li><li>Smaller index</li><li>Less noise</li></ul>
+
+
+
+<strong>Problem:</strong>
+<ul><li>``to be or not to be'' $\rightarrow$ ``''</li><li>``The Who'' (band) $\rightarrow$ ``Who''</li><li>Loses phrase meaning</li></ul></div>
+      <div class="half"><h3></h3><strong>Modern View (2010+):</strong>
+<ul><li><strong>Keep stop words</strong></li><li>Storage is cheap</li><li>Important for phrases</li><li>Neural models need them</li></ul>
+
+
+
+<strong>When to remove:</strong>
+<ul><li>Very large scale (web search)</li><li>Memory-constrained devices</li><li>Proven unnecessary for domain</li></ul></div>
+    </div>
+  </section>
+  <section>
+    <h2>Preprocessing Depends on Representation</h2>
+    <div class="content">[T]
+
+<div class="block"><h3>Sparse Retrieval</h3><div class="block-content"><ul><li><strong>Tokenization:</strong> Defines vocabulary entries.</li><li><strong>Stemming:</strong> Useful for term matching (e.g., learn/learning).</li><li>[regular] <strong>Stopwords:</strong> Optional (to save space).</li></ul></div></div>
+
+
+
+
+<div class="block"><h3>Dense Retrieval</h3><div class="block-content"><ul><li><strong>Tokenizer:</strong> Fixed by the model (BPE, WordPiece).</li><li><strong>No Stemming:</strong> Models understand word variants.</li><li><strong>Truncation:</strong> Context window limits matter.</li></ul></div></div></div>
+  </section>
+  <section>
+    <h2>Preprocessing Depends on Representation (Figure)</h2>
+    <div class="content"><div class="h-center"><img class="tikz-img" src="assets/wordpiece_example.png" alt="wordpiece_example"></div></div>
+  </section>
+  <section>
+    <h2>Index Compression: Why It Matters</h2>
+    <div class="content"><div class="block"><h3>The Bottleneck</h3><div class="block-content">Modern CPUs: 3+ GHz, billions of operations/second 
+Modern SSDs: 500 MB/s read speed
+
+
+
+<strong>Decompression:</strong> 2-5 GB/s 
+<strong>Reading uncompressed:</strong> 0.5 GB/s
+
+
+
+$\rightarrow$ <strong>Reading compressed data is faster!</strong></div></div>
+
+
+
+
+<div class="example-block"><h3>Real Impact</h3><div class="block-content"><strong>Collection:</strong> 10M documents, 100 words each 
+<strong>Uncompressed index:</strong> 10 GB 
+<strong>Compressed (5$\times$):</strong> 2 GB
+
+
+
+Benefits:
+<ul><li>More index fits in RAM (faster queries)</li><li>Lower storage costs</li><li>Faster I/O (disk $\rightarrow$ memory)</li></ul></div></div></div>
+  </section>
+  <section>
+    <h2>Gap Encoding: The Key Insight</h2>
+    <div class="content"><strong>Original posting list (docIDs):</strong>
+
+[5, 127, 214, 215, 512, 1024, 2048, 10239]
+
+
+
+
+<strong>Observation:</strong> Most gaps between consecutive docIDs are small
+
+
+
+<strong>Store gaps instead:</strong>
+
+[5, 122, 87, 1, 297, 512, 1024, 8191]
+
+
+
+
+<div class="block"><h3>Why This Helps</h3><div class="block-content"><strong>Original:</strong> Numbers range 5-10,239 $\rightarrow$ need 14 bits each 
+<strong>Gaps:</strong> Most numbers small ($<$ 256) $\rightarrow$ need fewer bits
+
+
+
+Small numbers compress much better!</div></div>
+
+
+
+
+<div class="alert-block"><h3>Decoding</h3><div class="block-content">Sequential only: $\text{docID}_i = \text{docID}_{i-1} + \text{gap}_i$</div></div></div>
+  </section>
+  <section>
+    <h2>Variable Byte (VB) Encoding</h2>
+    <div class="content"><div class="block"><h3>Core Idea</h3><div class="block-content">Use 1 byte for small numbers, multiple bytes for large numbers
+<ul><li>7 bits for data</li><li>1 bit (MSB) for continuation: 1 = last byte, 0 = more bytes follow</li></ul></div></div>
+
+
+
+
+
+
+<table><tr><th><strong>Number</strong></th><th><strong>Binary</strong></th><th><strong>VB Encoding</strong></th></tr><tr><td>5</td><td>101</td><td><code>1_0000101</code> (1 byte)</td></tr><tr><td>122</td><td>1111010</td><td><code>1_1111010</code> (1 byte)</td></tr><tr><td>824</td><td>1100111000</td><td><code>0_0000110 1_0111000</code> (2 bytes)</td></tr></table>
+
+
+
+
+<strong>Example compression:</strong>
+<ul><li>Gaps: [5, 122, 87, 1] $\rightarrow$ 4 bytes (VB encoded)</li><li>Uncompressed: 16 bytes (4 $\times$ 32-bit integers)</li><li><strong>Compression ratio: 4$\times$</strong></li></ul></div>
+  </section>
+  <section>
+    <h2>VB Encoding: Step-by-Step Example</h2>
+    <div class="content"><strong>Encode 824:</strong>
+
+
+
+<ol><li>Binary representation: 1100111000 (10 bits needed)</li><li>Needs 2 bytes (10 $>$ 7)</li><li>Split into 7-bit chunks from right: 
+    <ul><li>Lower 7 bits: 0111000</li><li>Upper bits: 0000110</li></ul></li><li>First byte (higher bits): <code>0_0000110</code> (continuation = 0)</li><li>Second byte (lower bits): <code>1_0111000</code> (continuation = 1, last byte)</li><li>Result: <code>00000110 10111000</code></li></ol>
+
+
+
+<strong>Decode:</strong>
+<ol><li>Read bytes until continuation bit = 1</li><li>Strip continuation bits: <code>0000110 0111000</code></li><li>Concatenate: 0000110_0111000 = 1100111000 = 824</li></ol></div>
+  </section>
+  <section>
+    <h2>Compression in Practice</h2>
+    <div class="content"><div class="block"><h3>Typical Results</h3><div class="block-content"><ul><li>VB encoding: 3-4$\times$ compression</li><li>More sophisticated methods (PForDelta): 6-10$\times$ compression</li><li>Dictionary compression (front coding): 30-50</li></ul></div></div>
+
+
+
+
+<div class="example-block"><h3>Production Systems</h3><div class="block-content"><ul><li><strong>Lucene/Elasticsearch:</strong> Uses FOR (Frame of Reference) with SIMD</li><li><strong>Google:</strong> Custom compression optimized for their hardware</li><li><strong>Your projects:</strong> VB encoding is good enough (simple, effective)</li></ul></div></div>
+
+
+
+
+<div class="alert-block"><h3>Key Takeaway</h3><div class="block-content">Compression is not optional --- it makes systems <strong>faster</strong> and cheaper</div></div></div>
+  </section>
+  <section>
+    <h2>PyTerrier Demo: Sparse Indexing</h2>
+    <div class="content">[language=Python, basicstyle=]
+import pyterrier as pt
+pt.init()
+
+# Load dataset
+dataset = pt.get_dataset('irds:vaswani')
+
+# Index documents (builds inverted index with compression)
+indexer = pt.IterDictIndexer("./vaswani_index", overwrite=True)
+index_ref = indexer.index(dataset.get_corpus_iter())
+print("Indexing complete!")
+
+# Build retriever (uses BM25 scoring)
+bm25 = pt.BatchRetrieve(index_ref, wmodel="BM25")
+
+# Search
+results = bm25.search("aerodynamic flow over wings")
+print(results[['docno', 'score', 'rank']].head())
+
+# Evaluate on full test set
+evaluation = pt.Experiment(
+    [bm25],
+    dataset.get_topics(),
+    dataset.get_qrels(),
+    eval_metrics=["map", "ndcg_cut_10", "P_10"]
+)
+print(evaluation)
+#    name       map  ndcg_cut_10      P_10
+# 0  BM25  0.234567     0.456789  0.345678
+
+
+<strong>This is production-ready sparse retrieval!</strong></div>
+  </section>
+</section>
+<section>
+  <section>
+    <h2>The Shift to Dense Vectors</h2>
+    <div class="split-layout">
+      <div class="half"><h3></h3><div class="block"><h3>Sparse (BM25)</h3><div class="block-content"><strong>Doc:</strong> ``car problems''
+
+
+
+<strong>Representation:</strong>
+<ul><li>Dimensions: 30,000 (vocab)</li><li>car: 1</li><li>problems: 1</li><li>All else: 0</li><li><strong>99.99% zeros</strong></li></ul>
+
+
+
+<strong>Limitation:</strong> 
+Misses ``automobile issues''</div></div></div>
+      <div class="half"><h3></h3><div class="block"><h3>Dense (Neural)</h3><div class="block-content"><strong>Doc:</strong> ``car problems''
+
+
+
+<strong>Representation:</strong>
+<ul><li>Dimensions: 768</li><li>{[0.23, -0.41, 0.87, ]}</li><li>All non-zero</li><li><strong>100% dense</strong></li></ul>
+
+
+
+<strong>Advantage:</strong> 
+Matches ``automobile issues'' 
+(similar embedding!)</div></div></div>
+    </div>
+  </section>
+  <section>
+    <h2>The ANN Search Problem</h2>
+    <div class="content"><div class="block"><h3>Task</h3><div class="block-content"><strong>Given:</strong>
+<ul><li>Collection of $N$ vectors: $\{\vec{d}_1, \vec{d}_2, \ldots, \vec{d}_N\}$</li><li>Query vector: $\vec{q}$</li></ul>
+
+<strong>Find:</strong> $k$ vectors most similar to $\vec{q}$ (typically cosine similarity)</div></div>
+
+
+
+
+<div class="alert-block"><h3>Naive Solution: Exact Search</h3><div class="block-content">Compare query to <strong>all</strong> $N$ vectors: $O(N \cdot d)$
+
+
+
+For $N = 10^9$ docs, $d = 768$ dimensions: 
+768 billion operations $\rightarrow$ <strong>too slow!</strong> ($>$1 second even on GPU)</div></div>
+
+
+
+
+<div class="example-block"><h3>Solution: Approximate Nearest Neighbor (ANN)</h3><div class="block-content">Trade exactness for speed: find <em>approximately</em> top-$k$ 
+Typical accuracy: 90-99% recall (good enough for IR!)</div></div></div>
+  </section>
+  <section>
+    <h2>ANN: Accuracy-Speed Trade-off</h2>
+    <div class="content"><strong>Typical operating points:</strong>
+<ul><li><strong>High quality:</strong> 95-99% recall @ 100-500 QPS (production RAG)</li><li><strong>Balanced:</strong> 90-95% recall @ 500-2000 QPS (most use cases)</li><li><strong>Fast:</strong> 80-90% recall @ 2000-10,000 QPS (first-stage retrieval)</li></ul></div>
+  </section>
+  <section>
+    <h2>ANN: Accuracy-Speed Trade-off (Figure)</h2>
+    <div class="content"><div class="h-center"><img class="tikz-img" src="assets/accuracy_speed_tradeoff.png" alt="accuracy_speed_tradeoff"></div></div>
+  </section>
+  <section>
+    <h2>From Text to Index: A Unified View</h2>
+    <div class="content"><div class="example-block"><h3>Key Distinction</h3><div class="block-content"><strong>Sparse:</strong> Matches exact characters (lexical). 
+<strong>Dense:</strong> Matches numerical meaning (semantic).</div></div></div>
+  </section>
+  <section>
+    <h2>From Text to Index: A Unified View (Figure)</h2>
+    <div class="content"><div class="h-center"><img class="tikz-img" src="assets/unified_view.png" alt="unified_view"></div></div>
+  </section>
+  <section>
+    <h2>The Standard ANN Approach: IVF + PQ</h2>
+    <div class="content"><ol><li><strong>Clustering-Based (IVF)</strong>
+    <ul><li>Cluster vectors with k-means</li><li>Search only in nearest clusters</li><li>Fast, scalable</li><li>Lower accuracy without tuning</li></ul></li><li><strong>Product Quantization (PQ)</strong>
+    <ul><li>Compress vectors aggressively (32$\times$)</li><li>Approximate distances in compressed space</li><li>Very memory-efficient</li><li>Moderate accuracy loss</li></ul></li><li><strong>Combined (IVF + PQ)</strong>
+    <ul><li>Use clustering to narrow search area</li><li>Use compression to fit index in RAM and speed up distance calculation</li><li><strong>The industry standard for large-scale RAG</strong></li></ul></li></ol></div>
+  </section>
+  <section>
+    <h2>IVF: Inverted File Index (for Vectors!)</h2>
+    <div class="content"><div class="block"><h3>Core Idea</h3><div class="block-content">Cluster vectors, then search only in nearest clusters</div></div></div>
+  </section>
+  <section>
+    <h2>IVF: Inverted File Index (for Vectors!) (Figure)</h2>
+    <div class="content"><div class="h-center"><img class="tikz-img" src="assets/vector_projection.png" alt="vector_projection"></div></div>
+  </section>
+  <section>
+    <h2>IVF: Construction and Search</h2>
+    <div class="content"><div class="block"><h3>Construction</h3><div class="block-content">[1]
+ Run k-means on all vectors $\rightarrow$ get $k$ cluster centers (e.g., $k=1000$)
+ Assign each vector to its nearest cluster center
+ Build inverted lists: cluster $i$ $\rightarrow$ [vector IDs in cluster $i$]</div></div>
+
+
+
+
+<div class="block"><h3>Search</h3><div class="block-content">[1]
+ <strong>Input:</strong> Query $\vec{q}$, $n_{\text{probe}}$ (clusters to search), $k$
+ Compute distance from $\vec{q}$ to all cluster centers
+ Select $n_{\text{probe}}$ nearest cluster centers
+ $\text{candidates} \gets []$
+{each selected cluster}
+     Fetch all vectors in cluster
+     Compute exact distances to $\vec{q}$
+     Add to candidates
+
+ Sort candidates by distance, return top-$k$</div></div>
+
+
+
+
+<strong>Key parameter:</strong> $n_{\text{probe}}$ (1 = fast/low recall, 100 = slow/high recall)</div>
+  </section>
+  <section>
+    <h2>Product Quantization: Compression</h2>
+    <div class="content"><div class="block"><h3>Goal</h3><div class="block-content">Compress 768-dim vector (3072 bytes) to 96 bytes (32$\times$ compression!)</div></div>
+
+
+
+
+<strong>Method:</strong>
+<ol><li><strong>Split</strong> each vector into $m$ subvectors (e.g., $m=96$ subvectors of 8 dims)</li><li><strong>Quantize</strong> each subvector: assign to nearest centroid (256 centroids)</li><li><strong>Store</strong> centroid ID (1 byte) instead of full subvector</li></ol>
+
+
+
+<div class="example-block"><h3>Example</h3><div class="block-content"><strong>Original:</strong> [0.23, -0.41, 0.87, 0.12, -0.34, 0.56, 0.78, -0.23, ...] (768 floats)
+
+<strong>Split into 96 subvectors:</strong>
+<ul><li>Subvec 1: [0.23, -0.41, 0.87, 0.12, -0.34, 0.56, 0.78, -0.23] $\rightarrow$ Centroid 42</li><li>Subvec 2: [0.45, 0.67, -0.12, 0.89, 0.34, -0.56, 0.23, 0.11] $\rightarrow$ Centroid 123</li><li>... (96 total)</li></ul>
+
+<strong>Compressed:</strong> [42, 123, 7, 89, ...] (96 bytes)</div></div></div>
+  </section>
+  <section>
+    <h2>Product Quantization: Distance Approximation</h2>
+    <div class="content"><div class="block"><h3>Key Insight</h3><div class="block-content">Can approximate distances using only centroid IDs (no need to decompress!)</div></div>
+
+
+
+
+<strong>Algorithm:</strong>
+<ol><li><strong>Precompute</strong> distance table: query subvector to all centroids
+    <ul><li>For each of 96 subspaces</li><li>For each of 256 centroids</li><li>Total: 96 $\times$ 256 = 24,576 distances (computed once per query)</li></ul></li><li><strong>For each document:</strong>
+    <ul><li>Approximate distance = $\sum_{i=1}^{96} \text{distTable}_i[\text{code}_i]$</li><li>Just 96 lookups + additions (very fast!)</li></ul></li></ol>
+
+
+
+<div class="example-block"><h3>Performance</h3><div class="block-content"><ul><li><strong>Memory:</strong> 32$\times$ compression (3GB $\rightarrow$ 96MB for 1M vectors)</li><li><strong>Speed:</strong> 10-100$\times$ faster than exact distance</li><li><strong>Accuracy:</strong> 80-95% recall typical</li></ul></div></div></div>
+  </section>
+  <section>
+    <h2>IVF + PQ: The Production Standard</h2>
+    <div class="content"><div class="block"><h3>Best of Both Worlds</h3><div class="block-content">Combine IVF (clustering) with PQ (compression)</div></div>
+
+
+
+
+<strong>Architecture:</strong>
+<ol><li><strong>Offline:</strong> Cluster vectors into $k$ clusters (IVF)</li><li><strong>Offline:</strong> Compress vectors with PQ</li><li><strong>Online:</strong> Find $n_{\text{probe}}$ nearest clusters</li><li><strong>Online:</strong> Search within those clusters using PQ distances</li></ol>
+
+
+
+<div class="example-block"><h3>Real-World Impact</h3><div class="block-content"><strong>Facebook/Meta AI Similarity Search (FAISS):</strong>
+<ul><li>1 billion vectors $\times$ 768 dims $\times$ 4 bytes = <strong>3 TB</strong></li><li>With IVFPQ: 1 billion vectors $\times$ 64 bytes = <strong>64 GB</strong></li><li><strong>50$\times$ memory reduction!</strong></li><li>Still achieves 90-95% recall with proper tuning</li></ul></div></div>
+
+
+
+
+<strong>Used by:</strong> Meta, OpenAI, many large-scale systems</div>
+  </section>
+  <section>
+    <h2>FAISS Demo: Dense Indexing (IVF+PQ)</h2>
+    <div class="content">[language=Python, basicstyle=]
+import numpy as np
+import faiss
+
+# Simulate document embeddings (100k docs, 768 dims)
+dimension = 768
+n_docs = 100000
+doc_embeddings = np.random.randn(n_docs, dimension).astype('float32')
+faiss.normalize_L2(doc_embeddings)  # For cosine similarity
+
+# === 1. Training & Building IVF+PQ index ===
+n_clusters = 100  # Number of clusters (centroids)
+m_subvectors = 96 # Number of PQ subvectors (768/96 = 8 dims each)
+bits = 8          # Bits per subvector (256 centroids per subspace)
+
+quantizer = faiss.IndexFlatL2(dimension)
+index = faiss.IndexIVFPQ(quantizer, dimension, n_clusters, m_subvectors, bits)
+
+print("Training index...")
+index.train(doc_embeddings) # PQ needs training to find centroids
+index.add(doc_embeddings)
+print(f"Total docs indexed: {index.ntotal}")
+
+# === 2. Search ===
+query = np.random.randn(1, dimension).astype('float32')
+faiss.normalize_L2(query)
+
+index.nprobe = 10  # Search 10 nearest clusters
+distances, indices = index.search(query, k=10)
+
+print("Top 10 document indices:", indices[0])
+print("Approximate distances:", distances[0])
+
+# Memory usage (approximation)
+# Uncompressed: 100,000 * 768 * 4 bytes = 307.2 MB
+# IVFPQ: 100,000 * 96 bytes = 9.6 MB (~32x smaller!)</div>
+  </section>
+</section>
+<section>
+  <section>
+    <h2>The Decision Matrix: Scale vs. Precision</h2>
+    <div class="content"><table><tr><th><strong>Aspect</strong></th><th><strong>Sparse (Inverted Index)</strong></th><th><strong>Dense (IVF+PQ)</strong></th></tr><tr><td>Best for</td><td>Exact Match, Rare Keywords</td><td>Semantic Similarity</td></tr><tr><td>Recall</td><td>Medium (High for entities)</td><td>High (Semantic)</td></tr><tr><td>Precision</td><td>Very High</td><td>High</td></tr><tr><td>Latency</td><td>5-20ms</td><td>10-50ms</td></tr><tr><td>Memory</td><td>Low</td><td>Low-Medium (due to compression)</td></tr><tr><td>Scalability</td><td>Excellent</td><td>Excellent (with IVF)</td></tr><tr><td>Explainability</td><td>High</td><td>Low (Black box)</td></tr></table>
+
+
+
+
+<div class="block"><h3>Production Wisdom</h3><div class="block-content"><ul><li>Use <strong>Sparse</strong> when you need to find exact names, model numbers, or unique terms.</li><li>Use <strong>Dense</strong> when users ask questions in natural language or use synonyms.</li></ul></div></div></div>
+  </section>
+  <section>
+    <h2>Case Study: Academic Paper Search (100M+)</h2>
+    <div class="content"><div class="example-block"><h3>Scenario</h3><div class="block-content">Research search engine with 100M papers (arXiv, PubMed, etc.)</div></div>
+
+
+<strong>The Challenge:</strong>
+<ul><li>Cannot hold 100M raw vectors in RAM (300GB+).</li><li>Users need both exact titles (Sparse) and broad conceptual search (Dense).</li></ul>
+
+<div class="block"><h3>The Strategy: IVF+PQ</h3><div class="block-content"><ul><li><strong>Sparse (BM25):</strong> Index title, authors, abstracts for keyword matching.</li><li><strong>Dense (IVF+PQ):</strong></li><li>Cluster into 10k centroids (high speed).</li><li>Compress vectors 32$\times$ (fits on a single server!).</li></ul></div></div>
+
+
+<strong>Result:</strong> Billion-scale search with low latency and low cost.</div>
+  </section>
+  <section>
+    <h2>Common Pitfalls and Solutions</h2>
+    <div class="content"><div class="alert-block"><h3>Pitfall 1: Using Only Dense for Entity-Heavy Domains</h3><div class="block-content"><strong>Problem:</strong> Query ``Python 3.11 release date'' $\rightarrow$ matches ``snake release from zoo''
+
+<strong>Solution:</strong> Use hybrid! BM25 catches ``Python 3.11'' exactly</div></div>
+
+
+<div class="alert-block"><h3>Pitfall 2: Not Tuning ANN Parameters</h3><div class="block-content"><strong>Problem:</strong> Using default <code>ef_search=16</code> $\rightarrow$ only 80% recall
+
+<strong>Solution:</strong> Tune on dev set. Start <code>ef_search=64</code>, increase until recall plateaus</div></div>
+
+
+<div class="alert-block"><h3>Pitfall 3: Inconsistent Preprocessing</h3><div class="block-content"><strong>Problem:</strong> Index with stemming, query without $\rightarrow$ no matches!
+
+<strong>Solution:</strong> Same preprocessing for both. For embeddings: no stemming!</div></div>
+
+
+<div class="alert-block"><h3>Pitfall 4: Forgetting to Normalize Vectors</h3><div class="block-content"><strong>Problem:</strong> Using unnormalized embeddings $\rightarrow$ Euclidean distance $\neq$ cosine similarity
+
+<strong>Solution:</strong> Always normalize: <code>faiss.normalize_L2(embeddings)</code></div></div></div>
+  </section>
+  <section>
+    <h2>Production Checklist</h2>
+    <div class="split-layout">
+      <div class="half"><h3></h3><strong>Sparse Index:</strong>
+<ul><div>[$\square$] Compression enabled
+    [$\square$] Stop words handled
+    [$\square$] Stemming appropriate
+    [$\square$] Field boosting configured
+    [$\square$] Metadata filterable</div></ul>
+
+
+
+<strong>Dense Index (IVF+PQ):</strong>
+<ul><div>[$\square$] Vectors normalized
+    [$\square$] Number of probes ($n\_probe$) tuned
+    [$\square$] Memory budget met
+    [$\square$] PQ training data is representative</div></ul></div>
+      <div class="half"><h3></h3><strong>Monitoring:</strong>
+<ul><div>[$\square$] Track recall@k (vs. exact search)
+    [$\square$] Monitor p95/p99 latency
+    [$\square$] Alert on index growth
+    [$\square$] Log query/document drift</div></ul></div>
+    </div>
+  </section>
+  <section>
+    <h2>Modern IR Infrastructure Examples</h2>
+    <div class="content"><div class="block"><h3>Production RAG (Cloud/Managed)</h3><div class="block-content"><ul><li><strong>Embedding:</strong> OpenAI <code>text-embedding-3-small</code></li><li><strong>Vector DB:</strong> Pinecone, Qdrant, or Milvus Managed.</li><li><strong>Candidate Generation:</strong> Dense-first (IVF or HNSW hidden by provider).</li><li><strong>LLM:</strong> GPT-4o / Claude 3.5 Sonnet.</li></ul></div></div>
+
+
+<div class="block"><h3>Large Scale Open Source</h3><div class="block-content"><ul><li><strong>Sparse:</strong> Elasticsearch / OpenSearch (self-hosted).</li><li><strong>Dense:</strong> FAISS (IVF+PQ) for billionaire-scale efficiency.</li><li><strong>Language:</strong> Python / C++ for performance.</li><li><strong>Next Step:</strong> Re-ranking with Cross-encoders (Lecture 4).</li></ul></div></div></div>
+  </section>
+</section>
+<section>
+  <section>
+    <h2>What We Covered Today</h2>
+    <div class="content"><ol><li><strong>Sparse Indexing (Classical)</strong>
+    <ul><li>Inverted index structure</li><li>Text preprocessing pipeline</li><li>Compression (Gap encoding + VB)</li><li>PyTerrier demo</li></ul></li><li><strong>Dense Indexing (Neural)</strong>
+    <ul><li>Why ANN search is needed</li><li>IVF+PQ: The standard for scale (Clustering + Compression)</li><li>FAISS demo</li></ul></li><li><strong>Design Decisions</strong>
+    <ul><li>Modern IR Pipeline (Candidate Generation)</li><li>Traditional IR vs. RAG</li><li>Scaling to billions of documents</li></ul></li></ol></div>
+  </section>
+  <section>
+    <h2>Key Takeaways</h2>
+    <div class="content"><div class="block"><h3>1. Inverted Indexes are the Backbone</h3><div class="block-content">Keyword matching is essential for exact queries and entities. Don't throw away BM25!</div></div>
+
+
+<div class="block"><h3>2. Dense Retrieval Enables Semantic Search</h3><div class="block-content">Embeddings capture meaning, but require ANN techniques like IVF+PQ to work at scale.</div></div>
+
+
+<div class="block"><h3>3. Candidate Generation is the Bottleneck</h3><div class="block-content">Fast indexing determines how many documents your re-rankers or LLMs can "see".</div></div>
+
+
+<div class="block"><h3>4. Scalability requires Compression</h3><div class="block-content">Techniques like Product Quantization (PQ) are vital for fitting large indexes in RAM.</div></div></div>
+  </section>
+  <section>
+    <h2>Connection to Next Lectures</h2>
+    <div class="content"><strong>Lecture 3: Ranking Models</strong>
+<ul><li>BM25 scoring uses inverted indexes we built today</li><li>Query expansion (RM3) operates on sparse retrieval</li><li>Language models for better ranking</li></ul>
+
+
+
+<strong>Lecture 4: Transformer Re-rankers</strong>
+<ul><li>Re-rank candidates from hybrid retrieval</li><li>Cross-encoders (BERT) for precision</li><li>Two-stage: retrieve (today) $\rightarrow$ re-rank (lecture 4)</li></ul>
+
+
+
+<strong>Lecture 5: Dense Retrieval (Deep Dive)</strong>
+<ul><li>Bi-encoders in detail</li><li>Training dense retrievers</li><li>We already know ANN indexing!</li></ul>
+
+
+
+<strong>Lecture 6: Learning to Rank</strong>
+<ul><li>Combine sparse + dense scores optimally</li><li>Learn fusion weights from data</li><li>Put it all together</li></ul></div>
+  </section>
+  <section>
+    <h2>Assignment 2: From Sparse to Dense Retrieval</h2>
+    <div class="content"><strong>Due:</strong> 2 weeks
+
+
+
+<strong>Tasks:</strong>
+<ol><li><strong>Sparse Indexing (40 pts)</strong>
+    <ul><li>Build inverted index with PyTerrier.</li><li>Measure effect of compression (VB) on index size.</li></ul></li><li><strong>Dense Indexing (40 pts)</strong>
+    <ul><li>Build IVF+PQ index with FAISS on 100k vectors.</li><li>Measure recall vs. exact search as you change <code>n_probe</code>.</li></ul></li><li><strong>Analysis (20 pts)</strong>
+    <ul><li>Compare latency and memory usage of Sparse vs. Dense.</li><li>Identify query types where each method fails.</li></ul></li></ol></div>
+  </section>
+  <section>
+    <h2>Resources</h2>
+    <div class="content"><div class="block"><h3>Documentation</h3><div class="block-content"><ul><li>PyTerrier:</li><li>FAISS:</li><li>Sentence Transformers:</li></ul></div></div>
+
+
+<div class="block"><h3>Papers (Optional Reading)</h3><div class="block-content"><ul><li>HNSW: Malkov & Yashunin (2018) - "Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs"</li><li>Product Quantization: Jégou et al. (2011) - "Product quantization for nearest neighbor search"</li><li>Hybrid Search: Lin et al. (2021) - "A Few Brief Notes on DeepImpact, COIL, and a Conceptual Framework for Information Retrieval Techniques"</li></ul></div></div>
+
+
+<div class="block"><h3>Tools</h3><div class="block-content"><ul><li>Vector databases: Pinecone, Weaviate, Qdrant, Milvus</li><li>Elasticsearch 8.0+ (native kNN + BM25)</li><li>Vespa (Yahoo's search engine, open source)</li></ul></div></div></div>
+  </section>
+  <section>
+    <h2>Questions?</h2>
+    <div class="content">Questions?
+
+
+
+
+Office Hours: [Your time]
+
+
+
+Email: [Your email]
+
+
+
+
+<strong>Next Class: Lecture 3 --- Ranking Models</strong>
+
+
+
+We'll use the indexes we built today to implement BM25, 
+language models, and query expansion!
+
+
+
+<strong>Start the assignment early</strong> --- building a hybrid system takes time!</div>
+  </section>
+</section>
+
+  </div>
+</div>
+<script src="node_modules/reveal.js/dist/reveal.js"></script>
+<script src="node_modules/reveal.js/plugin/math/math.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    plugins: [ RevealMath.KaTeX ]
+  });
+  
+  window.addEventListener('keydown', (e) => {
+      if (e.shiftKey && e.key === 'ArrowRight') {
+          const next = '03_ranking.html';
+          if (next) window.location.href = next;
+      } else if (e.shiftKey && e.key === 'ArrowLeft') {
+          const prev = '01_intro_vector_space.html';
+          if (prev) window.location.href = prev;
+      } else if (e.key === 'Escape') {
+          window.location.href = 'index.html';
+      }
+  });
+</script>
+</body>
+</html>

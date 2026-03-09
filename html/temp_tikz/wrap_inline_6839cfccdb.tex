@@ -1,0 +1,23 @@
+
+\documentclass[tikz,border=2pt]{standalone}
+\usepackage{amsmath,amssymb}
+\usepackage{amsfonts}
+\usepackage{xcolor}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes,decorations.pathreplacing}
+% Define some common colors used in IR lectures if any
+\definecolor{sparse}{rgb}{0.8,0.8,1}
+\definecolor{dense}{rgb}{1,0.8,0.8}
+\begin{document}
+\begin{tikzpicture}[
+    box/.style={draw, rounded corners, fill=#1, minimum height=0.8cm, minimum width=2.8cm, align=center, font=\small},
+    arr/.style={-{Stealth[length=2.5mm]}, thick}
+]
+\node[box=sparse!15] (enc) {Bi-Encoder\\(updated every step)};
+\node[box=hybrid!15, right=3.5cm of enc] (idx) {ANN Index\\(refreshed every __MATH_INLINE_0__ steps)};
+\node[box=dense!15, below=1.5cm of __MATH_INLINE_1__] (neg) {Hard Negatives\\(top-__MATH_INLINE_2__ from stale index)};
+
+\draw[arr] (enc) -- (idx) node[midway, above, font=\footnotesize] {new embeddings};
+\draw[arr] (idx) -- (neg) node[midway, right, font=\footnotesize, xshift=0.3cm] {query index};
+\draw[arr] (neg) -| (enc) node[midway, below, font=\footnotesize] {train with};
+\end{tikzpicture}
+\end{document}

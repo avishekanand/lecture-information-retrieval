@@ -1,0 +1,31 @@
+
+\documentclass[tikz,border=2pt]{standalone}
+\usepackage{amsmath,amssymb}
+\usepackage{amsfonts}
+\usepackage{xcolor}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes,decorations.pathreplacing}
+% Define some common colors used in IR lectures if any
+\definecolor{sparse}{rgb}{0.8,0.8,1}
+\definecolor{dense}{rgb}{1,0.8,0.8}
+\begin{document}
+\begin{tikzpicture}[
+    scale=0.8, transform shape,
+    box/.style={draw, rounded corners, fill=#1, minimum height=0.7cm, minimum width=3.2cm, align=center, font=\scriptsize\sffamily},
+    arr/.style={-{Stealth[length=2mm]}, thick}
+]
+\node[box=gray!15] (q) {User Query};
+\node[box=sparse!15, below=0.5cm of q] (ret) {Dense/Hybrid Retrieval\\(Full Corpus)};
+\node[box=dense!15, below=0.5cm of ret] (rr) {CE Re-ranking\\(Top 50)};
+\node[box=hybrid!15, below=0.5cm of rr] (rag) {LLM Generation\\(Augmented Prompt)};
+\node[box=orange!15, below=0.5cm of rag] (ans) {Final Correct Answer};
+
+\draw[arr] (q) -- (ret);
+\draw[arr] (ret) -- (rr) node[midway, right, font=\tiny] {Candidates};
+\draw[arr] (rr) -- (rag) node[midway, right, font=\tiny] {Grounding context};
+\draw[arr] (rag) -- (ans);
+
+\node[left=0.5cm of ret, font=\tiny\itshape, text=sparse] {Recall};
+\node[left=0.5cm of rr, font=\tiny\itshape, text=dense] {Precision};
+\node[left=0.5cm of rag, font=\tiny\itshape, text=hybrid] {Reasoning};
+\end{tikzpicture}
+\end{document}

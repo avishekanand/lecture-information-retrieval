@@ -1,17 +1,24 @@
 \begin{tikzpicture}[
-    node distance=2cm,
-    box/.style={rectangle, draw, fill=blue!20, text width=3cm, align=center, minimum height=1cm},
-    arrow/.style={->, thick}
+    scale=0.45, transform shape,
+    node distance=1.8cm,
+    box/.style={rectangle, draw, rounded corners=2pt, fill=blue!10, text width=4cm, align=center, minimum height=0.8cm, font=\small},
+    arrow/.style={->, thick, -{Stealth[length=2.2mm]}}
 ]
-    \node[box] (user) {User with Information Need};
-    \node[box, right=of user] (query) {Query \\ (e.g., ``climate change'')};
-    \node[box, right=of query] (system) {IR System};
-    \node[box, below=of system] (collection) {Document Collection \\ (millions of docs)};
-    \node[box, left=of collection] (results) {Ranked Results \\ (top-k docs)};
-    
-    \draw[arrow] (user) -- (query) node[midway, above] {\small formulate};
-    \draw[arrow] (query) -- (system) node[midway, above] {\small submit};
-    \draw[arrow] (system) -- (collection) node[midway, right] {\small search};
-    \draw[arrow] (collection) -- (results) node[midway, below] {\small rank};
-    \draw[arrow] (results) -- (user) node[midway, below] {\small satisfy};
+    \node[box, fill=irInfra!10] (user) {User Information Need};
+    \node[box, below=of user] (query) {Query Formulation\\(Text String)};
+    \node[box, below=of query] (system) {Search Engine Logic};
+    \node[box, below=of system] (collection) {Document Index};
+    \node[box, below=of collection] (results) {Ranked Results List};
+    \node[box, below=of results, fill=irAccent!10] (satisfy) {User Satisfaction};
+
+    \draw[arrow] (user.south) -- (query.north) node[midway, right, font=\tiny] {formulate};
+    \draw[arrow] (query.south) -- (system.north) node[midway, right, font=\tiny] {submit};
+    \draw[arrow] (system.south) -- (collection.north) node[midway, right, font=\tiny] {index lookup};
+    \draw[arrow] (collection.south) -- (results.north) node[midway, right, font=\tiny] {rank};
+    \draw[arrow] (results.south) -- (satisfy.north) node[midway, right, font=\tiny] {evaluate};
+
+    % Optional backlink
+    \draw[arrow, dashed, irMuted] (satisfy.west) .. controls +(-1.5,0) and +(-1.5,0) .. (user.west) 
+        node[midway, left, font=\tiny, rotate=90] {reformulate};
+
 \end{tikzpicture}

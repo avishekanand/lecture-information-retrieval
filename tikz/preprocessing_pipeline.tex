@@ -1,17 +1,17 @@
-\begin{tikzpicture}[spacing/.style={yshift=-1.8cm}]
+\begin{tikzpicture}[scale=0.6, transform shape, spacing/.style={yshift=-2.5cm}]
     % Sequential Boxes using API
     \IRBox{raw}{(0,0)}{The Neural Networks \\ are Learning!}{String Input}{accent}
     
     \begin{scope}[spacing]
-        \IRBox{token}{($ (raw) + (0,-1.8) $)}{[The, Neural, Networks, \\ are, Learning, !]}{Tokenized}{primary}
-        \IRBox{lower}{($ (token) + (0,-1.8) $)}{[the, neural, networks, \\ are, learning, !]}{Normalized}{primary}
-        \IRBox{stop}{($ (lower) + (0,-1.8) $)}{[neural, networks, \\ learning]}{Filtered}{primary}
-        \IRBox{stem}{($ (stop) + (0,-1.8) $)}{[neural, network, \\ learn]}{Stemmed}{emph}
+        \IRBox{token}{($ (raw) + (0,-2.5) $)}{[The, Neural, Networks, \\ are, Learning, !]}{Tokenized}{primary}
+        \IRBox{lower}{($ (token) + (0,-2.5) $)}{[the, neural, networks, \\ are, learning, !]}{Normalized}{primary}
+        \IRBox{stop}{($ (lower) + (0,-2.5) $)}{[neural, networks, \\ learning]}{Filtered}{primary}
+        \IRBox{stem}{($ (stop) + (0,-2.5) $)}{[neural, network, \\ learn]}{Stemmed}{emph}
     \end{scope}
 
-    % Connect with sloped labels
-    \IRArrow{raw}{token}{Tokenize}
-    \IRArrow{token}{lower}{Lowercase}
-    \IRArrow{lower}{stop}{Stopwords}
-    \IRArrow{stop}{stem}{Stem/Lemmatize}
+    % Connect with sloped labels using TB arrows for vertical flow
+    \IRArrowTB{raw}{token}{Tokenize}
+    \IRArrowTB{token}{lower}{Lowercase}
+    \IRArrowTB{lower}{stop}{Stopwords}
+    \IRArrowTB{stop}{stem}{Stem/Lemmatize}
 \end{tikzpicture}

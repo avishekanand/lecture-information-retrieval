@@ -1,19 +1,19 @@
 \begin{tikzpicture}
     % Cross-encoder
     \node[infra, minimum width=4.5cm, dashed] at (-4.5, 4) {Cross-Encoder (Reranking)};
-    \node[rerank, minimum width=4cm, minimum height=1cm] (cross_bert) at (-4.5, 2.2) {\textbf{BERT}};
-    \node[font=\tiny] (cross_in) at (-4.5, 0.5) {[CLS] \textcolor{irRerank}{Query} [SEP] \textcolor{irRerank}{Doc} [SEP]};
+    \node[rerank, compact, minimum width=4cm] (cross_bert) at (-4.5, 2.2) {\textbf{BERT}};
+    \node[font=\tiny, align=center, text width=4cm] (cross_in) at (-4.5, 0.5) {[CLS] \textcolor{irRerank}{Query} [SEP] \textcolor{irRerank}{Doc} [SEP]};
     \node[font=\small\bfseries, irRerank] (cross_out) at (-4.5, 3.5) {Score ($s$)};
     \draw[irArrowBase] (cross_in) -- (cross_bert);
     \draw[irArrowBase] (cross_bert) -- (cross_out);
 
     % Bi-encoder
     \node[infra, minimum width=4.5cm, dashed] at (4.5, 4) {Bi-Encoder (Retrieval)};
-    \node[dense, minimum width=1.8cm] (bi_q) at (3.2, 2.2) {\textbf{BERT$_q$}};
-    \node[dense, minimum width=1.8cm] (bi_d) at (5.8, 2.2) {\textbf{BERT$_d$}};
-    \node[font=\tiny, irDense] (q_in) at (3.2, 0.5) {query ($q$)};
-    \node[font=\tiny, irDense] (d_in) at (5.8, 0.5) {doc ($d$)};
-    \node[font=\small\bfseries, irDense] (dot) at (4.5, 3.5) {$\vec{h}_q \cdot \vec{h}_d$ = Score ($s$)};
+    \node[dense, compact, minimum width=2.2cm] (bi_q) at (3.2, 2.2) {\textbf{BERT$_q$}};
+    \node[dense, compact, minimum width=2.2cm] (bi_d) at (5.8, 2.2) {\textbf{BERT$_d$}};
+    \node[dense, compact] (q_in) at (3.2, 0.5) {query ($q$)};
+    \node[dense, compact] (d_in) at (5.8, 0.5) {doc ($d$)};
+    \node[font=\small\bfseries, irDense, align=center, text width=4cm] (dot) at (4.5, 3.5) {$\vec{h}_q \cdot \vec{h}_d$ = Score ($s$)};
     
     \draw[irArrowBase] (q_in) -- (bi_q);
     \draw[irArrowBase] (d_in) -- (bi_d);

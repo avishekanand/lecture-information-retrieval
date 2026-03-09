@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Question Answering and Retrieval-Augmented Generation</title>
+<link rel="stylesheet" href="node_modules/reveal.js/dist/reveal.css">
+<link rel="stylesheet" href="node_modules/reveal.js/dist/theme/serif.css">
+<link rel="stylesheet" href="common.css">
+<style>
+  .reveal h1 { font-size: 1.8em !important; }
+  .reveal h2 { font-size: 1.3em !important; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+  .reveal h3 { font-size: 1.0em !important; }
+  .reveal p, .reveal li { font-size: 0.7em !important; }
+  .highlight { color: #e74c3c; font-weight: bold; }
+  .split-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em; }
+  .half { background: #f9f9f9; padding: 0.8em; border-radius: 8px; border: 1px solid #ddd; }
+  .half h3 { font-size: 0.9em !important; border-bottom: 1px solid #ccc; }
+  .figure-img { max-height: 300px !important; border: 1px solid #ddd; padding: 5px; background: #fff; }
+  .figure-caption { font-size: 0.6em; color: #666; font-style: italic; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.6em !important; }
+  th { background: #eee; }
+  th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+</style>
+</head>
+<body>
+<div class="reveal">
+  <div class="slides">
+    <section>
+  <section>
+    <h1>What is Question Answering?</h1>
+    <h3>From extracting spans to open-domain generation</h3>
+  </section>
+  <section>
+    <h2>The Information Need</h2>
+    <div class="split-layout">
+      <div class="half"><h3>Evolution of Search</h3><ul><li><strong>1990s Web Search:</strong> ranked documents</li><li><strong>2011 IBM Watson:</strong> direct answer</li><li><strong>2018 BERT:</strong> extract answer span</li><li><strong>2020 GPT-3:</strong> generate answer from weights</li><li><strong>2020 RAG:</strong> retrieve then generate</li></ul></div>
+      <div class="half"><h3>The Core Tension</h3><ul><li>Retrieval gives us <strong>evidence</strong> but cannot reason.</li><li>Generation gives us <strong>fluency</strong> but can fabricate.</li><li><strong>QA needs both.</strong></li></ul></div>
+    </div>
+  </section>
+  <section>
+    <h2>What Does a QA System Do?</h2>
+    <img class="figure-img" src="assets/rag_search.png">
+    <div class="figure-caption">Input: natural language question. Output: direct answer.</div>
+    <div style="margin-top:0.5em"><p><strong>Document IR:</strong> returns a ranked list of passages.</p><p><strong>QA:</strong> returns a single concise answer.</p><p class='highlight'>Why harder? Questions are short/ambiguous. Evidence may be split. Answer must be correct, not just relevant.</p></div>
+  </section>
+  <section>
+    <h2>Two Ways to Know</h2>
+    <div class="split-layout">
+      <div class="half"><h3>Parametric (LLMs)</h3><ul><li>Knowledge baked into weights</li><li>Fast inference, no index</li><li><strong>Fails:</strong> stale data, rare facts, confident errors</li></ul></div>
+      <div class="half"><h3>Non-parametric (Retrieval)</h3><ul><li>External, updatable index</li><li>Explicit, citable, fresh</li><li><strong>Fails:</strong> retrieval errors propagate; cannot reason alone</li></ul></div>
+    </div>
+    <div style="margin-top:0.5em"><h2 class='highlight' style='margin-top:2rem;'>RAG = Parametric + Non-Parametric</h2></div>
+  </section>
+  <section>
+    <h2>QA as a Task Family</h2>
+    <div class="content"><table><tr><th>Type</th><th>Input</th><th>Output</th></tr><tr><td>Extractive</td><td>Question + passage</td><td>Span in passage</td></tr><tr><td>Abstractive</td><td>Question + passage</td><td>Generated string</td></tr><tr><td class='highlight'>Open-Domain</td><td class='highlight'>Question only</td><td class='highlight'>Answer (from corpus)</td></tr><tr><td>Knowledge-Base</td><td>Question + KG</td><td>Entity/relation</td></tr><tr><td>Conversational</td><td>Multi-turn history</td><td>Answer in context</td></tr></table><br><p style='font-size:2rem; margin-top:2rem'><strong>This lecture's focus:</strong> Open-domain QA. RAG is the dominant approach.</p></div>
+  </section>
+  <section>
+    <h2>Open-Domain QA: The Setup</h2>
+    <div class="content"><ul><li><strong>Input:</strong> Question $q$ and Corpus $\mathcal{C} = \{d_1, d_2, \dots, d_N\}$</li><li><strong>Step 1:</strong> Retrieve top-$k$ passages $\mathcal{R}_k(q) \subset \mathcal{C}$</li><li><strong>Step 2:</strong> Generate answer $a = f(q, \mathcal{R}_k(q))$</li></ul><br><p class='highlight' style='font-size:2.5rem'>If the evidence isn't retrieved, probability of correct answer approaches 0.<br>All QA quality is bounded by retrieval quality.</p></div>
+  </section>
+  <section>
+    <h2>Evaluation Limits</h2>
+    <div class="split-layout">
+      <div class="half"><h3>Task-Level Metrics</h3><ul><li><strong>Exact Match / Token F1:</strong> Good for spans, bad for abstraction. <em>automobile &#8800; car</em></li><li><strong>BERTScore/ROUGE:</strong> Better for generated abstract text.</li><li><em>Question: Is the answer correct?</em></li></ul></div>
+      <div class="half"><h3>System-Level Metrics</h3><ul><li>Faithfulness</li><li>Attribution</li><li>Hallucination Rate</li><li><em>Question: Is every claim grounded in evidence?</em></li></ul></div>
+    </div>
+    <div style="margin-top:0.5em"><p style='font-size:2rem; margin-top:2rem'>A system can score high on EM by memorizing training answers while hallucinating on novel queries.</p></div>
+  </section>
+</section>
+<section>
+  <section>
+    <h1>System Architectures</h1>
+    <h3>From Reader to Generator</h3>
+  </section>
+  <section>
+    <h2>Retriever-Reader Paradigm</h2>
+    <img class="figure-img" src="assets/retriever-reader-qa.png">
+    <div class="figure-caption">DrQA (2017) established the 'Retrieve then Read' framework.</div>
+    <div style="margin-top:0.5em"><ul><li><strong>Stage 1:</strong> TF-IDF Retriever maximizes passage recall.</li><li><strong>Stage 2:</strong> BiLSTM Reader maximizes span precision.</li></ul></div>
+  </section>
+  <section>
+    <h2>Retriever-Reader-Generator</h2>
+    <img class="figure-img" src="assets/retrieve-reader-gen.png">
+  </section>
+  <section>
+    <h2>Closed-Book QA: The LLM Bet</h2>
+    <img class="figure-img" src="assets/closedbook-qa.png">
+    <div class="figure-caption">LLMs answering exclusively from their parametric weight memory.</div>
+  </section>
+  <section>
+    <h2>Why Closed-Book QA Falls Short</h2>
+    <div class="split-layout">
+      <div class="half"><h3>Failures</h3><ul><li><strong>Knowledge cutoff:</strong> no access to post-training facts</li><li><strong>Long-tail failure:</strong> rare entities poorly represented</li><li><strong>No evidence:</strong> cannot cite sources</li><li><strong>Hallucination:</strong> confident generation of false content</li></ul></div>
+      <div class="half"><h3>The Scale Paradox</h3><p class='highlight' style='font-size:2.5rem; margin-top:2rem'>Larger models hallucinate <em>more confidently</em>, not less.<br><br>Scale alone does not solve factual grounding.</p></div>
+    </div>
+  </section>
+</section>
+<section>
+  <section>
+    <h1>The Hallucination Crisis</h1>
+    <h3>Factually incorrect content presented with confidence</h3>
+  </section>
+  <section>
+    <h2>What Is Hallucination?</h2>
+    <div class="content"><ul><li><strong>Intrinsic:</strong> contradicts the given context or source</li><li><strong>Extrinsic:</strong> asserts facts absent from any source (pure fabrication)</li></ul><br><h2>Why it's not a bug</h2><ul><li>LLMs maximize token likelihood, not truth</li><li>No external factuality check at inference</li><li>Fluent generation &#8800; faithful generation</li></ul></div>
+  </section>
+  <section>
+    <h2>Hallucinations in the Wild</h2>
+    <img class="figure-img" src="assets/hallucination-many.png">
+  </section>
+  <section>
+    <h2>High-Stakes Hallucination</h2>
+    <img class="figure-img" src="assets/hallucination-noonan.png">
+  </section>
+  <section>
+    <h2>Why LLMs Hallucinate</h2>
+    <div class="split-layout">
+      <div class="half"><h3>Root Causes</h3><ul><li>Training data noise (contradictions)</li><li>Distributional gaps (unseen entity combos)</li><li>Autoregressive bias (no global fact-check)</li><li>RLHF prioritizes helpfulness over truth</li></ul></div>
+      <div class="half"><h3>The Core Problem</h3><ul><li>Generates the <em>most likely</em> continuation</li><li>Does <strong>not</strong> generate the <em>most true</em> continuation</li></ul></div>
+    </div>
+  </section>
+  <section>
+    <h2>RAG as the Solution</h2>
+    <div class="split-layout">
+      <div class="half"><h3>Grounding</h3><p>Grounding generation in retrieved evidence constrains the model.</p><ul><li>Retrieved evidence is <strong>explicit</strong> and <strong>checkable</strong>.</li><li>Prompts force citations: <em>"use only passages"</em></li><li>Index updateable without retraining</li></ul></div>
+      <div class="half"><h3>Key Insight</h3><ul><li>Errors shift from invisible hallucinations to detectable retrieval failures.</li><li><strong>Retrieval defines reasoning substrate.</strong></li></ul></div>
+    </div>
+  </section>
+</section>
+<section>
+  <section>
+    <h1>RAG 101</h1>
+    <h3>Pipeline of Decisions</h3>
+  </section>
+  <section>
+    <h2>What RAG Actually Is</h2>
+    <div class="content"><p>A compound AI system, not a single model trick.</p><ul><li><strong>Retrieval defines reasoning substrate.</strong></li><li>If evidence is not retrieved, it cannot be used.</li><li>Modularity allows isolated debugging.</li></ul><p class='highlight' style='font-size:2.5rem; margin-top:2rem'>Pipeline: Retrieval $\to$ Conditioning $\to$ Generation</p></div>
+  </section>
+  <section>
+    <h2>A System View</h2>
+    <img class="figure-img" src="assets/rag_system_view.png">
+    <div class="figure-caption">Treat each module as a component with knobs and an evaluation contract.</div>
+  </section>
+  <section>
+    <h2>Sequential Training in RAG</h2>
+    <div class="split-layout">
+      <div class="half"><h3>Options</h3><ol><li><strong>Stage 1:</strong> Pre-train/fine-tune dense retriever</li><li><strong>Stage 2:</strong> Joint fine-tuning (marginalise over retrieved passages)</li><li><strong>Stage 3:</strong> RLHF/DPO for grounding preferences</li></ol></div>
+      <div class="half"><h3>Practical default (2025)</h3><ul><li>Freeze the retriever (Contriever/e5-large)</li><li>LoRA-fine-tune generator on grounded QA</li><li>Joint training is expensive and often unnecessary</li></ul></div>
+    </div>
+  </section>
+</section>
+<section>
+  <section>
+    <h1>Lewis et al. 2020</h1>
+    <h3>The paper that formalized RAG</h3>
+  </section>
+  <section>
+    <h2>Key Innovation</h2>
+    <div class="content"><p>Retrieval treated as a <em>latent variable</em>.</p><p style='font-size:2.5rem; line-height: 1.5;'>$$p(y \mid x) \approx \sum_{z} p(z \mid x)\, p(y \mid x, z)$$</p><ul><li>Marginalizing over documents makes retrieval differentiable.</li><li><strong>RAG-Sequence:</strong> retrieve once for full answer.</li><li><strong>RAG-Token:</strong> retrieve per generated token.</li></ul></div>
+  </section>
+  <section>
+    <h2>Original RAG Architecture</h2>
+    <img class="figure-img" src="assets/rag-original.png">
+    <div class="figure-caption">Lewis et al. 2020</div>
+  </section>
+</section>
+<section>
+  <section>
+    <h1>Retrieval Deep Dive</h1>
+    <h3>Finding the Right Evidence</h3>
+  </section>
+  <section>
+    <h2>Retrieval Choices (2025 View)</h2>
+    <div class="content"><table><tr><th>Method</th><th>Strengths</th><th>Typical Failure</th><th>Default?</th></tr><tr><td>BM25</td><td>Entity precision, OOD robust</td><td>Vocabulary mismatch</td><td>Yes</td></tr><tr><td>Dense (DPR)</td><td>Semantic matching, recall</td><td>Entity drift, OOD</td><td>Yes (tuned)</td></tr><tr><td class='highlight'>Hybrid</td><td class='highlight'>Best practical default</td><td class='highlight'>Normalization complexity</td><td class='highlight'>Yes</td></tr><tr><td>ColBERT</td><td>High quality at scale</td><td>Storage, infra cost</td><td>High-value</td></tr></table><br><h2 class='highlight' style='margin-top:2rem'>The Ceiling</h2><p>Most "hallucinations" in RAG are <strong>selection failures</strong>: the evidence existed but was not retrieved.</p></div>
+  </section>
+  <section>
+    <h2>The Evidence Ceiling</h2>
+    <div class="split-layout">
+      <div class="half"><h3>Logic</h3><p>$$\text{Answer}(q) = f(q, \mathcal{R}_k(q))$$</p><ul><li><strong>Retrieve:</strong> find the right chunk</li><li><strong>Select:</strong> include it in context window</li><li><strong>Use:</strong> force grounding via prompt</li></ul></div>
+      <div class="half"><h3>Implication</h3><ul><li>Improving the generator yields zero gain if retrieval recall is the bottleneck.</li><li>Measure Recall@k <em>before</em> tuning generator.</li></ul></div>
+    </div>
+  </section>
+  <section>
+    <h2>Chunking: A Modeling Decision</h2>
+    <img class="figure-img" src="assets/chunking_tradeoff.png">
+    <div class="figure-caption">The retrieval unit determines recall, precision, and context efficiency.</div>
+    <div style="margin-top:0.5em"><div class='split-layout'><div class='half'><ul><li><strong>Fixed-size:</strong> simple; may split sentences</li><li><strong>Semantic:</strong> boundary at paragraph; variable length</li></ul></div><div class='half'><ul><li><strong>Recursive:</strong> balances size and coherence</li><li><strong>Extraction:</strong> tables, PDFs</li></ul></div></div><p class='highlight' style='margin-top:1rem'>Rule: A chunk without provenance metadata breaks the attribution chain.</p></div>
+  </section>
+  <section>
+    <h2>Late Chunking</h2>
+    <img class="figure-img" src="assets/rag_late_chunking.png">
+    <div class="figure-caption">Context-Aware Embeddings (Günther et al., 2024)</div>
+    <div style="margin-top:0.5em"><p>Encode the full document first, then mean-pool chunk representations.<br>Massive coherence boost with same storage footprint.</p></div>
+  </section>
+  <section>
+    <h2>Query Reformulation</h2>
+    <div class="split-layout">
+      <div class="half"><h3>Strategies</h3><ul><li><strong>HyDE:</strong> Generate hypothetical document, embed that.</li><li><strong>Multi-Query:</strong> Generate paraphrases, retrieve all, fuse (RRF).</li><li><strong>Step-back:</strong> abstract to a broader concept</li><li><strong>Decomposition:</strong> Break down multi-part questions.</li></ul></div>
+      <div class="half"><h3>Danger: Intent Drift</h3><p>Reformulation can shift user intent.</p><p>Always monitor retrieval overlap between original and rewritten queries to detect drift away from actual need.</p></div>
+    </div>
+  </section>
+  <section>
+    <h2>Retrieval Quality Metrics</h2>
+    <div class="content"><ul><li><strong>Recall@k:</strong> does the gold evidence appear in top-k?</li><li><strong>MRR:</strong> mean reciprocal rank of first relevant passage</li><li><strong>Context Hit Rate:</strong> fraction of queries where retrieved context contains sufficient information to answer correctly (measured against ground truth).</li></ul><br><p class='highlight' style='font-size:2.5rem; margin-top:2rem'>Measurement order: Measure Recall@k first. If < 0.7, fix the retriever before tuning the generator.</p></div>
+  </section>
+</section>
+<section>
+  <section>
+    <h1>Beyond Single-Shot</h1>
+    <h3>Multi-Step Retrieval</h3>
+  </section>
+  <section>
+    <h2>The DeRIVeR Paradigm</h2>
+    <div class="split-layout">
+      <div class="half"><h3>Single-shot limitation</h3><p>$q \to \mathcal{R}_k(q) \to a$</p><p>One retrieval round captures only the <em>surface</em> question. Fails on multi-hop/ambiguous queries.</p></div>
+      <div class="half"><h3>DeRIVeR</h3><ul><li>1. Query Planner</li><li>2. Retrieval Module</li><li>3. Reasoning Synthesis</li></ul><p>Each role can be independently optimized, swapped, or scaled.</p></div>
+    </div>
+  </section>
+  <section>
+    <h2>Query Planning</h2>
+    <div class="split-layout">
+      <div class="half"><h3>Example</h3><p><strong>Q:</strong> "CEO of company that acquired DeepMind's education?"</p><ul><li>$q_1$: "Company acquired DeepMind" $\to$ Google</li><li>$q_2$: "CEO of Google" $\to$ Sundar Pichai</li><li>$q_3$: "Education Sundar Pichai" $\to$ IIT</li></ul></div>
+      <div class="half"><h3>Strategies</h3><ul><li><strong>Sequential:</strong> $q_i$ uses $q_{i-1}$ result</li><li><strong>Parallel:</strong> independent, then fuse</li><li><strong>Conditional:</strong> branch on evidence</li></ul><p style='color:var(--accent-secondary)'>Cost Trade-off: Each step adds latency/tokens. Measure first.</p></div>
+    </div>
+  </section>
+  <section>
+    <h2>Single-Shot vs. Multi-Step Retrieval</h2>
+    <img class="figure-img" src="assets/rag_multistep.png">
+    <div class="figure-caption">Iterate until confidence is met or budget exhausted.</div>
+    <div style="margin-top:0.5em"><ul><li><strong>Single-shot:</strong> retrieve once; fast but fails on ambiguity</li><li><strong>Multi-step:</strong> retrieve $\to$ reason $\to$ retrieve again</li></ul></div>
+  </section>
+  <section>
+    <h2>Evidence Chaining: Multi-Hop Reasoning</h2>
+    <img class="figure-img" src="assets/rag_reasoning_chain.png">
+    <div class="figure-caption">Latent links: bridging entities not in original query.</div>
+    <div style="margin-top:0.5em"><p>Failure mode: If the bridge entity is not retrieved correctly, the entire chain collapses. Error propagates.</p></div>
+  </section>
+  <section>
+    <h2>Search-in-the-Loop</h2>
+    <img class="figure-img" src="assets/rag_dynamic_search.png">
+    <div class="figure-caption">Retrieval as an LLM tool-call within reasoning trace.</div>
+    <div style="margin-top:0.5em"><ul><li><strong>Trigger:</strong> search when model uncertainty $u_t > \theta$</li><li><strong>Budget:</strong> cap max tool calls</li><li><strong>Training:</strong> RLHF to learn when <em>not</em> to search</li></ul></div>
+  </section>
+  <section>
+    <h2>When Does Multi-Step Help?</h2>
+    <div class="content"><table><tr><th>Query Type</th><th>Approach</th><th>Reason</th></tr><tr><td>Simple factual</td><td>Single-shot</td><td>One retrieval round sufficient</td></tr><tr><td>Multi-hop</td><td>Sequential multi-step</td><td>Entity linking requires chaining</td></tr><tr><td>Ambiguous / broad</td><td>Parallel multi-query + RRF</td><td>Diverse coverage needed</td></tr><tr><td>Temporal / evolving</td><td>Dynamic search</td><td>Date-filtered iterative retrieval</td></tr></table><br><h2 class='highlight'>Rule of Thumb</h2><p>Only add complexity when a clear recall gap exists and latency/cost budget permits.</p></div>
+  </section>
+</section>
+
+  </div>
+</div>
+
+<script src="node_modules/reveal.js/dist/reveal.js"></script>
+<script src="node_modules/reveal.js/plugin/math/math.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    plugins: [ RevealMath.KaTeX ]
+  });
+</script>
+</body>
+</html>

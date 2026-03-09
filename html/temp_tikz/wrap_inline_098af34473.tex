@@ -1,0 +1,25 @@
+
+\documentclass[tikz,border=2pt]{standalone}
+\usepackage{amsmath,amssymb}
+\usepackage{amsfonts}
+\usepackage{xcolor}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes,decorations.pathreplacing}
+% Define some common colors used in IR lectures if any
+\definecolor{sparse}{rgb}{0.8,0.8,1}
+\definecolor{dense}{rgb}{1,0.8,0.8}
+\begin{document}
+\begin{tikzpicture}[
+    box/.style={draw, rounded corners, minimum height=0.9cm, minimum width=2.8cm, align=center, font=\small},
+    arr/.style={-{Stealth[length=2.5mm]}, thick}
+]
+\node[box, fill=sparse!20] (bertq) {__MATH_INLINE_0__};
+\node[box, fill=dense!20, right=4cm of bertq] (bertd) {__MATH_INLINE_1__};
+\node[below=0.4cm of bertq, font=\small] (clsq) {__MATH_INLINE_2__};
+\node[below=0.4cm of bertd, font=\small] (clsd) {__MATH_INLINE_3__};
+\node[above=0.4cm of bertq, font=\small\itshape, text=gray] {``who founded wikipedia''};
+\node[above=0.4cm of bertd, font=\small\itshape, text=gray] {``Wikipedia was founded by\ldots''};
+
+\draw[arr] (bertq) -- (clsq);
+\draw[arr] (bertd) -- (clsd);
+\end{tikzpicture}
+\end{document}

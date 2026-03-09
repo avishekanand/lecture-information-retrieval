@@ -1,0 +1,292 @@
+[
+  {
+    "title": "Recap & Motivation --- From Re-ranking to Retrieval",
+    "slides": [
+      {
+        "type": "bullet",
+        "title": "Recap: Where We Are",
+        "content": "<div class=\"block\"><h3>What We've Built So Far</h3><div class=\"block-content\"><ul><li><strong>Lecture 2:</strong> Inverted indexes and ANN indexes (IVF+PQ, HNSW)</li><li><strong>Lecture 5:</strong> BM25, Language Models, RM3 for scoring and expansion</li><li><strong>Lecture 6:</strong> BERT cross-encoders for re-ranking (monoBERT, monoT5)</li></ul></div></div>\n\n\n\n<div class=\"alert-block\"><h3>The Remaining Problem</h3><div class=\"block-content\">Cross-encoders are <strong>too slow for retrieval</strong>:\n<ul><li>Re-ranking 100 docs: 0.5s \u2713  Full corpus (8.8M): 12+ hours</li><li>BM25 misses semantic matches: ``automobile issues'' vs.\\ ``car problems''</li><li>Bounded Recall: if retriever misses a relevant doc, the cross-encoder can <strong>never</strong> recover it</li></ul></div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "Today's Goal",
+        "content": "<div class=\"example-block\"><h3>The Missing Piece</h3><div class=\"block-content\">Combine the <strong>semantic understanding</strong> of BERT with the <strong>retrieval speed</strong> of ANN indexes from Lecture 2.</div></div>\n\n\n\n<div class=\"block\"><h3>Key Idea: The Bi-Encoder</h3><div class=\"block-content\"><ol><li>Encode all documents <strong>offline</strong> with BERT $\\to$ dense vectors</li><li>Store in ANN index (IVF+PQ from Lecture 2!)</li><li>At query time: encode query with BERT $\\to$ ANN search $\\to$ top-$k$</li></ol></div></div>\n\n\n\n\n<div class=\"alert-block\"><h3>The Trade-off</h3><div class=\"block-content\">Bi-encoders are <strong>less accurate</strong> than cross-encoders (no query-document interaction) but <strong>fast enough for full-corpus retrieval</strong>.</div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "The Dense Retrieval Pipeline",
+        "content": "<strong>Offline (once):</strong>\n<ul><li>Encode all 8.8M passages</li><li>Build ANN index</li><li>$\\sim$hours on GPU</li></ul>\n\n\n<strong>Online (per query):</strong>\n<ul><li>Encode query: $\\sim$5 ms</li><li>ANN search: $\\sim$10 ms</li><li>Total: $\\sim$15 ms \u2713</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "The Dense Retrieval Pipeline (Figure)",
+        "content": "<div class=\"h-center\"><img class=\"tikz-img\" src=\"assets/inline_1b38ba1762.png\" alt=\"Inline TikZ\"></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "Cross-Encoder vs.\\ Bi-Encoder: Architecture",
+        "content": "<div class=\"example-block\"><h3>Key Question</h3><div class=\"block-content\">How do we <strong>train</strong> the bi-encoder so the dot product captures relevance?</div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "Cross-Encoder vs.\\ Bi-Encoder: Architecture (Figure)",
+        "content": "<div class=\"h-center\"><img class=\"tikz-img\" src=\"assets/inline_9e522ab8ba.png\" alt=\"Inline TikZ\"></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "Cross-Encoder vs.\\ Bi-Encoder: Comparison",
+        "content": "<table><tr><th><strong>Cross-Encoder</strong></th><th><strong>Bi-Encoder</strong></th></tr><tr><td>Query-doc interaction</td><td>Full (all layers)</td><td>None (dot product only)</td></tr><tr><td>Pre-compute doc embeddings</td><td>No</td><td>\u2713 Yes (offline)</td></tr><tr><td>Use for retrieval</td><td>No (too slow)</td><td>\u2713 Yes (with ANN)</td></tr><tr><td>Accuracy</td><td>Higher</td><td>Lower</td></tr><tr><td>Speed at inference</td><td>$\\sim$5 ms/pair</td><td>$\\sim$15 ms total</td></tr></table>"
+      }
+    ]
+  },
+  {
+    "title": "Contrastive Learning for Retrieval",
+    "slides": [
+      {
+        "type": "bullet",
+        "title": "Contrastive Learning: Core Principle",
+        "content": "<div class=\"block\"><h3>Objective</h3><div class=\"block-content\">Learn embeddings such that:\n$$\\text{score}(\\vq, \\vd^+) \\;\\gg\\; \\text{score}(\\vq, \\vd^-)$$\nfor relevant pair $(\\vq, \\vd^+)$ and irrelevant pair $(\\vq, \\vd^-)$.</div></div>\n\n\n\n\n<strong>Intuition:</strong> The embedding space is a <strong>map of meaning</strong>.\n<ul><li>``car problems'' and ``automobile issues'' $\\to$ nearby points</li><li>``car problems'' and ``car racing'' $\\to$ far apart</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "InfoNCE: Noise Contrastive Estimation --- The Classification View",
+        "content": "<div class=\"example-block\"><h3>Key Insight</h3><div class=\"block-content\">InfoNCE frames retrieval as <strong>$N$-way classification</strong>: given query $\\vq$, classify which of the $N$ documents in the corpus is the relevant one, using dot-product similarity as the logit.</div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "InfoNCE: Noise Contrastive Estimation --- The Classification View (Figure)",
+        "content": "<div class=\"h-center\"><img class=\"tikz-img\" src=\"assets/infonce_classification.png\" alt=\"infonce_classification\"></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "Theoretical InfoNCE: The Global View",
+        "content": "<div class=\"block\"><h3>The Goal: Contrastive Estimation</h3><div class=\"block-content\">Given query $\\vq$ and its relevant document $\\vd^+$, we want to maximize the probability:\n$$P(\\vd^+ | \\vq) = \\frac{\\exp(\\vq^\\top \\vd^+ / \\tau)}{\\sum_{\\vd \\in \\mathcal{D}} \\exp(\\vq^\\top \\vd / \\tau)}$$\nwhere $\\mathcal{D}$ is the <strong>entire corpus</strong> (e.g., 8.8M passages).</div></div>\n\n\n\n<div class=\"block\"><h3>The InfoNCE Loss</h3><div class=\"block-content\">The loss minimizes the negative log-probability of the positive document:\n$$\\mathcal{L}_{\\text{InfoNCE}} = -\\log P(\\vd^+ | \\vq) = -\\log \\frac{\\exp(\\vq^\\top \\vd^+ / \\tau)}{\\sum_{\\vd \\in \\mathcal{D}} \\exp(\\vq^\\top \\vd / \\tau)}$$</div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "InfoNCE: The Computational Bottleneck",
+        "content": "<div class=\"block\"><h3>The InfoNCE Loss</h3><div class=\"block-content\">The loss minimizes the negative log-probability of the positive document:\n$$\\mathcal{L}_{\\text{InfoNCE}} = -\\log P(\\vd^+ | \\vq) = -\\log \\frac{\\exp(\\vq^\\top \\vd^+ / \\tau)}{\\sum_{\\vd \\in \\mathcal{D}} \\exp(\\vq^\\top \\vd / \\tau)}$$</div></div>\n\n\n\n\n<div class=\"alert-block\"><h3>The Computational Bottleneck</h3><div class=\"block-content\">The denominator requires computing the dot product for <strong>every single document</strong> in the corpus for every gradient step. \n<ul><li>8.8M documents $\\times$ 128 queries per batch $\\approx$ 1.1 Billion dot products.</li><li>Numerically and computationally <strong>impossible</strong> to do directly.</li></ul></div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "The InfoNCE Loss: Practical Approximation",
+        "content": "<div class=\"block\"><h3>In-Batch Contrastive Loss</h3><div class=\"block-content\">We approximate the global sum with a sum over the current <strong>training batch</strong> of size $B$:\n$$\\mathcal{L} = -\\log \\frac{\\exp\\!\\bigl(\\vq_i^\\top \\vp_i^+ / \\tau\\bigr)}{\\displaystyle\\sum_{j=1}^{B} \\exp\\!\\bigl(\\vq_i^\\top \\vp_j / \\tau\\bigr)}$$</div></div>\n\n\n\n\n<strong>Key components:</strong>\n<ul><li>$B$: batch size --- provides $B-1$ <strong>free</strong> negatives per query</li><li>$\\tau$: temperature --- controls sharpness of the softmax</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "InfoNCE: From $N$ Classes to $B$ Classes",
+        "content": "<div class=\"example-block\"><h3>Batch Approximation</h3><div class=\"block-content\">Instead of classifying over the <strong>entire corpus</strong> ($N$ classes), we classify over only the <strong>batch</strong> ($B$ classes). Each batch provides $B{-}1$ in-batch negatives for free.</div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "InfoNCE: From $N$ Classes to $B$ Classes (Figure)",
+        "content": "<div class=\"h-center\"><img class=\"tikz-img\" src=\"assets/infonce_batch_approx.png\" alt=\"infonce_batch_approx\"></div>"
+      }
+    ]
+  },
+  {
+    "title": "Dense Passage Retrieval (DPR)",
+    "slides": [
+      {
+        "type": "bullet",
+        "title": "DPR: Architecture (Karpukhin et al., 2020)",
+        "content": "<div class=\"block\"><h3>Key Design Choices</h3><div class=\"block-content\"><ul><li><strong>Representation:</strong> <code>[CLS]</code> token output --- single vector per text</li><li><strong>Similarity:</strong> $\\text{score}(\\vq, \\vp) = \\vq^\\top \\vp$ (dot product)</li></ul></div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "DPR: Architecture (Karpukhin et al., 2020) (Figure)",
+        "content": "<div class=\"h-center\"><img class=\"tikz-img\" src=\"assets/inline_098af34473.png\" alt=\"Inline TikZ\"></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "DPR: Training Recipe --- Loss & Negatives",
+        "content": "<strong>Loss:</strong> InfoNCE with in-batch negatives\n$$\\mathcal{L} = -\\log \\frac{e^{\\vq_i^\\top \\vp_i^+/\\tau}}{\\sum_{j=1}^{B} e^{\\vq_i^\\top \\vp_j / \\tau}}$$\n\n\n\n<strong>Negatives per query:</strong>\n<ol><li>$B-1$ in-batch negatives (free!)</li><li>1 BM25 hard negative (precomputed)</li></ol>\n\n\n\n<div class=\"example-block\"><h3>Key Insight</h3><div class=\"block-content\">Mixing <strong>one</strong> BM25 hard negative with in-batch random negatives is surprisingly effective. The BM25 negative is lexically similar but not relevant --- forces the model beyond surface matching.</div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "DPR: Why BM25 Hard Negatives?",
+        "content": "<strong>Query:</strong> ``side effects of aspirin''\n\n\n\n<strong>Random negative:</strong> ``The capital of France is Paris''\n<ul><li>$\\vq^\\top \\vd^- \\approx 0.05$ --- trivially easy, <strong>no learning signal</strong></li></ul>\n\n\n\n\n<strong>BM25 hard negative:</strong> ``Aspirin was invented by Bayer in 1899''\n<ul><li>Contains ``aspirin'' $\\to$ BM25 ranks it high</li><li>But <strong>not about side effects</strong> $\\to$ not relevant</li><li>$\\vq^\\top \\vd^- \\approx 0.6$ --- confusing, <strong>strong learning signal!</strong></li></ul>\n\n\n\n\n<div class=\"alert-block\"><h3>The Principle</h3><div class=\"block-content\">The model must learn: ``just because a passage mentions aspirin doesn't mean it's about side effects.'' This is <strong>exactly</strong> what BM25 cannot do.</div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "DPR: Results & Significance",
+        "content": "<table><tr><th><strong>Method</strong></th><th><strong>NQ Top-20 Recall</strong></th><th><strong>MS MARCO MRR@10</strong></th><th><strong>Params</strong></th></tr><tr><td>BM25</td><td>59.1</td><td>18.7</td><td>---</td></tr><tr><td><strong>DPR</strong></td><td><strong>78.4</strong></td><td><strong>31.1</strong></td><td>220M</td></tr></table>\n\n\n\n\n<div class=\"block\"><h3>Why DPR Matters</h3><div class=\"block-content\"><ul><li>First system to conclusively show <strong>dense $>$ sparse</strong> for open-domain QA</li><li>+19pp top-20 recall over BM25 on Natural Questions</li><li>Enabled the modern ``retriever + reader'' paradigm</li></ul></div></div>\n\n\n\n\n<div class=\"alert-block\"><h3>But</h3><div class=\"block-content\">A single 768-dim vector for the entire document? That's a severe <strong>information bottleneck</strong>. Can we do better?</div></div>"
+      }
+    ]
+  },
+  {
+    "title": "ColBERT: Late Interaction",
+    "slides": [
+      {
+        "type": "bullet",
+        "title": "The Single-Vector Bottleneck",
+        "content": "<div class=\"alert-block\"><h3>Problem with DPR</h3><div class=\"block-content\">The <strong>entire</strong> document is compressed into a single 768-dim vector.</div></div>\n\n\n\n\n\n\n\n\n\n\n<strong>Consequences:</strong>\n<ul><li>Cannot capture fine-grained token-level alignments</li><li>``<strong>Who</strong> founded Wikipedia?'' vs.\\ ``<strong>When</strong> was Wikipedia founded?'' $\\to$ similar scores!</li><li>Long documents lose information</li></ul>\n\n\n\n<div class=\"example-block\"><h3>Solution</h3><div class=\"block-content\">Keep <strong>all</strong> token embeddings, not just <code>[CLS]</code>. Compare at the token level.</div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "The Single-Vector Bottleneck (Figure)",
+        "content": "<div class=\"h-center\"><img class=\"tikz-img\" src=\"assets/inline_e67bf8fc72.png\" alt=\"Inline TikZ\"></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "ColBERT: Architecture (Khattab & Zaharia, 2020)",
+        "content": "<div class=\"block\"><h3>Key Idea</h3><div class=\"block-content\">Encode query and document <strong>separately</strong> (like bi-encoder), but compare at the <strong>token level</strong> using MaxSim.</div></div>\n\n\n\n\n\n\n\n\n\n\n<div class=\"example-block\"><h3>Late Interaction</h3><div class=\"block-content\">Documents are encoded <strong>offline</strong> (token-level embeddings stored). The ``interaction'' happens <strong>late</strong> --- only at query time via MaxSim.</div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "ColBERT: Architecture (Khattab & Zaharia, 2020) (Figure)",
+        "content": "<div class=\"h-center\"><img class=\"tikz-img\" src=\"assets/inline_63a2ce5dd8.png\" alt=\"Inline TikZ\"></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "ColBERT: MaxSim Scoring",
+        "content": "<div class=\"block\"><h3>MaxSim Definition</h3><div class=\"block-content\">$$\\text{MaxSim}(\\vq, \\vd) = \\sum_{i=1}^{|\\vq|} \\max_{j=1}^{|\\vd|}\\; \\cos(\\vq_i, \\vd_j)$$</div></div>\n\n\n\n<strong>Step by step:</strong>\n<ol><li>For each query token $\\vq_i$, find the document token $\\vd_j$ with highest cosine similarity</li><li>Take that maximum similarity</li><li>Sum across all query tokens</li></ol>\n\n\n\n\n<strong>Properties:</strong>\n<ul><li><strong>Asymmetric:</strong> Every query token must find a match; document tokens can be ignored</li><li><strong>Decomposable:</strong> Document embeddings precomputed and stored offline</li><li>Token embeddings: $\\vq_i, \\vd_j \\in \\mathbb{R}^{128}$ (projected down from 768)</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Worked Example: MaxSim Scoring",
+        "content": "<strong>Query:</strong> ``who founded wikipedia'' (3 tokens)\n<strong>Document:</strong> ``wikipedia was founded by jimmy wales'' (6 tokens)\n\n\n\n\n\n\n<table><tr><th><em>wikipedia</em></th><th><em>was</em></th><th><em>founded</em></th><th><em>by</em></th><th><em>jimmy</em></th><th><em>wales</em></th></tr><tr><td><em>who</em></td><td>0.12</td><td>0.08</td><td>0.15</td><td>0.10</td><td><strong>0.72</strong></td><td>0.45</td></tr><tr><td><em>founded</em></td><td>0.20</td><td>0.05</td><td><strong>0.95</strong></td><td>0.10</td><td>0.12</td><td>0.08</td></tr><tr><td><em>wikipedia</em></td><td><strong>0.98</strong></td><td>0.06</td><td>0.18</td><td>0.04</td><td>0.10</td><td>0.15</td></tr></table>\n\n\n\n\n\n$$\\text{MaxSim} = \\underbrace{0.72}_{\\text{who}\\to\\text{jimmy}} + \\underbrace{0.95}_{\\text{founded}\\to\\text{founded}} + \\underbrace{0.98}_{\\text{wikipedia}\\to\\text{wikipedia}} = \\mathbf{2.65}$$\n\n\n\n<div class=\"example-block\"><h3>Notice</h3><div class=\"block-content\">``who'' aligns with ``jimmy'' (the answer entity) --- the model learns <strong>semantic alignment</strong>, not just exact matching.</div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "ColBERT: Efficiency vs.\\ Accuracy",
+        "content": "<table><tr><th><strong>DPR (Bi-Enc)</strong></th><th><strong>ColBERT</strong></th><th><strong>Cross-Encoder</strong></th></tr><tr><td>Interaction</td><td>None (dot prod)</td><td>Late (MaxSim)</td><td>Full (cross-attn)</td></tr><tr><td>Pre-compute docs</td><td>\u2713 (1 vec)</td><td>\u2713 ($n$ vecs)</td></tr><tr><td>Use for retrieval</td><td>\u2713 With ANN</td><td>\u2713 With ANN</td><td>Too slow</td></tr><tr><td>Speedup vs.\\ CE</td><td>$\\sim$1000$\\times$</td><td>$\\sim$100$\\times$</td><td>$1\\times$</td></tr><tr><td>MS MARCO MRR@10</td><td>31.1</td><td>36.0</td><td>39.0</td></tr><tr><td>Storage per doc</td><td>$768 \\times 4$B = 3 KB</td><td>$128 \\times 128 \\times 4$B $\\approx$ 64 KB</td><td>N/A</td></tr></table>\n\n\n\n\n\n<div class=\"example-block\"><h3>Sweet Spot</h3><div class=\"block-content\">ColBERT gives near-cross-encoder accuracy at bi-encoder-like speed. Trade-off: <strong>much higher storage</strong> (one vector per token, not per document).</div></div>"
+      }
+    ]
+  },
+  {
+    "title": "Hard Negatives Mining",
+    "slides": [
+      {
+        "type": "bullet",
+        "title": "Hard vs.\\ Easy Negatives: Why It Matters",
+        "content": "<div class=\"h-center\"><img class=\"tikz-img\" src=\"assets/hard_negatives_viz.png\" alt=\"hard_negatives_viz\"></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "The Evolving Encoder and Negative Quality",
+        "content": "<div class=\"block\"><h3>Key Insight: What Counts as ``Hard'' Changes Over Training</h3><div class=\"block-content\">The encoder's understanding of relevance <strong>evolves</strong> across training epochs. This changes which negatives are informative:</div></div>\n\n\n\n\n<strong>Early training:</strong> The encoder has no notion of relevance.\n<ul><li>BM25 negatives (lexically similar but irrelevant) are <strong>not yet hard</strong> --- the model cannot even distinguish basic relevance.</li><li>Random negatives provide sufficient learning signal.</li></ul>\n\n\n\n\n<strong>Later training:</strong> The encoder understands basic relevance.\n<ul><li>Random negatives become <strong>trivially easy</strong> --- zero gradient.</li><li>BM25 negatives now become <strong>genuinely hard</strong> --- the model must learn to distinguish lexical overlap from true relevance.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "The Evolving Encoder: Representations Shift Over Training",
+        "content": "<div class=\"alert-block\"><h3>Implication</h3><div class=\"block-content\">The optimal negative sampling strategy is <strong>not fixed</strong> --- it should adapt to the encoder's current capability.</div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "The Evolving Encoder: Representations Shift Over Training (Figure)",
+        "content": "<div class=\"h-center\"><img class=\"tikz-img\" src=\"assets/evolving_encoder.png\" alt=\"evolving_encoder\"></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "From Static to Dynamic Negatives",
+        "content": "<div class=\"block\"><h3>Static Negatives (e.g., BM25)</h3><div class=\"block-content\">Negatives are chosen <strong>once, before training</strong> and remain fixed:\n<ul><li>Cheap to compute (run BM25 once).</li><li>Eventually become too easy as the encoder improves.</li></ul></div></div>\n\n\n\n\n<div class=\"example-block\"><h3>Dynamic Negatives (e.g., ANCE)</h3><div class=\"block-content\">Negatives are defined by the <strong>current encoder state</strong>:\n<ul><li>A <strong>hard negative</strong> = a document the model <strong>currently</strong> scores high, but is <strong>not</strong> the ground-truth relevant document.</li><li>These are the most confusing examples {right now} --- maximally informative gradients.</li><li>Requires periodically re-encoding the corpus and refreshing the index.</li></ul></div></div>\n\n\n\n\n\n<strong>Static:</strong> fixed before training  $\\longrightarrow$  <strong>Dynamic:</strong> adapts with the model"
+      },
+      {
+        "type": "bullet",
+        "title": "ANCE: Asynchronous Index Refresh",
+        "content": "<div class=\"block\"><h3>Core Innovation</h3><div class=\"block-content\">Maintain an ANN index during training. Use the model's <strong>own</strong> top-$k$ nearest passages as hard negatives.</div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "ANCE: Asynchronous Index Refresh (Figure)",
+        "content": "<div class=\"h-center\"><img class=\"tikz-img\" src=\"assets/inline_6839cfccdb.png\" alt=\"Inline TikZ\"></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "ANCE: Results",
+        "content": "<table><tr><th><strong>Method</strong></th><th><strong>NQ Top-20 R</strong></th><th><strong>MS MARCO MRR@10</strong></th><th><strong>Negatives</strong></th></tr><tr><td>BM25</td><td>59.1</td><td>18.7</td><td>---</td></tr><tr><td>DPR (BM25 neg.)</td><td>78.4</td><td>31.1</td><td>Static / lexical</td></tr><tr><td><strong>ANCE</strong></td><td><strong>81.9</strong></td><td><strong>33.0</strong></td><td>Dynamic / semantic</td></tr></table>\n\n\n\n\n\n<div class=\"example-block\"><h3>Key Takeaway</h3><div class=\"block-content\">The <strong>only</strong> difference between DPR and ANCE is the negative sampling strategy. Semantic hard negatives from the model's own index are strictly better than BM25 hard negatives.</div></div>\n\n<div class=\"alert-block\"><h3>Implication</h3><div class=\"block-content\">Negative sampling is a <strong>first-order concern</strong> in dense retrieval. The model and architecture stay the same --- the negatives matter most.</div></div>"
+      }
+    ]
+  },
+  {
+    "title": "Evaluation & The Zero-Shot Challenge",
+    "slides": [
+      {
+        "type": "bullet",
+        "title": "Key Benchmarks",
+        "content": "<table><tr><th><strong>Benchmark</strong></th><th><strong>Corpus</strong></th><th><strong>Queries</strong></th><th><strong>Primary Metric</strong></th></tr><tr><td>MS MARCO</td><td>8.8M passages</td><td>500K train</td><td>MRR@10</td></tr><tr><td>Natural Questions</td><td>21M passages</td><td>3.5K test</td><td>Top-20 Recall</td></tr><tr><td>BEIR (18 tasks)</td><td>Varies</td><td>Varies</td><td>nDCG@10 (zero-shot)</td></tr><tr><td>TREC-DL 2019/20</td><td>8.8M passages</td><td>43/54</td><td>nDCG@10</td></tr></table>\n\n\n\n\n\n<div class=\"alert-block\"><h3>Critical Distinction</h3><div class=\"block-content\"><ul><li>MS MARCO / NQ: <strong>In-domain</strong> (train & test same distribution)</li><li>BEIR: <strong>Zero-shot</strong> (train on MS MARCO, test on 18 diverse tasks)</li><li>Dense methods excel in-domain but often struggle on BEIR!</li></ul></div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "The Zero-Shot Challenge: BEIR",
+        "content": "<table><tr><th><strong>BM25</strong></th><th><strong>DPR</strong></th><th><strong>ColBERT</strong></th><th><strong>ANCE</strong></th><th><strong>Contriever</strong></th></tr><tr><td>BEIR Avg nDCG@10</td><td>47.3</td><td>33.2</td><td>41.5</td><td>37.7</td><td>48.5</td></tr></table>\n\n\n\n\n\n<div class=\"alert-block\"><h3>Surprising Finding</h3><div class=\"block-content\"><strong>BM25 outperforms</strong> most dense models on zero-shot BEIR!</div></div>\n\n<strong>Why?</strong>\n<ul><li>Dense models overfit to MS MARCO query structure.</li><li>BM25 is distribution-agnostic (just term statistics).</li><li>BEIR includes diverse tasks (fact-checking, etc.) where semantic matching isn't always enough.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Solving Zero-Shot: Contriever",
+        "content": "<div class=\"block\"><h3>Contriever (Izacard et al., 2022)</h3><div class=\"block-content\">Instead of learning retrieval from <strong>manual relevance labels</strong>,\nhow can we learn from <strong>raw text alone</strong> using contrastive learning.</div></div>\n\n\n\n\n<div class=\"example-block\"><h3>Result</h3><div class=\"block-content\">Contriever (48.5) finally beats BM25 (47.3) on average across BEIR, showing that domain-agnostic dense retrieval is possible.</div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "How Contriever Solves the Zero-Shot Problem",
+        "content": "<div class=\"h-center\"><img class=\"tikz-img\" src=\"assets/contriever_training.png\" alt=\"contriever_training\"></div>"
+      },
+      {
+        "type": "split",
+        "title": "Why Contriever Works (and What It Does Not Fix)",
+        "content": "",
+        "left_title": "",
+        "left_content": "<strong>Why it works</strong>\n<ul><li>Learns <strong>domain-agnostic semantic similarity</strong>.</li><li>Trained on <strong>diverse web text</strong>, not one supervised benchmark.</li></ul>",
+        "right_title": "",
+        "right_content": "<strong>Limits</strong>\n<ul><li>Still not always best at <strong>top-rank precision</strong> (<em>nDCG@10</em>).</li><li>Long, argument-heavy documents remain hard (e.g., T{\\'o}uch{\\'e}).</li></ul>",
+        "bottom": ""
+      },
+      {
+        "type": "bullet",
+        "title": "Hybrid Retrieval: Dense + Sparse",
+        "content": "<div class=\"block\"><h3>Key Finding</h3><div class=\"block-content\">Combining BM25 and dense retrieval <strong>outperforms either alone</strong>.</div></div>\n\n\n\n$$\\text{score}_{\\text{hybrid}}(q, d) = \\alpha \\cdot \\text{score}_{\\text{BM25}}(q,d) + (1-\\alpha) \\cdot \\text{score}_{\\text{dense}}(q,d)$$\n\n\n\n\n<table><tr><th><strong>Method</strong></th><th><strong>NQ Top-20 Recall</strong></th></tr><tr><td>BM25 alone</td><td>62.9</td></tr><tr><td>DPR alone</td><td>78.4</td></tr><tr><td>BM25 + DPR (hybrid)</td><td><strong>82.6</strong></td></tr></table>\n\n\n\n\n\n<div class=\"example-block\"><h3>Why Hybrid Works</h3><div class=\"block-content\">Sparse captures <strong>exact matches</strong> (named entities, rare terms). Dense captures <strong>semantic similarity</strong> (paraphrases). They are complementary, not competing.</div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "Score-Agnostic Fusion: Reciprocal Rank Fusion",
+        "content": "<div class=\"block\"><h3>The Challenge</h3><div class=\"block-content\">Dense scores (dot products) and Sparse scores (BM25) are on <strong>different scales</strong>. How to combine them without fragile hyperparameter tuning?</div></div>\n\n\n\n\n\n\n\n\n\n\n<div class=\"alert-block\"><h3>Reciprocal Rank Fusion (RRF)</h3><div class=\"block-content\">RRF relies only on <strong>rankings</strong>. It favors documents that appear high in <em>any</em> characteristic (sparse or dense).</div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "Score-Agnostic Fusion: Reciprocal Rank Fusion (Figure)",
+        "content": "<div class=\"h-center\"><img class=\"tikz-img\" src=\"assets/rrf_visualization.png\" alt=\"rrf_visualization\"></div>"
+      }
+    ]
+  },
+  {
+    "title": "Retrieval-Augmented Generation (RAG)",
+    "slides": [
+      {
+        "type": "bullet",
+        "title": "Beyond Ranking: Retrieval-Augmented Generation (RAG)",
+        "content": "<div class=\"block\"><h3>The Paradigm Shift</h3><div class=\"block-content\">In modern AI applications, retrieval is not the final step. It is the <strong>foundation</strong> for Large Language Models (LLMs).</div></div>\n\n\n\n\n<ul><li><strong>Problem:</strong> LLMs hallucinate and have a fixed knowledge cutoff.</li><li><strong>Solution:</strong> Retrieve relevant, up-to-date passages and provide them as <strong>grounding context</strong> in the model's prompt.</li><li><strong>Impact:</strong> Retrieval expands the model's memory and enables it to cite its sources.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "The Modern IR Pipeline with RAG",
+        "content": "<div class=\"block\"><h3>Retrieval as the \"Eyes\" of the LLM</h3><div class=\"block-content\">If the retriever (bi-encoder) or re-ranker (cross-encoder) fails, the generator <strong>cannot</strong> produce a factual answer. High-quality IR is the bottleneck for RAG accuracy.</div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "The Modern IR Pipeline with RAG (Figure)",
+        "content": "<div class=\"h-center\"><img class=\"tikz-img\" src=\"assets/inline_0f022b659d.png\" alt=\"Inline TikZ\"></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "The Complete Modern Retrieval Stack",
+        "content": "Each lecture adds a component. Dense retrieval (today) gives us semantic first-stage retrieval --- the missing piece from Lecture 4."
+      },
+      {
+        "type": "bullet",
+        "title": "The Complete Modern Retrieval Stack (Figure)",
+        "content": "<div class=\"h-center\"><img class=\"tikz-img\" src=\"assets/inline_bff51798ab.png\" alt=\"Inline TikZ\"></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "Key Takeaways",
+        "content": "<div class=\"block\"><h3>1. Bi-Encoders Enable Semantic Retrieval at Scale</h3><div class=\"block-content\">Encode documents offline, search with ANN indexes from Lecture 2. Solves the vocabulary mismatch problem that BM25 cannot.</div></div>\n\n<div class=\"block\"><h3>2. Contrastive Learning Is the Training Paradigm</h3><div class=\"block-content\">InfoNCE loss with in-batch negatives. Larger batches = more negatives = better training. Temperature $\\tau$ is a critical hyperparameter.</div></div>\n\n<div class=\"block\"><h3>3. DPR $\\to$ ColBERT $\\to$ ANCE: Improving Dense Retrieval</h3><div class=\"block-content\">DPR: single-vector bi-encoder. ColBERT: token-level late interaction. ANCE: dynamic hard negatives via asynchronous index refresh.</div></div>\n\n<div class=\"block\"><h3>4. Hybrid Retrieval Is the Practical Standard</h3><div class=\"block-content\">Dense + sparse complementary. BM25 for exact match, dense for semantics. Cross-encoder on top for final precision.</div></div>"
+      },
+      {
+        "type": "bullet",
+        "title": "Questions?",
+        "content": "Questions?\n\n\n\n<strong>Preview:</strong> Next class we learn about <strong>Learning to Rank</strong>."
+      }
+    ]
+  }
+]

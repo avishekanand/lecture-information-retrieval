@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Question Answering and Retrieval-Augmented Generation</title>
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      processEscapes: true
+    },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+  :root {
+    --bg-color: #0f111a;
+    --text-color: #e2e8f0;
+    --accent-color: #38bdf8;
+    --accent-secondary: #f43f5e;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #94a3b8;
+    --sidebar-active: #e2e8f0;
+  }
+  body, html { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg-color); color: var(--text-color); overflow: hidden; }
+  .app-container { display: flex; height: 100vh; }
+  .sidebar { width: 280px; background: var(--sidebar-bg); padding: 2rem 0; display: flex; flex-direction: column; overflow-y: auto; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.5); }
+  .chapter-link { padding: 1rem 1.5rem; cursor: pointer; color: var(--sidebar-text); transition: all 0.2s; font-size: 1.1rem; border-left: 4px solid transparent; }
+  .chapter-link:hover { color: var(--sidebar-active); background: rgba(255,255,255,0.05); }
+  .chapter-link.active { color: var(--sidebar-active); border-left-color: var(--accent-color); font-weight: bold; background: rgba(0,0,0,0.2); }
+  
+  .main-content { flex: 1; position: relative; overflow: hidden; }
+  .slide-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.4s ease; pointer-events: none; padding: 3rem 5rem; box-sizing: border-box; flex-direction: column; }
+  .slide-container.active { opacity: 1; pointer-events: auto; z-index: 5; }
+  
+  .slide-content { max-width: 1400px; width: 100%; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .slide-content.image-layout { max-width: 1600px; }
+  
+  .slide-content h1 { font-size: 4rem; color: #fff; margin-bottom: 1.5rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+  .slide-content h2 { font-size: 2.8rem; color: var(--accent-color); margin-bottom: 1.5rem; font-weight: 600; line-height: 1.2; text-align: center;}
+  .slide-content h2 strong {color: var(--accent-secondary); }
+  .slide-content p { font-size: 2.1rem; line-height: 1.4; color: #cbd5e1; margin-bottom: 1rem; }
+  .slide-content ul, .slide-content ol { text-align: left; display: inline-block; font-size: 2rem; line-height: 1.5; color: #cbd5e1; margin: 0 auto; max-width: 100%; padding-left: 2.5rem; }
+  .slide-content li { margin-bottom: 0.8rem; }
+  
+  .highlight { color: var(--accent-color) !important; font-weight: bold; }
+  
+  .split-layout { display: flex; gap: 3rem; text-align: left; margin-top: 2rem; align-items: stretch; justify-content: center; width: 100%; height: 100%; }
+  .half { flex: 1; background: rgba(255,255,255,0.03); padding: 2.5rem; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; overflow-y: auto; max-height: 60vh; }
+  .half h3 { font-size: 2.3rem; color: #fff; margin-top: 0; margin-bottom: 1.5rem; text-align: center; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 1rem;}
+  .half p { font-size: 1.7rem; text-align: left; }
+  .half ul { font-size: 1.7rem; line-height: 1.5; padding-left: 2rem; color: #cbd5e1; display: block; }
+  
+  .progress-container { position: absolute; top: 1.5rem; right: 2rem; font-size: 1.2rem; color: #64748b; font-weight: 600; z-index: 10; font-variant-numeric: tabular-nums; }
+  .controls { position: absolute; bottom: 1.5rem; right: 2rem; display: flex; gap: 1rem; z-index: 10; }
+  .btn { background: rgba(255,255,255,0.1); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; }
+  .btn:hover { background: rgba(255,255,255,0.3); }
+  
+  table { border-collapse: collapse; margin: 2rem auto; font-size: 1.9rem; color: #e2e8f0; width: 90%; background: rgba(255,255,255,0.02); }
+  th, td { border: 1px solid rgba(255,255,255,0.1); padding: 1.2rem 1.5rem; text-align: left; }
+  th { background: rgba(255,255,255,0.05); color: var(--accent-color); font-weight: bold; border-bottom: 2px solid var(--accent-color); }
+  td.highlight { font-weight: bold; color: #fff; background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); }
+  
+  .figure-img { max-width: 100%; max-height: 55vh; border-radius: 0.5rem; object-fit: contain; box-shadow: 0 10px 30px rgba(0,0,0,0.5); background: white; padding: 10px; margin: 1rem auto; display: block; }
+  .figure-caption { font-size: 1.4rem; color: #94a3b8; font-style: italic; margin-bottom: 2rem; }
+  
+  code { font-family: monospace; background: rgba(255,255,255,0.1); padding: 0.2rem 0.5rem; border-radius: 0.3rem; color: var(--accent-secondary); }
+</style>
+</head>
+<body>
+<div class="app-container">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-content" id="main-content">
+    <div class="progress-container"><span id="current">1</span> / <span id="total">1</span></div>
+    <div class="controls">
+      <button class="btn" id="prev-btn" title="Previous Slide (Left Arrow)">&#8592;</button>
+      <button class="btn" id="next-btn" title="Next Slide (Right Arrow)">&#8594;</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const chapters = [{"title": "What is Question Answering?", "slides": [{"type": "title", "title": "What is Question Answering?", "subtitle": "From extracting spans to open-domain generation"}, {"type": "split", "title": "The Information Need", "left_title": "Evolution of Search", "left_content": "<ul><li><strong>1990s Web Search:</strong> ranked documents</li><li><strong>2011 IBM Watson:</strong> direct answer</li><li><strong>2018 BERT:</strong> extract answer span</li><li><strong>2020 GPT-3:</strong> generate answer from weights</li><li><strong>2020 RAG:</strong> retrieve then generate</li></ul>", "right_title": "The Core Tension", "right_content": "<ul><li>Retrieval gives us <strong>evidence</strong> but cannot reason.</li><li>Generation gives us <strong>fluency</strong> but can fabricate.</li><li><strong>QA needs both.</strong></li></ul>", "bottom": ""}, {"type": "image", "title": "What Does a QA System Do?", "image": "assets/rag_search.png", "caption": "Input: natural language question. Output: direct answer.", "content": "<p><strong>Document IR:</strong> returns a ranked list of passages.</p><p><strong>QA:</strong> returns a single concise answer.</p><p class='highlight'>Why harder? Questions are short/ambiguous. Evidence may be split. Answer must be correct, not just relevant.</p>"}, {"type": "split", "title": "Two Ways to Know", "left_title": "Parametric (LLMs)", "left_content": "<ul><li>Knowledge baked into weights</li><li>Fast inference, no index</li><li><strong>Fails:</strong> stale data, rare facts, confident errors</li></ul>", "right_title": "Non-parametric (Retrieval)", "right_content": "<ul><li>External, updatable index</li><li>Explicit, citable, fresh</li><li><strong>Fails:</strong> retrieval errors propagate; cannot reason alone</li></ul>", "bottom": "<h2 class='highlight' style='margin-top:2rem;'>RAG = Parametric + Non-Parametric</h2>"}, {"type": "bullet", "title": "QA as a Task Family", "content": "<table><tr><th>Type</th><th>Input</th><th>Output</th></tr><tr><td>Extractive</td><td>Question + passage</td><td>Span in passage</td></tr><tr><td>Abstractive</td><td>Question + passage</td><td>Generated string</td></tr><tr><td class='highlight'>Open-Domain</td><td class='highlight'>Question only</td><td class='highlight'>Answer (from corpus)</td></tr><tr><td>Knowledge-Base</td><td>Question + KG</td><td>Entity/relation</td></tr><tr><td>Conversational</td><td>Multi-turn history</td><td>Answer in context</td></tr></table><br><p style='font-size:2rem; margin-top:2rem'><strong>This lecture's focus:</strong> Open-domain QA. RAG is the dominant approach.</p>"}, {"type": "bullet", "title": "Open-Domain QA: The Setup", "content": "<ul><li><strong>Input:</strong> Question $q$ and Corpus $\\mathcal{C} = \\{d_1, d_2, \\dots, d_N\\}$</li><li><strong>Step 1:</strong> Retrieve top-$k$ passages $\\mathcal{R}_k(q) \\subset \\mathcal{C}$</li><li><strong>Step 2:</strong> Generate answer $a = f(q, \\mathcal{R}_k(q))$</li></ul><br><p class='highlight' style='font-size:2.5rem'>If the evidence isn't retrieved, probability of correct answer approaches 0.<br>All QA quality is bounded by retrieval quality.</p>"}, {"type": "split", "title": "Evaluation Limits", "left_title": "Task-Level Metrics", "left_content": "<ul><li><strong>Exact Match / Token F1:</strong> Good for spans, bad for abstraction. <em>automobile &#8800; car</em></li><li><strong>BERTScore/ROUGE:</strong> Better for generated abstract text.</li><li><em>Question: Is the answer correct?</em></li></ul>", "right_title": "System-Level Metrics", "right_content": "<ul><li>Faithfulness</li><li>Attribution</li><li>Hallucination Rate</li><li><em>Question: Is every claim grounded in evidence?</em></li></ul>", "bottom": "<p style='font-size:2rem; margin-top:2rem'>A system can score high on EM by memorizing training answers while hallucinating on novel queries.</p>"}]}, {"title": "System Architectures", "slides": [{"type": "title", "title": "System Architectures", "subtitle": "From Reader to Generator"}, {"type": "image", "title": "Retriever-Reader Paradigm", "image": "assets/retriever-reader-qa.png", "caption": "DrQA (2017) established the 'Retrieve then Read' framework.", "content": "<ul><li><strong>Stage 1:</strong> TF-IDF Retriever maximizes passage recall.</li><li><strong>Stage 2:</strong> BiLSTM Reader maximizes span precision.</li></ul>"}, {"type": "image", "title": "Retriever-Reader-Generator", "image": "assets/retrieve-reader-gen.png", "caption": "", "content": ""}, {"type": "image", "title": "Closed-Book QA: The LLM Bet", "image": "assets/closedbook-qa.png", "caption": "LLMs answering exclusively from their parametric weight memory.", "content": ""}, {"type": "split", "title": "Why Closed-Book QA Falls Short", "left_title": "Failures", "left_content": "<ul><li><strong>Knowledge cutoff:</strong> no access to post-training facts</li><li><strong>Long-tail failure:</strong> rare entities poorly represented</li><li><strong>No evidence:</strong> cannot cite sources</li><li><strong>Hallucination:</strong> confident generation of false content</li></ul>", "right_title": "The Scale Paradox", "right_content": "<p class='highlight' style='font-size:2.5rem; margin-top:2rem'>Larger models hallucinate <em>more confidently</em>, not less.<br><br>Scale alone does not solve factual grounding.</p>", "bottom": ""}]}, {"title": "The Hallucination Crisis", "slides": [{"type": "title", "title": "The Hallucination Crisis", "subtitle": "Factually incorrect content presented with confidence"}, {"type": "bullet", "title": "What Is Hallucination?", "content": "<ul><li><strong>Intrinsic:</strong> contradicts the given context or source</li><li><strong>Extrinsic:</strong> asserts facts absent from any source (pure fabrication)</li></ul><br><h2>Why it's not a bug</h2><ul><li>LLMs maximize token likelihood, not truth</li><li>No external factuality check at inference</li><li>Fluent generation &#8800; faithful generation</li></ul>"}, {"type": "image", "title": "Hallucinations in the Wild", "image": "assets/hallucination-many.png", "caption": "", "content": ""}, {"type": "image", "title": "High-Stakes Hallucination", "image": "assets/hallucination-noonan.png", "caption": "", "content": ""}, {"type": "split", "title": "Why LLMs Hallucinate", "left_title": "Root Causes", "left_content": "<ul><li>Training data noise (contradictions)</li><li>Distributional gaps (unseen entity combos)</li><li>Autoregressive bias (no global fact-check)</li><li>RLHF prioritizes helpfulness over truth</li></ul>", "right_title": "The Core Problem", "right_content": "<ul><li>Generates the <em>most likely</em> continuation</li><li>Does <strong>not</strong> generate the <em>most true</em> continuation</li></ul>", "bottom": ""}, {"type": "split", "title": "RAG as the Solution", "left_title": "Grounding", "left_content": "<p>Grounding generation in retrieved evidence constrains the model.</p><ul><li>Retrieved evidence is <strong>explicit</strong> and <strong>checkable</strong>.</li><li>Prompts force citations: <em>\"use only passages\"</em></li><li>Index updateable without retraining</li></ul>", "right_title": "Key Insight", "right_content": "<ul><li>Errors shift from invisible hallucinations to detectable retrieval failures.</li><li><strong>Retrieval defines reasoning substrate.</strong></li></ul>", "bottom": ""}]}, {"title": "RAG 101", "slides": [{"type": "title", "title": "RAG 101", "subtitle": "Pipeline of Decisions"}, {"type": "bullet", "title": "What RAG Actually Is", "content": "<p>A compound AI system, not a single model trick.</p><ul><li><strong>Retrieval defines reasoning substrate.</strong></li><li>If evidence is not retrieved, it cannot be used.</li><li>Modularity allows isolated debugging.</li></ul><p class='highlight' style='font-size:2.5rem; margin-top:2rem'>Pipeline: Retrieval $\\to$ Conditioning $\\to$ Generation</p>"}, {"type": "image", "title": "A System View", "image": "assets/rag_system_view.png", "caption": "Treat each module as a component with knobs and an evaluation contract.", "content": ""}, {"type": "split", "title": "Sequential Training in RAG", "left_title": "Options", "left_content": "<ol><li><strong>Stage 1:</strong> Pre-train/fine-tune dense retriever</li><li><strong>Stage 2:</strong> Joint fine-tuning (marginalise over retrieved passages)</li><li><strong>Stage 3:</strong> RLHF/DPO for grounding preferences</li></ol>", "right_title": "Practical default (2025)", "right_content": "<ul><li>Freeze the retriever (Contriever/e5-large)</li><li>LoRA-fine-tune generator on grounded QA</li><li>Joint training is expensive and often unnecessary</li></ul>", "bottom": ""}]}, {"title": "The Original RAG Model", "slides": [{"type": "title", "title": "Lewis et al. 2020", "subtitle": "The paper that formalized RAG"}, {"type": "bullet", "title": "Key Innovation", "content": "<p>Retrieval treated as a <em>latent variable</em>.</p><p style='font-size:2.5rem; line-height: 1.5;'>$$p(y \\mid x) \\approx \\sum_{z} p(z \\mid x)\\, p(y \\mid x, z)$$</p><ul><li>Marginalizing over documents makes retrieval differentiable.</li><li><strong>RAG-Sequence:</strong> retrieve once for full answer.</li><li><strong>RAG-Token:</strong> retrieve per generated token.</li></ul>"}, {"type": "image", "title": "Original RAG Architecture", "image": "assets/rag-original.png", "caption": "Lewis et al. 2020", "content": ""}]}, {"title": "Retrieval Deep Dive", "slides": [{"type": "title", "title": "Retrieval Deep Dive", "subtitle": "Finding the Right Evidence"}, {"type": "bullet", "title": "Retrieval Choices (2025 View)", "content": "<table><tr><th>Method</th><th>Strengths</th><th>Typical Failure</th><th>Default?</th></tr><tr><td>BM25</td><td>Entity precision, OOD robust</td><td>Vocabulary mismatch</td><td>Yes</td></tr><tr><td>Dense (DPR)</td><td>Semantic matching, recall</td><td>Entity drift, OOD</td><td>Yes (tuned)</td></tr><tr><td class='highlight'>Hybrid</td><td class='highlight'>Best practical default</td><td class='highlight'>Normalization complexity</td><td class='highlight'>Yes</td></tr><tr><td>ColBERT</td><td>High quality at scale</td><td>Storage, infra cost</td><td>High-value</td></tr></table><br><h2 class='highlight' style='margin-top:2rem'>The Ceiling</h2><p>Most \"hallucinations\" in RAG are <strong>selection failures</strong>: the evidence existed but was not retrieved.</p>"}, {"type": "split", "title": "The Evidence Ceiling", "left_title": "Logic", "left_content": "<p>$$\\text{Answer}(q) = f(q, \\mathcal{R}_k(q))$$</p><ul><li><strong>Retrieve:</strong> find the right chunk</li><li><strong>Select:</strong> include it in context window</li><li><strong>Use:</strong> force grounding via prompt</li></ul>", "right_title": "Implication", "right_content": "<ul><li>Improving the generator yields zero gain if retrieval recall is the bottleneck.</li><li>Measure Recall@k <em>before</em> tuning generator.</li></ul>", "bottom": ""}, {"type": "image", "title": "Chunking: A Modeling Decision", "image": "assets/chunking_tradeoff.png", "caption": "The retrieval unit determines recall, precision, and context efficiency.", "content": "<div class='split-layout'><div class='half'><ul><li><strong>Fixed-size:</strong> simple; may split sentences</li><li><strong>Semantic:</strong> boundary at paragraph; variable length</li></ul></div><div class='half'><ul><li><strong>Recursive:</strong> balances size and coherence</li><li><strong>Extraction:</strong> tables, PDFs</li></ul></div></div><p class='highlight' style='margin-top:1rem'>Rule: A chunk without provenance metadata breaks the attribution chain.</p>"}, {"type": "image", "title": "Late Chunking", "image": "assets/rag_late_chunking.png", "caption": "Context-Aware Embeddings (G\u00fcnther et al., 2024)", "content": "<p>Encode the full document first, then mean-pool chunk representations.<br>Massive coherence boost with same storage footprint.</p>"}, {"type": "split", "title": "Query Reformulation", "left_title": "Strategies", "left_content": "<ul><li><strong>HyDE:</strong> Generate hypothetical document, embed that.</li><li><strong>Multi-Query:</strong> Generate paraphrases, retrieve all, fuse (RRF).</li><li><strong>Step-back:</strong> abstract to a broader concept</li><li><strong>Decomposition:</strong> Break down multi-part questions.</li></ul>", "right_title": "Danger: Intent Drift", "right_content": "<p>Reformulation can shift user intent.</p><p>Always monitor retrieval overlap between original and rewritten queries to detect drift away from actual need.</p>", "bottom": ""}, {"type": "bullet", "title": "Retrieval Quality Metrics", "content": "<ul><li><strong>Recall@k:</strong> does the gold evidence appear in top-k?</li><li><strong>MRR:</strong> mean reciprocal rank of first relevant passage</li><li><strong>Context Hit Rate:</strong> fraction of queries where retrieved context contains sufficient information to answer correctly (measured against ground truth).</li></ul><br><p class='highlight' style='font-size:2.5rem; margin-top:2rem'>Measurement order: Measure Recall@k first. If < 0.7, fix the retriever before tuning the generator.</p>"}]}, {"title": "Beyond Single-Shot", "slides": [{"type": "title", "title": "Beyond Single-Shot", "subtitle": "Multi-Step Retrieval"}, {"type": "split", "title": "The DeRIVeR Paradigm", "left_title": "Single-shot limitation", "left_content": "<p>$q \\to \\mathcal{R}_k(q) \\to a$</p><p>One retrieval round captures only the <em>surface</em> question. Fails on multi-hop/ambiguous queries.</p>", "right_title": "DeRIVeR", "right_content": "<ul><li>1. Query Planner</li><li>2. Retrieval Module</li><li>3. Reasoning Synthesis</li></ul><p>Each role can be independently optimized, swapped, or scaled.</p>", "bottom": ""}, {"type": "split", "title": "Query Planning", "left_title": "Example", "left_content": "<p><strong>Q:</strong> \"CEO of company that acquired DeepMind's education?\"</p><ul><li>$q_1$: \"Company acquired DeepMind\" $\\to$ Google</li><li>$q_2$: \"CEO of Google\" $\\to$ Sundar Pichai</li><li>$q_3$: \"Education Sundar Pichai\" $\\to$ IIT</li></ul>", "right_title": "Strategies", "right_content": "<ul><li><strong>Sequential:</strong> $q_i$ uses $q_{i-1}$ result</li><li><strong>Parallel:</strong> independent, then fuse</li><li><strong>Conditional:</strong> branch on evidence</li></ul><p style='color:var(--accent-secondary)'>Cost Trade-off: Each step adds latency/tokens. Measure first.</p>", "bottom": ""}, {"type": "image", "title": "Single-Shot vs. Multi-Step Retrieval", "image": "assets/rag_multistep.png", "caption": "Iterate until confidence is met or budget exhausted.", "content": "<ul><li><strong>Single-shot:</strong> retrieve once; fast but fails on ambiguity</li><li><strong>Multi-step:</strong> retrieve $\\to$ reason $\\to$ retrieve again</li></ul>"}, {"type": "image", "title": "Evidence Chaining: Multi-Hop Reasoning", "image": "assets/rag_reasoning_chain.png", "caption": "Latent links: bridging entities not in original query.", "content": "<p>Failure mode: If the bridge entity is not retrieved correctly, the entire chain collapses. Error propagates.</p>"}, {"type": "image", "title": "Search-in-the-Loop", "image": "assets/rag_dynamic_search.png", "caption": "Retrieval as an LLM tool-call within reasoning trace.", "content": "<ul><li><strong>Trigger:</strong> search when model uncertainty $u_t > \\theta$</li><li><strong>Budget:</strong> cap max tool calls</li><li><strong>Training:</strong> RLHF to learn when <em>not</em> to search</li></ul>"}, {"type": "bullet", "title": "When Does Multi-Step Help?", "content": "<table><tr><th>Query Type</th><th>Approach</th><th>Reason</th></tr><tr><td>Simple factual</td><td>Single-shot</td><td>One retrieval round sufficient</td></tr><tr><td>Multi-hop</td><td>Sequential multi-step</td><td>Entity linking requires chaining</td></tr><tr><td>Ambiguous / broad</td><td>Parallel multi-query + RRF</td><td>Diverse coverage needed</td></tr><tr><td>Temporal / evolving</td><td>Dynamic search</td><td>Date-filtered iterative retrieval</td></tr></table><br><h2 class='highlight'>Rule of Thumb</h2><p>Only add complexity when a clear recall gap exists and latency/cost budget permits.</p>"}]}];
+  
+  let slides = [];
+  let currentSlideIndex = 0;
+  
+  const sidebarEl = document.getElementById('sidebar');
+  const mainContentEl = document.getElementById('main-content');
+  const currentEl = document.getElementById('current');
+  const totalEl = document.getElementById('total');
+  
+  function init() {
+    let slideIdx = 0;
+    chapters.forEach((chapter, cIdx) => {
+      const navItem = document.createElement('div');
+      navItem.className = 'chapter-link';
+      navItem.textContent = chapter.title;
+      navItem.dataset.chapter = cIdx;
+      // jump to first slide of this chapter
+      navItem.onclick = () => goToSlide(slides.findIndex(s => s.chapterIdx === cIdx));
+      sidebarEl.appendChild(navItem);
+      
+      chapter.slides.forEach(slide => {
+        slide.globalIndex = slideIdx++;
+        slide.chapterIdx = cIdx;
+        slides.push(slide);
+        
+        const slideEl = document.createElement('div');
+        slideEl.className = 'slide-container';
+        slideEl.id = 'slide-' + slide.globalIndex;
+        
+        // Use wider container if it contains an image
+        const isImage = slide.type === 'image';
+        let html = `<div class="slide-content ${isImage ? 'image-layout' : ''}">`;
+        
+        if (slide.type === 'title') {
+          html += `<h1>${slide.title}</h1>`;
+          if (slide.subtitle) html += `<h2 style="color:var(--text-color); font-weight:400;">${slide.subtitle}</h2>`;
+        } else if (slide.type === 'bullet') {
+          html += `<h2>${slide.title}</h2>`;
+          html += slide.content;
+        } else if (slide.type === 'split') {
+            html += `<h2>${slide.title}</h2>`;
+            html += `<div class="split-layout">
+                <div class="half"><h3>${slide.left_title}</h3>${slide.left_content}</div>
+                <div class="half"><h3>${slide.right_title}</h3>${slide.right_content}</div>
+            </div>`;
+            if (slide.bottom) html += `<div style="margin-top:2rem; width:100%;">${slide.bottom}</div>`;
+        } else if (slide.type === 'image') {
+            html += `<h2>${slide.title}</h2>`;
+            html += `<img class="figure-img" src="../${slide.image}" alt="${slide.title}">`;
+            if (slide.caption) html += `<div class="figure-caption">${slide.caption}</div>`;
+            if (slide.content) html += `<div style="margin-top:1rem; width: 100%;">${slide.content}</div>`;
+        }
+        
+        html += '</div>';
+        slideEl.innerHTML = html;
+        mainContentEl.appendChild(slideEl);
+      });
+    });
+    
+    totalEl.textContent = slides.length;
+    goToSlide(0);
+    
+    document.getElementById('prev-btn').onclick = prevSlide;
+    document.getElementById('next-btn').onclick = nextSlide;
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+        if (e.key === 'ArrowLeft') prevSlide();
+    });
+  }
+
+  function nextSlide() {
+      goToSlide(currentSlideIndex + 1);
+  }
+
+  function prevSlide() {
+      goToSlide(currentSlideIndex - 1);
+  }
+  
+  function goToSlide(idx) {
+    if (idx < 0 || idx >= slides.length) return;
+    
+    document.querySelectorAll('.slide-container').forEach(el => el.classList.remove('active'));
+    document.getElementById('slide-' + idx).classList.add('active');
+    
+    currentSlideIndex = idx;
+    currentEl.textContent = idx + 1;
+    
+    const chapterIdx = slides[idx].chapterIdx;
+    document.querySelectorAll('.chapter-link').forEach(el => {
+        el.classList.toggle('active', parseInt(el.dataset.chapter) === chapterIdx);
+    });
+  }
+  
+  window.onload = () => {
+      init();
+      if (window.MathJax) {
+          MathJax.typesetPromise().catch((err) => console.log('MathJax error:', err));
+      }
+  };
+</script>
+</body>
+</html>

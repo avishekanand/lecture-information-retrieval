@@ -1,7 +1,7 @@
 \begin{tikzpicture}[
     scale=0.7, transform shape,
-    node distance=1.4cm,
-    block/.style={rectangle, draw, rounded corners=2pt, minimum height=0.7cm, minimum width=3.5cm, align=center, font=\scriptsize\sffamily}
+    node distance=1.6cm,
+    block/.style={rectangle, draw, rounded corners=2pt, minimum height=0.7cm, text width=3.5cm, align=center, font=\scriptsize\sffamily}
 ]
     \node[infra, block] (corpus) {Document Corpus\\$N \approx 10^6$};
     \node[sparse, block, below=of corpus] (bm25) {\textbf{Stage 1: Sparse Retrieval}\\BM25 / LM\\Retrieve top-$k$ ($k \approx 1000$)};

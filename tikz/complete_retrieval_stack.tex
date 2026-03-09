@@ -1,9 +1,9 @@
-\begin{tikzpicture}[node distance=0.8cm]
-    \IRBox[10cm]{s1}{(0,0)}{Stage 1: Sparse Retrieval (L3) \textit{or} Dense Retrieval (L5)}{}{sparse}[]
-    \IRBox[10cm]{s1b}{(0,0)}{Optional: Query Expansion / PRF improves recall (L3)}{}{hybrid}[below=of s1]
-    \IRBox[10cm]{s2}{(0,0)}{Stage 2: Neural Re-ranking / Cross-Encoder}{}{rerank}[below=of s1b]
-    \IRBox[10cm]{s3}{(0,0)}{Stage 3: Learning to Rank (LTR) combines all signals (L6)}{Today}{hybrid}[below=of s2]
-    \IRBox[10cm]{out}{(0,0)}{Final Ranked List $\to$ User or RAG Application}{}{infra}[below=of s3]
+\begin{tikzpicture}[scale=0.62, transform shape, node distance=1.0cm]
+    \IRBox[8cm]{s1}{(0,0)}{Stage 1: Sparse Retrieval (L3) \textit{or} Dense Retrieval (L5)}{}{sparse}[]
+    \IRBox[8cm]{s1b}{}{Optional: Query Expansion / PRF improves recall (L3)}{}{hybrid}[below=of s1]
+    \IRBox[8cm]{s2}{}{Stage 2: Neural Re-ranking / Cross-Encoder}{}{rerank}[below=of s1b]
+    \IRBox[8cm]{s3}{}{Stage 3: Learning to Rank (LTR) combines all signals (L6)}{Today}{hybrid}[below=of s2]
+    \IRBox[8cm]{out}{}{Final Ranked List $\to$ User or RAG Application}{}{infra}[below=of s3]
 
     \IRArrowTB{s1}{s1b}{}
     \IRArrowTB{s1b}{s2}{}

@@ -1,9 +1,9 @@
 \begin{tikzpicture}
     % Spectrum Nodes
-    \node[sparse] (bow) at (0, 0) {\textbf{Bag of Words}\\BM25, LM\\(L3)};
-    \node[dense] (static) at (3.5, 0) {\textbf{Static Embed.}\\Word2Vec\\(L4)};
-    \node[rerank] (cross) at (7, 0) {\textbf{Cross-Encoder}\\monoBERT\\(L4)};
-    \node[dense] (bi) at (10.5, 0) {\textbf{Bi-Encoder}\\DPR, ColBERT\\(L5)};
+    \node[sparse, compact] (bow) at (0, 0) {\textbf{Bag of Words}\\BM25, LM\\(L3)};
+    \node[dense, compact] (static) at (3.8, 0) {\textbf{Static Embed.}\\Word2Vec\\(L4)};
+    \node[rerank, compact] (cross) at (7.6, 0) {\textbf{Cross-Encoder}\\monoBERT\\(L4)};
+    \node[dense, compact] (bi) at (11.4, 0) {\textbf{Bi-Encoder}\\DPR, ColBERT\\(L5)};
 
     % Connections
     \draw[irArrowBase] (bow) -- (static);
@@ -17,7 +17,7 @@
     \node[below=0.2cm of bi, irLabel] {Semantic retrieval\\Pre-computation};
 
     % Axis
-    \draw[<->, thick, irInfra] (0, -2) -- (10.5, -2);
-    \node[font=\tiny\bfseries, irInfra, anchor=north] at (2, -2.1) {Scale \& Speed};
-    \node[font=\tiny\bfseries, irInfra, anchor=north] at (8.5, -2.1) {Complexity \& Accuracy};
+    \draw[<->, thick, irInfra] (0, -2) -- (11.4, -2);
+    \node[font=\tiny\bfseries, irInfra, anchor=north] at (2.5, -2.1) {Scale \& Speed};
+    \node[font=\tiny\bfseries, irInfra, anchor=north] at (9.0, -2.1) {Complexity \& Accuracy};
 \end{tikzpicture}

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Information Retrieval Slides</title>
+<link rel="stylesheet" href="node_modules/reveal.js/dist/reveal.css">
+<link rel="stylesheet" href="node_modules/reveal.js/dist/theme/serif.css">
+<link rel="stylesheet" href="common.css">
+<style>
+  .reveal h1 { font-size: 1.4em !important; }
+  .reveal h2 { font-size: 1.0em !important; color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 8px; }
+  .reveal h3 { font-size: 0.75em !important; }
+  
+  .nav-hint { 
+    position: fixed; bottom: 8px; left: 8px; z-index: 99; 
+    font-size: 8px; color: #aaa; font-family: sans-serif;
+    background: rgba(255,255,255,0.8); padding: 4px; border-radius: 4px;
+  }
+  .nav-hint a { color: #3498db; text-decoration: none; font-weight: bold; }
+</style>
+</head>
+<body>
+<div class="nav-hint">
+    <a href="index.html">⌂ Index</a> | 
+    Shift + ➔ Next | Shift + ⬅ Prev
+</div>
+<div class="reveal">
+  <div class="slides">
+    <section>
+  <section>
+    <h2></h2>
+    <div class="content"><strong>What is Information Retrieval?</strong></div>
+  </section>
+  <section>
+    <h2>What is Information Retrieval?</h2>
+    <div class="content"><div class="block"><h3>Definition</h3><div class="block-content">Information Retrieval (IR) is finding material (usually documents) of an unstructured nature (usually text) that satisfies an information need from within large collections (usually stored on computers).</div></div>
+
+
+
+<div class="example-block"><h3>The Essence of IR: Given an Information Need</h3><div class="block-content"><ul><li><strong>Find relevant results</strong> that satisfy the information need</li><li><strong>By searching over a large collection</strong> of items (billions of documents)</li><li><strong>In reasonable time:</strong></li><li>Web search: $< 1$ second</li><li>AI/conversational systems: allow more time for generation</li></ul>
+    • <strong>Present results</strong> in a manner that is easily consumable by humans</div></div></div>
+  </section>
+  <section>
+    <h2>IR vs. Database Systems</h2>
+    <div class="content"><table><tr><th><strong>Aspect</strong></th><th><strong>Database Systems</strong></th><th><strong>IR Systems</strong></th></tr><tr><td>Data</td><td>Structured (tables, schemas)</td><td>Unstructured (text, documents)</td></tr><tr><td>Queries</td><td>Precise (SQL)</td><td>Vague (natural language)</td></tr><tr><td>Matching</td><td>Exact</td><td>Approximate/Ranked</td></tr><tr><td>Result</td><td>All matching records</td><td>Top-k relevant documents</td></tr><tr><td>Failure</td><td>No results or all results</td><td>Ranked list (best effort)</td></tr><tr><td>Example</td><td><code>SELECT * WHERE age>30</code></td><td>``climate change effects''</td></tr></table>
+
+
+
+
+
+<div class="alert-block"><h3>Key Difference</h3><div class="block-content">Databases: <em>``Give me all records matching X''</em> 
+IR: <em>``Give me the most relevant documents about X''</em></div></div></div>
+  </section>
+  <section>
+    <h2>IR vs. Natural Language Processing (NLP)</h2>
+    <div class="split-layout">
+      <div class="half"><h3></h3><strong>NLP (Language Centric)</strong>
+<ul><li>Focus on language <strong>understanding</strong>, representation, and <strong>generation</strong>.</li><li>Deep analysis of syntax, semantics, and pragmatics.</li><li>Models like BERT, Llama, GPT.</li></ul></div>
+      <div class="half"><h3></h3><strong>IR (Scale & Need Centric)</strong>
+<ul><li>Focus on <strong>information seeking</strong> at a massive scale.</li><li>Uses NLP tech as a toolkit to model relevance.</li><li>Priority: Speed, ranking, and satisfying user needs.</li></ul></div>
+    </div>
+  </section>
+  <section>
+    <h2>Examples of Search Systems</h2>
+    <div class="content"><strong>Conversational AI Search</strong>[0.5em]
+
+ ChatGPT - AI-powered conversational search
+
+
+
+
+<strong>E-Commerce Search</strong>[0.5em]
+
+ Amazon - Product search and recommendations
+
+
+
+
+
+<div class="alert-block"><h3>Common Thread</h3><div class="block-content">All search systems share the same core challenge: finding relevant items from massive collections in real-time.</div></div></div>
+  </section>
+  <section>
+    <h2>Examples of Search Systems (Figure)</h2>
+    <div class="content"><div class="h-center"><img class="figure-img" src="assets/search_chatgpt.png" alt="Figure"></div></div>
+  </section>
+  <section>
+    <h2>Real-World IR Applications</h2>
+    <div class="split-layout">
+      <div class="half"><h3></h3><strong>Web Search</strong>
+<ul><li>Google, Bing, DuckDuckGo</li><li>Billions of web pages</li><li>Sub-second response time</li></ul>
+
+
+
+<strong>Enterprise Search</strong>
+<ul><li>Search company documents</li><li>Email search</li><li>Knowledge management</li></ul></div>
+      <div class="half"><h3></h3><strong>E-commerce</strong>
+<ul><li>Amazon product search</li><li>eBay, Etsy</li><li>Recommendation systems</li></ul>
+
+
+
+<strong>Specialized Domains</strong>
+<ul><li>Legal document search (LexisNexis)</li><li>Academic papers (Google Scholar)</li><li>Medical records (PubMed)</li><li>News archives</li></ul></div>
+    </div>
+  </section>
+</section>
+<section>
+  <section>
+    <h2></h2>
+    <div class="content"><strong>Challenges in IR</strong></div>
+  </section>
+  <section>
+    <h2>The Retrieval Challenge: Understanding Intent</h2>
+    <div class="content"><div class="example-block"><h3>The Semantic Gap</h3><div class="block-content"><ul><li><strong>Syntactic match:</strong> Docs containing ``mouse'', ``trap'', ``poison''.</li><li><strong>User intent:</strong> Docs describing <em>humane</em> traps or <em>mechanical</em> traps.</li><li><strong>Danger:</strong> Returning docs about ``how poison traps work'' (contains keywords!).</li></ul></div></div></div>
+  </section>
+  <section>
+    <h2>The Retrieval Challenge: Understanding Intent (Figure)</h2>
+    <div class="content"><div class="h-center"><img class="tikz-img" src="assets/inline_3fa528c45f.png" alt="Inline TikZ"></div></div>
+  </section>
+  <section>
+    <h2>The Scale of Modern IR</h2>
+    <div class="content"><div class="block"><h3>Web Search Statistics (2024)</h3><div class="block-content"><ul><li><strong>Google:</strong> Processes 8.5+ billion searches per day</li><li><strong>Index size:</strong> 100+ trillion web pages indexed</li><li><strong>Freshness:</strong> New pages indexed within hours</li><li><strong>Speed:</strong> Results in $< 0.5$ seconds on average</li></ul></div></div>
+
+
+<div class="example-block"><h3>Challenges at Scale</h3><div class="block-content"><ul><li><strong>Storage:</strong> How to store 100 trillion documents?</li><li><strong>Speed:</strong> How to search in milliseconds?</li><li><strong>Relevance:</strong> How to rank billions of results?</li><li><strong>Freshness:</strong> How to keep index up-to-date?</li><li><strong>Quality:</strong> How to fight spam and misinformation?</li></ul></div></div></div>
+  </section>
+  <section>
+    <h2>The Information Retrieval Problem</h2>
+    <div class="content"><strong>Core Questions:</strong>
+<ol><li>How to represent documents and queries?</li><li>How to match queries to documents efficiently?</li><li>How to rank documents by relevance?</li></ol></div>
+  </section>
+  <section>
+    <h2>The Information Retrieval Problem (Figure)</h2>
+    <div class="content"><div class="h-center"><img class="tikz-img" src="assets/inline_01440738f8.png" alt="Inline TikZ"></div></div>
+  </section>
+</section>
+<section>
+  <section>
+    <h2>The Information Retrieval Process</h2>
+    <div class="content"><div class="alert-block"><h3>Forward Reference: Lecture 2</h3><div class="block-content"><strong>The fundamental IR process</strong>, including pipeline architectures and preprocessing, is now covered in detail in <strong>Lecture 2: Indexing</strong>.</div></div>
+
+
+<div class="example-block"><h3>Why the change?</h3><div class="block-content"><ul><li>Better logical flow: Preprocessing is tightly coupled with building indexes.</li><li>Focus for today: Understanding the models (Boolean and Vector Space).</li></ul></div></div>
+
+
+
+<em>Proceeding to Section 3: Boolean Retrieval...</em></div>
+  </section>
+</section>
+<section>
+  <section>
+    <h2></h2>
+    <div class="content"><strong>Boolean Retrieval</strong></div>
+  </section>
+  <section>
+    <h2>Boolean Retrieval Model</h2>
+    <div class="content"><div class="block"><h3>Definition</h3><div class="block-content">Documents are retrieved if they satisfy a Boolean expression of query terms</div></div>
+
+
+
+<strong>Boolean Operators:</strong>
+<ul><li><strong>AND:</strong> Both terms must appear (intersection)</li><li><strong>OR:</strong> Either term must appear (union)</li><li><strong>NOT:</strong> Term must not appear (negation)</li></ul>
+
+
+
+<div class="example-block"><h3>Example Queries</h3><div class="block-content"><ul><li><code>climate AND change</code> → docs containing both ``climate'' and ``change''</li><li><code>cat OR dog</code> → docs containing ``cat'' or ``dog'' or both</li><li><code>java NOT coffee</code> → docs with ``java'' but not ``coffee''</li><li><code>(climate AND change) OR (global AND warming)</code></li></ul></div></div></div>
+  </section>
+  <section>
+    <h2>Boolean Retrieval with Sets</h2>
+    <div class="split-layout">
+      <div class="half"><h3></h3><strong>Document Collection:</strong>
+<ul><li>D1: \{cat, sat, mat\}</li><li>D2: \{dog, sat, log\}</li><li>D3: \{cat, dog, run\}</li><li>D4: \{bird, fly, sky\}</li></ul></div>
+      <div class="half"><h3></h3><strong>Inverted Index:</strong>
+<ul><li>cat: \{D1, D3\}</li><li>dog: \{D2, D3\}</li><li>sat: \{D1, D2\}</li><li>run: \{D3\}</li></ul></div>
+    </div>
+  </section>
+  <section>
+    <h2>Boolean Retrieval Example</h2>
+    <div class="content"><strong>Query:</strong> <code>(cat AND mat) OR dog</code>
+
+
+
+
+
+
+
+
+
+<strong>Execution:</strong>
+<ol><li><code>cat</code>: \{D1, D3\}</li><li><code>mat</code>: \{D1\}</li><li><code>cat AND mat</code>: \{D1, D3\} $\cap$ \{D1\} = \{D1\}</li><li><code>dog</code>: \{D2, D3\}</li><li><code>(cat AND mat) OR dog</code>: \{D1\} $\cup$ \{D2, D3\} = \{D1, D2, D3\}</li></ol></div>
+  </section>
+  <section>
+    <h2>Boolean Retrieval Example (Figure)</h2>
+    <div class="content"><div class="h-center"><img class="tikz-img" src="assets/inline_50ccb733dc.png" alt="Inline TikZ"></div></div>
+  </section>
+  <section>
+    <h2>Advantages of Boolean Retrieval</h2>
+    <div class="content"><div class="block"><h3>✓ Advantages</h3><div class="block-content"><ul><div>[✓] <strong>Precise control:</strong> Users specify exactly what they want
+    [✓] <strong>Transparent:</strong> Clear why documents matched
+    [✓] <strong>Efficient:</strong> Fast set operations on posting lists
+    [✓] <strong>Predictable:</strong> Same query always returns same results
+    [✓] <strong>Expressive:</strong> Can construct complex queries</div></ul></div></div>
+
+
+
+<div class="example-block"><h3>Use Cases</h3><div class="block-content"><ul><li>Legal document search (very precise requirements)</li><li>Patent search (need exact specifications)</li><li>Database-like queries on text</li><li>Expert users who know what they want</li></ul></div></div></div>
+  </section>
+  <section>
+    <h2>Limitations of Boolean Retrieval</h2>
+    <div class="content"><div class="alert-block"><h3>{55</h3><div class="block-content">Critical Limitations}
+<ol><div>[] <strong>No ranking</strong>
+    <ul><li>All matching documents equally relevant</li><li>Can't distinguish ``very relevant'' from ``barely relevant''</li></ul>
+
+    [] <strong>All or nothing</strong>
+    <ul><li><code>climate AND change AND effects</code>: No results if one term missing</li><li>Too restrictive or too permissive</li></ul>
+
+    [] <strong>Hard to formulate queries</strong>
+    <ul><li>Most users don't know Boolean operators</li><li>Hard to express fuzzy information needs</li></ul>
+
+    [] <strong>Result set size unpredictable</strong>
+    <ul><li>Could return 0 results or 10 million</li><li>Users want ``top 10'', not ``all matching''</li></ul></div></ol></div></div></div>
+  </section>
+  <section>
+    <h2>Boolean Retrieval: The Feast or Famine Problem</h2>
+    <div class="split-layout">
+      <div class="half"><h3></h3><strong>Too Restrictive (Famine)</strong>
+<ul><li>Query: <code>machine AND learning AND neural AND networks</code></li><li>Result: 0 documents</li><li>Problem: One term missing kills entire result</li></ul>
+
+
+
+<strong>Solution?</strong>
+<ul><li>User tries: <code>machine AND learning</code></li></ul></div>
+      <div class="half"><h3></h3><strong>Too Permissive (Feast)</strong>
+<ul><li>Query: <code>machine AND learning</code></li><li>Result: 1,000,000 documents</li><li>Problem: Which 10 should I read?</li></ul>
+
+
+
+<strong>Need:</strong>
+<ul><li>Ranking by relevance</li><li>Graceful degradation</li><li>Better matching</li></ul></div>
+    </div>
+  </section>
+</section>
+<section>
+  <section>
+    <h2></h2>
+    <div class="content"><strong>The Vector Space Model</strong></div>
+  </section>
+  <section>
+    <h2>From Boolean to Vector Space</h2>
+    <div class="split-layout">
+      <div class="half"><h3></h3><strong>Boolean Model:</strong>
+<ul><li>D1: \{cat, dog\}</li><li>D2: \{cat, mat\}</li><li>Binary: term present or not</li></ul>
+
+
+
+<strong>Query:</strong> <code>cat AND dog</code>
+<ul><li>Result: \{D1\}</li><li>D2 excluded (no ``dog'')</li></ul></div>
+      <div class="half"><h3></h3><strong>Vector Space Model:</strong>
+<ul><li>D1: [cat: 0.5, dog: 0.5, mat: 0]</li><li>D2: [cat: 0.7, dog: 0, mat: 0.3]</li><li>Weighted: importance/frequency</li></ul>
+
+
+
+<strong>Query:</strong> [cat: 0.5, dog: 0.5]
+<ul><li>Similarity(D1, Q) = 0.5</li><li>Similarity(D2, Q) = 0.35</li><li><strong>Ranked:</strong> D1, then D2</li></ul></div>
+    </div>
+  </section>
+  <section>
+    <h2>Vector Space Model: Geometric View</h2>
+    <div class="content"><strong>Documents and queries as vectors in term space</strong>
+
+
+
+
+
+
+
+<strong>Similarity = Angle between vectors</strong> 
+ (Smaller angle = more similar)</div>
+  </section>
+  <section>
+    <h2>Vector Space Model: Geometric View (Figure)</h2>
+    <div class="content"><div class="h-center"><img class="tikz-img" src="assets/inline_5c72636795.png" alt="Inline TikZ"></div></div>
+  </section>
+  <section>
+    <h2>Term Weighting in Vector Space Model</h2>
+    <div class="content"><strong>Question:</strong> How to assign weights to terms?
+
+
+
+<div class="block"><h3>Option 1: Binary Weights</h3><div class="block-content">$$w_{t,d} = \begin{cases} 1 & \text{if term } t \text{ appears in doc } d \\ 0 & \text{otherwise} \end{cases}$$
+<ul><li>Simple but ignores frequency</li></ul></div></div>
+
+<div class="block"><h3>Option 2: Term Frequency (TF)</h3><div class="block-content">$$w_{t,d} = \text{count}(t, d)$$
+<ul><li>Better: reflects importance</li><li>Problem: Common words get high weight</li></ul></div></div>
+
+<div class="alert-block"><h3>Problem with Raw TF</h3><div class="block-content">Document mentioning ``the'' 100 times doesn't make it about ``the''</div></div></div>
+  </section>
+  <section>
+    <h2>TF-IDF Weighting</h2>
+    <div class="content"><strong>Idea:</strong> Balance term frequency with term rarity
+
+
+
+<div class="block"><h3>TF-IDF Formula</h3><div class="block-content">$$w_{t,d} = \text{tf}(t,d) \times \text{idf}(t)$$
+
+where:
+<ul><li>$\text{tf}(t,d) = \text{count}(t,d)$ (term frequency in document)</li><li>$\text{idf}(t) = \log\frac{N}{\text{df}(t)}$ (inverse document frequency)</li><li>$N$ = total number of documents</li><li>$\text{df}(t)$ = number of documents containing term $t$</li></ul></div></div>
+
+
+
+<strong>Intuition:</strong>
+<ul><li><strong>High TF:</strong> Term appears often in this document → important for this doc</li><li><strong>High IDF:</strong> Term is rare across collection → discriminative</li><li><strong>High TF-IDF:</strong> Important AND discriminative</li></ul></div>
+  </section>
+  <section>
+    <h2>TF-IDF Example</h2>
+    <div class="content"><strong>Collection:</strong> 10,000 documents
+
+
+
+
+
+
+<table><tr><th><strong>Term</strong></th><th><strong>tf(t,d)</strong></th><th><strong>df(t)</strong></th><th><strong>idf(t)</strong></th><th><strong>tf-idf</strong></th></tr><tr><td>neural</td><td>5</td><td>100</td><td>$\log(10000/100) = 2.0$</td><td>10.0</td></tr><tr><td>network</td><td>3</td><td>500</td><td>$\log(10000/500) = 1.3$</td><td>3.9</td></tr><tr><td>the</td><td>50</td><td>9000</td><td>$\log(10000/9000) = 0.05$</td><td>2.5</td></tr></table>
+
+
+
+
+<strong>Observations:</strong>
+<ul><li>``neural'' appears less than ``the'' (5 vs. 50) but gets higher weight (10.0 vs. 2.5)</li><li>Rare, discriminative terms weighted higher</li><li>Common words automatically downweighted</li></ul>
+
+
+
+<div class="alert-block"><h3>Note</h3><div class="block-content">This is a simplified version; we'll cover refined TF-IDF and BM25 in Lecture 3</div></div></div>
+  </section>
+  <section>
+    <h2>Document Vectors with TF-IDF</h2>
+    <div class="content"><strong>Example Collection:</strong>
+<ul><li>D1: ``cat cat dog''</li><li>D2: ``cat mat''</li><li>D3: ``dog bird bird''</li></ul>
+
+
+
+<strong>Vocabulary:</strong> \{cat, dog, mat, bird\}
+
+
+
+
+
+
+<table><tr><th><strong>Doc</strong></th><th><strong>cat</strong></th><th><strong>dog</strong></th><th><strong>mat</strong></th><th><strong>bird</strong></th></tr><tr><td>D1</td><td>2 × log(3/2) = 0.35</td><td>1 × log(3/2) = 0.18</td><td>0</td><td>0</td></tr><tr><td>D2</td><td>1 × log(3/2) = 0.18</td><td>0</td><td>1 × log(3/1) = 0.48</td><td>0</td></tr><tr><td>D3</td><td>0</td><td>1 × log(3/2) = 0.18</td><td>0</td><td>2 × log(3/1) = 0.95</td></tr></table>
+
+
+
+
+<strong>Vector Representation:</strong>
+<ul><li>D1: [0.35, 0.18, 0, 0]</li><li>D2: [0.18, 0, 0.48, 0]</li><li>D3: [0, 0.18, 0, 0.95]</li></ul></div>
+  </section>
+  <section>
+    <h2>Cosine Similarity</h2>
+    <div class="content"><strong>How to measure similarity between vectors?</strong>
+
+
+
+<div class="block"><h3>Cosine Similarity Formula</h3><div class="block-content">$$\text{sim}(\vec{q}, \vec{d}) = \frac{\vec{q} \cdot \vec{d}}{|\vec{q}| \times |\vec{d}|} = \frac{\sum_{t} q_t \times d_t}{\sqrt{\sum_{t} q_t^2} \times \sqrt{\sum_{t} d_t^2}}$$</div></div>
+
+
+
+<strong>Properties:</strong>
+<ul><li>Range: [-1, 1] (or [0, 1] for positive weights)</li><li>1 = identical vectors (same direction)</li><li>0 = orthogonal (no common terms)</li><li>-1 = opposite vectors (not relevant for IR)</li></ul>
+
+
+
+<strong>Why cosine instead of dot product?</strong>
+<ul><li>Cosine normalizes for document length</li><li>Long documents don't automatically score higher</li></ul></div>
+  </section>
+  <section>
+    <h2>Cosine Similarity: Example Calculation</h2>
+    <div class="content"><strong>Query:</strong> ``cat dog'' → $\vec{q} = [0.5, 0.5, 0, 0]$ 
+<strong>Documents:</strong>
+<ul><li>D1: [0.35, 0.18, 0, 0]</li><li>D2: [0.18, 0, 0.48, 0]</li><li>D3: [0, 0.18, 0, 0.95]</li></ul>
+
+
+
+<strong>Similarity Calculations:</strong>
+
+
+(q, D1) &= {(0.5  0.35) + (0.5  0.18)}{{0.5^2 + 0.5^2}  {0.35^2 + 0.18^2}} 
+&= {0.707  0.394} = 0.95 
+(q, D2) &= {0.5  0.18}{0.707  0.511} = 0.25 
+(q, D3) &= {0.5  0.18}{0.707  0.967} = 0.13
+
+
+
+
+<strong>Ranking:</strong> D1 (0.95)  >  D2 (0.25)  >  D3 (0.13)</div>
+  </section>
+  <section>
+    <h2>VSM vs. Boolean Retrieval</h2>
+    <div class="content"><table><tr><th><strong>Aspect</strong></th><th><strong>Boolean</strong></th><th><strong>Vector Space</strong></th></tr><tr><td>Matching</td><td>Exact (in/out)</td><td>Partial (weighted)</td></tr><tr><td>Ranking</td><td>No</td><td>Yes (by similarity)</td></tr><tr><td>Result size</td><td>Unpredictable</td><td>Top-$k$</td></tr><tr><td>Term weighting</td><td>Binary</td><td>TF-IDF</td></tr><tr><td>Query expression</td><td>Boolean operators</td><td>Term list</td></tr><tr><td>Robustness</td><td>Brittle</td><td>Graceful degradation</td></tr><tr><td>User friendliness</td><td>Expert users</td><td>General users</td></tr><tr><td>Relevance</td><td>All equal</td><td>Ranked by relevance</td></tr></table>
+
+
+
+
+<div class="block"><h3>Modern Usage</h3><div class="block-content"><ul><li><strong>Boolean:</strong> Still used in legal, patent search (precision critical)</li><li><strong>Vector Space:</strong> Foundation for web search, most IR systems</li><li><strong>Hybrid:</strong> Many systems combine both approaches</li></ul></div></div></div>
+  </section>
+  <section>
+    <h2>Advantages of Vector Space Model</h2>
+    <div class="content"><div class="block"><h3>✓ Key Advantages</h3><div class="block-content"><ol><li><strong>Ranking by relevance</strong>
+    <ul><li>Documents ordered by similarity to query</li><li>Users get best results first</li></ul></li><li><strong>Partial matching</strong>
+    <ul><li>Documents matching some query terms still retrieved</li><li>Graceful degradation (no feast/famine)</li></ul></li><li><strong>Term weighting</strong>
+    <ul><li>Important terms weighted higher (TF-IDF)</li><li>Automatic handling of common words</li></ul></li><li><strong>Simple queries</strong>
+    <ul><li>Users just type terms (no Boolean operators)</li><li>Natural for web search</li></ul></li><li><strong>Tunable</strong>
+    <ul><li>Can adjust weighting schemes</li><li>Foundation for more advanced models (BM25, Lecture 3)</li></ul></li></ol></div></div></div>
+  </section>
+  <section>
+    <h2>Limitations of Vector Space Model</h2>
+    <div class="content"><div class="alert-block"><h3>{55</h3><div class="block-content">Limitations}
+<ol><li><strong>Bag of words assumption</strong>
+    <ul><li>Word order ignored: ``dog bites man'' = ``man bites dog''</li><li>No phrase matching</li></ul></li><li><strong>Term independence</strong>
+    <ul><li>Assumes terms are independent</li><li>``New York'' treated as ``New'' and ``York''</li></ul></li><li><strong>Synonymy</strong>
+    <ul><li>``car'' and ``automobile'' treated as different</li><li>Misses relevant documents with synonyms</li></ul></li><li><strong>Polysemy</strong>
+    <ul><li>``bank'' (financial) vs. ``bank'' (river) undistinguished</li><li>Can retrieve irrelevant documents</li></ul></li></ol></div></div></div>
+  </section>
+</section>
+<section>
+  <section>
+    <h2></h2>
+    <div class="content"><strong>Looking Ahead</strong></div>
+  </section>
+</section>
+
+  </div>
+</div>
+<script src="node_modules/reveal.js/dist/reveal.js"></script>
+<script src="node_modules/reveal.js/plugin/math/math.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    plugins: [ RevealMath.KaTeX ]
+  });
+  
+  window.addEventListener('keydown', (e) => {
+      if (e.shiftKey && e.key === 'ArrowRight') {
+          const next = '02_indexing.html';
+          if (next) window.location.href = next;
+      } else if (e.shiftKey && e.key === 'ArrowLeft') {
+          const prev = '';
+          if (prev) window.location.href = prev;
+      } else if (e.key === 'Escape') {
+          window.location.href = 'index.html';
+      }
+  });
+</script>
+</body>
+</html>

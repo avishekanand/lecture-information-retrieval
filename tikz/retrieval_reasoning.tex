@@ -1,15 +1,15 @@
 \begin{tikzpicture}
     % Pipeline Steps using API
-    \IRPipelineTier{ret}{(0,3)}{Retrieval}{Millions of Docs}{sparse}
-    \IRPipelineTier{rank}{(0,1.5)}{Re-ranking}{Top-100 Candidates}{rerank}
-    \IRPipelineTier{llm}{(0,0)}{Reasoning}{Top-10 Context}{dense}
+    \IRPipelineTier[3.0cm]{ret}{(0,5)}{Retrieval}{Millions of Docs}{sparse}
+    \IRPipelineTier[3.0cm]{rank}{(0,2.5)}{Re-ranking}{Top-100 Candidates}{rerank}
+    \IRPipelineTier[3.0cm]{llm}{(0,0)}{Reasoning}{Top-10 Context}{dense}
     
     % Connections
-    \IRArrow{ret}{rank}{}
-    \IRArrow{rank}{llm}{}
+    \IRArrowTB{ret}{rank}{}
+    \IRArrowTB{rank}{llm}{}
     
     % Latency Annotations using badges
-    \IRBadge{(-2.5, 3)}{$O(\text{ms})$}
-    \IRBadge{(-2.5, 1.5)}{$O(100\text{ms})$}
+    \IRBadge{(-2.5, 5)}{$O(\text{ms})$}
+    \IRBadge{(-2.5, 2.5)}{$O(100\text{ms})$}
     \IRBadge{(-2.5, 0)}{$O(\text{sec})$}
 \end{tikzpicture}

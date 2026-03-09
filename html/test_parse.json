@@ -1,0 +1,265 @@
+[
+  {
+    "title": "From Sparse to Dense --- Why We Need Embeddings",
+    "slides": [
+      {
+        "type": "bullet",
+        "title": "Recap: Where We Are",
+        "content": "<ul><li><strong>Efficiency</strong>: Inverted indexes enable sub-second search.</li><li><strong>Scoring</strong>: BM25 provides a robust lexical baseline.</li><li><strong>Expansion</strong>: RM3 bridges some lexical gaps via feedback.</li><li>No semantics: <em>car problems</strong> $\\neq$ <em>automobile issues</strong>.</li><li>Polysemy: <em>bank</strong> (financial) = <em>bank</strong> (river).</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "The Representation Gap",
+        "content": "<ul><li><strong>Sparse</strong>: Each dimension corresponds to a vocabulary word.</li><li><strong>Dense</strong>: Dimensions represent latent semantic features.</li><li><strong>Goal</strong>: Learn embeddings where closeness $\\approx$ same meaning.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "The Distributional Hypothesis",
+        "content": "<ul><li>``A bottle of <em>tezguino</strong> is on the table.''</li><li>``Everybody enjoys <em>tezguino</strong>.''</li><li>``We brew <em>tezguino</strong> from corn.''</li></ul><h3>Core Principle (Firth, 1957)</h3><p>``You shall know a word by the company it keeps.''</p>"
+      },
+      {
+        "type": "bullet",
+        "title": "Word2Vec: Words as Vectors",
+        "content": "<ul><li><strong>Hypothesis</strong>: Words in similar contexts have similar meanings.</li><li><strong>Task</strong>: Predict surrounding context tokens from a target word.</li><li><strong>Objective</strong>: Weights in the hidden layer become the embeddings.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Word2Vec: Semantic Properties",
+        "content": "<ul><li>Vectors capture <strong>relational structure</strong>.</li><li>Semantic similarity $\\approx$ vector proximity (cosine similarity).</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Word2Vec: Relevance to IR",
+        "content": "<ul><li><strong>High Sim</strong>: $\\cos(\\vec{\\text{car</strong></strong>, \\vec{\\text{automobile</strong></strong>) \\approx 0.7$.</li><li><strong>Low Sim</strong>: $\\cos(\\vec{\\text{car</strong></strong>, \\vec{\\text{banana</strong></strong>) \\approx 0.1$.</li><li><strong>Recall</strong>: Enables finding relevant docs with zero term overlap.</li><li><strong>Mechanism:</strong> ``the cat sat on the mat'' $\\to \\text{Avg</strong>(\\vec{\\text{the</strong></strong>, \\vec{\\text{cat</strong></strong>, \\ldots)$</li><li><strong>Pros:</strong> Simple, fast, significantly better than BoW for vocabulary mismatch.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Query Processing with Word Embeddings",
+        "content": "<ul><li><strong>Approach</strong>: Represent both the query $q$ and the document $d$ as vectors in the same $d$-dimensional space.</li><li><strong>Mechanism</strong>: Use a pre-trained <strong>embedding table</strong> to look up vectors for each word.</li><li><strong>Represent</strong>: $\\vec{q</strong>$ and $\\vec{d</strong>$ are derived from word vectors (e.g., via averaging).</li><li><strong>Rank</strong>: Documents are ranked by vector similarity: $\\text{score</strong>(q, d) = \\cos(\\vec{q</strong>, \\vec{d</strong>)$.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "So what is the problem?",
+        "content": "<ul><li><em>bank</strong> (river) = <em>bank</strong> (financial).</li><li>Loses word order (``dog bites man'' = ``man bites dog'').</li><li>Polysemy unresolved.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Static vs. Contextualized Embeddings",
+        "content": "<ul><li><strong>Static</strong>: Word2Vec/GloVe assignment is fixed (ignores neighbors).</li><li><strong>Contextualized</strong>: BERT embeddings adapt to local word usage.</li><li><strong>Polysemy</strong>: Distinguishes between ``<strong>bank</strong>'' (finance) and ``<strong>bank</strong>'' (river).</li></ul>"
+      }
+    ]
+  },
+  {
+    "title": "The Transformer Architecture",
+    "slides": [
+      {
+        "type": "bullet",
+        "title": "Why Transformers?",
+        "content": "<ul><li><strong>Parallelism</strong>: Processes all tokens simultaneously (unlike sequential RNNs).</li><li><strong>Recency</strong>: Overcomes \"forgetting\" in long documents.</li><li><strong>Scale</strong>: Efficiently trained on massive web-scale corpora.</li></ul>"
+      },
+      {
+        "type": "image",
+        "title": "Transformer Architecture",
+        "content": "",
+        "image": "assets/transformer.png",
+        "caption": ""
+      },
+      {
+        "type": "bullet",
+        "title": "Self-Attention: The Core Idea",
+        "content": "<p><strong>Token representations are updated by \"attending\" to the most relevant neighbors.</strong>\n\n\n\n\n\n\n\n\n\\vspace{0.5em</strong>\n\\begin{center</strong>\n\\input{tikz/self_attention_logic.tex</strong>\n\\end{center</strong>\n\n\\vspace{0.8em</strong>\n\\begin{center</strong>\n\\input{tikz/self_attention_example.tex</strong>\n\\end{center</strong></p>"
+      },
+      {
+        "type": "bullet",
+        "title": "Self-Attention: The Mechanism",
+        "content": "<ul><li><strong>Query</strong> ($\\vec{q</strong>$): ``What am I looking for in other tokens?''</li><li><strong>Key</strong> ($\\vec{k</strong>$): ``What information do I offer to others?''</li><li><strong>Value</strong> ($\\vec{v</strong>$): The actual information content to be aggregated.</li></ul><h3>The Attention Formula</h3><p>\\[\n\\text{Attention</strong>(Q, K, V) = \\text{softmax</strong>\\left(\\frac{\\mathhl{QK^T</strong></strong>{\\sqrt{d_k</strong></strong>\\right) V\n\\]</p>"
+      },
+      {
+        "type": "bullet",
+        "title": "Breaking Down the Formula",
+        "content": "<ul><li><strong>Dot Product</strong> ($QK^T$): Measures raw similarity between tokens.</li><li><strong>Scaling</strong> ($\\sqrt{d_k</strong>$): Stabilizes gradients for deep training.</li><li><strong>Processing</strong>: Softmax converts scores to weighting factors (sum to 1).</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Worked Example: Information Flow",
+        "content": "<p><strong>Sentence:</strong> ``\\texttt{retrieval models</strong>'' ($d_k = 2$)\n\n\\vspace{0.5em</strong>\n\\begin{enumerate</strong>\n    \\item <strong>Similarity</strong>: $\\vec{q</strong>_{\\text{retr</strong></strong> \\cdot \\vec{k</strong>_{\\text{retr</strong></strong> = 0.9$ (Self) \\quad $\\vec{q</strong>_{\\text{retr</strong></strong> \\cdot \\vec{k</strong>_{\\text{mod</strong></strong> = 0.6$ (Neighbor)\n    \n    \\item <strong>Weights</strong>: $\\text{softmax</strong>([0.9, 0.6]) \\approx [\\,\\mathhl{0.57</strong>,\\; \\mathhl{0.43</strong>\\,]$\n    \n    \\item <strong>Output</strong>: $\\vec{h</strong>_{\\text{retr</strong></strong> = 0.57 \\vec{v</strong>_{\\text{retr</strong></strong> + 0.43 \\vec{v</strong>_{\\text{mod</strong></strong>$\n\\end{enumerate</strong>\n\n\\vspace{1em</strong>\n\n\\begin{exampleblock</strong>{Interpretation</strong>\nThe representation of ``retrieval'' is now updated with 43\\% of the information from ``models''. Context is integrated!\n\\end{exampleblock</strong></p>"
+      },
+      {
+        "type": "bullet",
+        "title": "Multi-Head Attention",
+        "content": "<ul><li><strong>Heads</strong>: BERT uses 8 heads per layer in parallel.</li><li><strong>Variety</strong>: Heads learn distinct features (Syntax, Entities, etc.).</li><li><strong>Robustness</strong>: Aggregating heads provides a richer representation.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Positional Encoding",
+        "content": "<ul><li><strong>Problem</strong>: Without positions, <em>dog bites man</strong> = <em>man bites dog</strong>.</li><li><strong>Solution</strong>: Add a unique position vector $\\vec{p</strong>_i$ to each token $\\vec{e</strong>_i$.</li><li><strong>Result</strong>: Model learns both identity and relative location.</li></ul><h3>Combined Input Representation</h3><p>\\[\n\\vec{x</strong>_i = \\vec{e</strong>_{\\text{word</strong>_i</strong> + \\vec{p</strong>_i\n\\]</p>"
+      },
+      {
+        "type": "bullet",
+        "title": "The Transformer Encoder Block",
+        "content": "<ul><li><strong>Attention</strong>: Token interaction via Q, K, V.</li><li><strong>Residuals</strong>: Prevents gradient signal decay.</li><li><strong>Norm</strong>: Stabilizes flow through deep layers.</li></ul>"
+      }
+    ]
+  },
+  {
+    "title": "BERT for Information Retrieval",
+    "slides": [
+      {
+        "type": "image",
+        "title": "What is BERT?",
+        "content": "<ul><li><strong>Encoder vs.\\ Generative</strong>:\n    \\begin{itemize</strong></li><li><strong>Generative (e.g., GPT)</strong>: Causal; predicts the next token.</li><li><strong>Encoder (BERT)</strong>: Bidirectional; sees the entire sequence simultaneously.</li><li><strong>Context Aware</strong>: Embeddings are computed based on <strong>all</strong> surrounding tokens.</li><li><strong>Instance</strong>: BERT is a specific implementation of a Transformer Encoder.</li></ul>",
+        "image": "assets/bert.png",
+        "caption": ""
+      },
+      {
+        "type": "bullet",
+        "title": "BERT Architecture: Core Components",
+        "content": "<ul><li><strong>Embeddings Layer</strong>:\n    \\begin{itemize</strong></li><li><strong>BPE / WordPiece</strong>: Splits tokens into sub-words (e.g., <em>embedding</strong> $\\to$ <em>embed</strong>, <em>\\#\\#ding</strong>).</li><li><strong>Positional Encoding</strong>: Injects sequence order info.</li><li><strong>Multi-Head Attention (MHA)</strong>:\n    \\begin{itemize</strong></li><li>Computes token interactions via Q, K, V dot-products.</li><li>Every token \"attends\" to every other token in the sequence.</li><li><strong>Stacking \\& Residuals</strong>:\n    \\begin{itemize</strong></li><li>Stacks many identical encoder blocks (12 for Base, 24 for Large).</li><li><strong>Residual Stream</strong>: Skip-connections allow signal to flow across layers.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Step 1: Subword Tokenization",
+        "content": "<ul><li><strong>Query</strong>: ``how to rank'' $\\to$ \\texttt{[how, to, rank]</strong></li><li><strong>Doc</strong>: ``ranking models'' $\\to$ \\texttt{[rank, \\#\\#ing, models]</strong></li><li><strong>Sequence</strong>: \\texttt{[CLS] Q [SEP] D [SEP]</strong></li></ul><h3>The Input Sequence</h3><p>\\begin{center</strong>\n\\texttt{[\\mathhl{CLS</strong>] how to rank [\\mathhl{SEP</strong>] rank \\#\\#ing models [\\mathhl{SEP</strong>]</strong>\n\\end{center</strong></p>"
+      },
+      {
+        "type": "bullet",
+        "title": "Step 2: Combining Embeddings",
+        "content": "<ul><li><strong>Token</strong>: The sub-word ID from the vocabulary.</li><li><strong>Position</strong>: A unique vector for index $0, 1, 2, \\ldots$</li><li><strong>Segment</strong>: $S_A$ for Query, $S_B$ for Document.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Step 3: Transformer Stacking to [CLS]",
+        "content": "<ul><li><strong>Transformation</strong>: Each layer updates all token representations.</li><li><strong>Context</strong>: Through MHA, the \\texttt{[CLS]</strong> vector \"sees\" the relationship between query and doc.</li><li><strong>Pooling</strong>: The final vector at index 0 becomes our representation.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Alternative: Token-wise Representations",
+        "content": "<ul><li><strong>Rich Context</strong>: Each $\\vec{h</strong>_i$ contains the meaning of token $i$ *in that specific sequence*.</li><li><strong>Applications</strong>:\n        \\begin{itemize</strong></li><li><strong>NER/POS</strong>: Classify each token.</li><li><strong>Question Answering</strong>: Predict start/end spans.</li><li><strong>Late Interaction</strong>: Used in models like ColBERT.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Pre-training at Scale",
+        "content": "<ul><li><strong>The Scale Shift</strong>: Trained on Google Books (800M words) + Wikipedia (2.5B words).</li><li><strong>Masked LM (MLM)</strong>: Hides 15\\% of tokens to predict from context.</li><li><strong>Next Sentence Prediction (NSP)</strong>: Learns sequence coherence.</li></ul><h3>The Result</h3><p>A \"foundation model\" that already knows how language works and stores significant <strong>world knowledge</strong>.</p>"
+      },
+      {
+        "type": "bullet",
+        "title": "Transfer Learning: Fine-tuning as \"Orienting\"",
+        "content": "<ul><li><strong>Pre-training</strong>: Learns general semantics (Expensive, done once).</li><li><strong>Fine-tuning</strong>: The process of <strong>\"orienting\"</strong> pre-trained knowledge to a specific task (e.g., Ranking).</li><li><strong>Efficiency</strong>: Requires much less data and compute than training from scratch.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "What BERT Knows: Layer by Layer",
+        "content": "<ul><li><strong>Lower Layers</strong>: Surface-level NLP (POS tagging, morphology, syntax).</li><li><strong>Middle Layers</strong>: Complex semantics and coreference resolution.</li><li><strong>Upper Layers</strong>: Abstract world knowledge and task-specific logic.</li></ul>"
+      },
+      {
+        "type": "image",
+        "title": "Cross-Encoder or MonoBERT: BERT for Re-ranking",
+        "content": "<ul><li><strong>Input</strong>: Feed query $q$ and document $d$ together as one sequence.</li><li><strong>Interaction</strong>: Every query token attends to every document token.</li><li><strong>Scoring</strong>: The final [CLS] token output serves as the relevance score.</li></ul>",
+        "image": "assets/embeddings-encoder-model.pdf",
+        "caption": ""
+      },
+      {
+        "type": "bullet",
+        "title": "Worked Example: Cross-Encoder (1/2)",
+        "content": "<ul><li><strong>Query</strong>: ``side effects of aspirin''</li><li><strong>Doc A</strong>: Mentions ``stomach bleeding'' and ``adverse reactions''.</li><li><strong>Doc B</strong>: Mentions ``stock price'' and ``sales report''.</li><li>\\texttt{[\\mathhl{CLS</strong>] q [\\mathhl{SEP</strong>] doc A [\\mathhl{SEP</strong>]</strong></li><li>\\texttt{[\\mathhl{CLS</strong>] q [\\mathhl{SEP</strong>] doc B [\\mathhl{SEP</strong>]</strong></li></ul><h3>Sequence Tokenization</h3><p>\\begin{itemize</strong>\n    \\item \\texttt{[\\mathhl{CLS</strong>] q [\\mathhl{SEP</strong>] doc A [\\mathhl{SEP</strong>]</strong>\n    \\item \\texttt{[\\mathhl{CLS</strong>] q [\\mathhl{SEP</strong>] doc B [\\mathhl{SEP</strong>]</strong>\n\\end{itemize</strong></p>"
+      },
+      {
+        "type": "bullet",
+        "title": "Worked Example: Cross-Encoder (2/2)",
+        "content": "<ul><li><strong>High Sim</strong>: Doc A matches the intent (medical effects) via soft-matching.</li><li><strong>Low Sim</strong>: Doc B repeats the keyword ``aspirin'' but intent (finance) is wrong.</li><li><strong>Output</strong>: $P(\\text{rel</strong>)$ is calculated from the [CLS] embedding.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Why Cross-Encoders are Accurate",
+        "content": "<ul><li><strong>Full Interaction</strong>: Every query token attends to every document token.</li><li><strong>Soft-Matching</strong>: Learned at all 12 layers of the Transformer.</li><li><strong>Recall</strong>: Finds relevant docs that share zero terms with the query.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "The Latency Bottleneck",
+        "content": "<ul><li><strong>Constraint</strong>: We cannot pre-compute $P(\\text{rel</strong>|q, d)$ offline.</li><li><strong>Inference</strong>: Requires running BERT for every query--doc pair at runtime.</li><li><strong>Scale</strong>: Feasible only for ~100--200 candidates per query.</li></ul>"
+      }
+    ]
+  },
+  {
+    "title": "The Two-Stage Retrieve-then-Rerank Pipeline",
+    "slides": [
+      {
+        "type": "bullet",
+        "title": "The Two-Stage Pipeline",
+        "content": "<ul><li><strong>Recall</strong>: Sparse methods (BM25) find $\\sim$1000 candidates quickly.</li><li><strong>Precision</strong>: Dense methods (Cross-Encoders) re-rank the top candidates.</li><li><strong>Scaling</strong>: Enables web-scale search at sub-second latencies.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Why Two Stages?",
+        "content": "<ul><li><strong>Sparse (Recall)</strong>: Microseconds per query. Metric: Recall@1000.</li><li><strong>Neural (Precision)</strong>: ~5ms scale per doc. Metric: NDCG@10.</li><li><strong>Combined</strong>: High precision search over an infinite corpus.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Comparing Pipeline Variants",
+        "content": "<p>\\begin{table</strong>\n\\centering\n\\begin{tabular</strong>{lcl</strong>\n\\toprule\n<strong>Pipeline</strong> & <strong>NDCG@10</strong> & <strong>Latency</strong> \\\\\n\\midrule\nBM25 Only & 0.45 & 5 ms \\\\\nBM25 + monoBERT & 0.55 & 500 ms \\\\\nBM25 + RM3 + monoBERT & <strong>0.57</strong> & 520 ms \\\\\nBM25 + monoT5-3B & <strong>0.58</strong> & 2 s \\\\\n\\bottomrule\n\\end{tabular</strong>\n\\end{table</strong>\n\n\\vspace{1em</strong>\n\n<strong>Insight:</strong> Neural re-ranking provides the single largest gain in modern IR (~10 NDCG points).</p>"
+      }
+    ]
+  },
+  {
+    "title": "Training Cross-Encoders in Practice",
+    "slides": [
+      {
+        "type": "image",
+        "title": "The training data: MS MARCO",
+        "content": "<p class='highlight'>\\small This benchmark enabled the transition from lexical scoring to deep semantic ranking.</p>",
+        "image": "assets/msmarco.pdf",
+        "caption": ""
+      },
+      {
+        "type": "bullet",
+        "title": "Training Pipeline: Step by Step",
+        "content": "<ul><li><strong>Triples</strong>: Train on $(q, d^+, d^-)$ tuples to learn relative relevance.</li><li><strong>Loss</strong>: Optimize Contrastive or Cross-Entropy loss functions.</li><li><strong>Setup</strong>: Typical training takes ~12--24 hours on one consumer GPU.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Fine-Tuning BERT for Ranking",
+        "content": "<ul><li><strong>Pointwise</strong>: Classify each pair (query, doc) as relevant or not.</li><li><strong>Pairwise</strong>: Train so $\\text{score</strong>(q, d^+) > \\text{score</strong>(q, d^-)$.</li><li><strong>Data</strong>: Usually requires large benchmarks like MS MARCO.</li><li><strong>MS MARCO</strong>: 530k queries with sparse (1 passage) labels.</li><li><strong>TREC</strong>: Smaller collections with dense, multi-level labels.</li></ul><h3>Common Benchmarks</h3><p>\\begin{itemize</strong>\n    \\item <strong>MS MARCO</strong>: 530k queries with sparse (1 passage) labels.\n    \\item <strong>TREC</strong>: Smaller collections with dense, multi-level labels.\n\\end{itemize</strong></p>"
+      },
+      {
+        "type": "bullet",
+        "title": "MS MARCO: Sparse Labels Challenge",
+        "content": "<ul><li><strong>False Negatives</strong>: Many relevant documents are not labeled.</li><li><strong>Bias</strong>: We cannot treat all unlabeled docs as truly non-relevant.</li><li><strong>Sampling</strong>: How we choose the non-relevant pairs defines model quality.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Practice: Training BERT-base",
+        "content": "<ul><li><strong>Init</strong>: Start from pre-trained weights (e.g., \\texttt{bert-base-uncased</strong>).</li><li><strong>Length</strong>: Must truncate query + doc to 512 sub-word tokens.</li><li><strong>Schedule</strong>: Learning rate $\\approx 2 \\times 10^{-5</strong>$ for ~24 hours on one GPU.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Standard Models: monoBERT \\& monoT5",
+        "content": "<ul><li><strong>monoBERT</strong>: Encoder-only; uses the [CLS] token for classification.</li><li><strong>monoT5</strong>: Encoder-Decoder; uses generative prompts (``Is document relevant?'').</li><li><strong>Choice</strong>: monoT5 is often favored for its flexibility and accuracy.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Comparison: monoBERT vs. monoT5",
+        "content": "<ul><li><strong>monoBERT</strong>: Faster inference; trained via classification.</li><li><strong>monoT5</strong>: More flexible; trained via sequence-to-sequence generation.</li><li><strong>Trade-off</strong>: T5's generative approach often yields slightly higher accuracy.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Common Training Pitfalls",
+        "content": "<ul><li><strong>Overfitting:</strong> Neural rankers overfit MS MARCO quickly. Stop at 2--3 epochs.</li><li><strong>Catastrophic Forgetting:</strong> Use small learning rates ($< 3 \\times 10^{-5</strong>$) and warmup.</li><li><strong>Weak Negatives:</strong> Random samples are too easy. Use BM25 hard negatives.</li></ul>"
+      },
+      {
+        "type": "bullet",
+        "title": "Implementation (Hugging Face)",
+        "content": "<p>\\begin{lstlisting</strong>[language=Python]\nmodel = AutoModelForSequenceClassification.from_pretrained(\"bert-base-uncased\")\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n\n# Training args\nargs = TrainingArguments(\n    per_device_train_batch_size=16,\n    learning_rate=2e-5,\n    num_train_epochs=3,\n    fp16=True\n)\n# Trainer handles batching, eval, and optimization\ntrainer = Trainer(model=model, args=args, train_dataset=ds)\ntrainer.train()\n\\end{lstlisting</strong></p>"
+      }
+    ]
+  },
+  {
+    "title": "Connections and Summary",
+    "slides": [
+      {
+        "type": "bullet",
+        "title": "The Representation Spectrum",
+        "content": "<ul><li><strong>Sparse</strong>: High scalability, zero semantics (Exact-match bottleneck).</li><li><strong>Dense</strong>: Good semantics, high scalability via ANN (Retrieval).</li><li><strong>Neural</strong>: Deepest interaction, lowest scalability (Re-ranking).</li></ul>"
+      }
+    ]
+  }
+]

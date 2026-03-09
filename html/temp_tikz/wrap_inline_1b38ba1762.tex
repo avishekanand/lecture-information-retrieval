@@ -1,0 +1,32 @@
+
+\documentclass[tikz,border=2pt]{standalone}
+\usepackage{amsmath,amssymb}
+\usepackage{amsfonts}
+\usepackage{xcolor}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes,decorations.pathreplacing}
+% Define some common colors used in IR lectures if any
+\definecolor{sparse}{rgb}{0.8,0.8,1}
+\definecolor{dense}{rgb}{1,0.8,0.8}
+\begin{document}
+\begin{tikzpicture}[
+    scale=0.85, transform shape,
+    box/.style={draw, rounded corners, minimum height=1cm, minimum width=2.5cm, align=center, font=\small},
+    arr/.style={-{Stealth[length=3mm]}, thick}
+]
+\node[box, fill=sparse!20] (qenc) {Query Encoder\\$\text{BERT}_Q$};
+\node[box, fill=dense!20, right=3.5cm of qenc] (denc) {Document Encoder\\$\text{BERT}_D$};
+\node[below=0.5cm of qenc, font=\small] (q) {__MATH_INLINE_0__};
+\node[below=0.5cm of denc, font=\small] (d) {__MATH_INLINE_1__};
+\node[box, fill=hybrid!20, below=1.2cm of __MATH_INLINE_2__] (sim) {__MATH_INLINE_3__};
+\node[box, fill=gray!15, below=0.7cm of sim] (ann) {ANN Index\\(FAISS / HNSW)};
+
+\draw[arr] (qenc) -- (q);
+\draw[arr] (denc) -- (d);
+\draw[arr] (q) -- (sim);
+\draw[arr] (d) -- (sim);
+\draw[arr] (sim) -- (ann);
+
+\node[above=0.3cm of qenc, font=\small\itshape, text=gray] {``car problems''};
+\node[above=0.3cm of denc, font=\small\itshape, text=gray] {``automobile issues\ldots''};
+\end{tikzpicture}
+\end{document}

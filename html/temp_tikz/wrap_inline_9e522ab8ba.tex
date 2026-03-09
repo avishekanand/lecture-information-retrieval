@@ -1,0 +1,26 @@
+
+\documentclass[tikz,border=2pt]{standalone}
+\usepackage{amsmath,amssymb}
+\usepackage{amsfonts}
+\usepackage{xcolor}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes,decorations.pathreplacing}
+% Define some common colors used in IR lectures if any
+\definecolor{sparse}{rgb}{0.8,0.8,1}
+\definecolor{dense}{rgb}{1,0.8,0.8}
+\begin{document}
+\begin{tikzpicture}[
+    box/.style={draw, rounded corners, minimum height=0.8cm, minimum width=2cm, align=center, font=\small},
+    arr/.style={-{Stealth[length=2mm]}, thick}
+]
+
+\node[font=\small\bfseries] at (-0.5, 2.5) {Cross-Encoder:};
+\node[box, fill=dense!15, minimum width=6cm] (ce) at (3.5, 2.5) {BERT([CLS] query [SEP] doc [SEP])};
+\node[below=0.3cm of ce, font=\small] {gets relevance score from output layer};
+
+
+\node[font=\small\bfseries] at (-0.5, 0.3) {Bi-Encoder:};
+\node[box, fill=sparse!15] (bq) at (2, 0.3) {__MATH_INLINE_0__(query)};
+\node[box, fill=sparse!15] (bd) at (6, 0.3) {__MATH_INLINE_1__(doc)};
+\node[below=0.3cm of __MATH_INLINE_2__, font=\small] {have to compute __MATH_INLINE_3__};
+\end{tikzpicture}
+\end{document}

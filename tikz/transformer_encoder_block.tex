@@ -1,10 +1,10 @@
-\begin{tikzpicture}[scale=0.6, transform shape]
+\begin{tikzpicture}[scale=0.55, transform shape]
     \node[sparse, minimum width=4.5cm] (input) at (0, 0) {Input Embeddings + Position};
-    \node[dense, minimum width=4.5cm] (attn) at (0, 1.5) {\textbf{Multi-Head Self-Attention}};
-    \node[infra, minimum width=4.5cm] (add1) at (0, 2.8) {Add \& Layer Norm};
-    \node[dense, minimum width=4.5cm] (ffn) at (0, 4.1) {\textbf{Feed-Forward Network}};
-    \node[infra, minimum width=4.5cm] (add2) at (0, 5.4) {Add \& Layer Norm};
-    \node[dense, minimum width=4.5cm] (out) at (0, 6.7) {Output Contextual Embeddings};
+    \node[dense, minimum width=4.5cm] (attn) at (0, 1.8) {\textbf{Multi-Head Self-Attention}};
+    \node[infra, minimum width=4.5cm] (add1) at (0, 3.4) {Add \& Layer Norm};
+    \node[dense, minimum width=4.5cm] (ffn) at (0, 5.0) {\textbf{Feed-Forward Network}};
+    \node[infra, minimum width=4.5cm] (add2) at (0, 6.6) {Add \& Layer Norm};
+    \node[dense, minimum width=4.5cm] (out) at (0, 8.2) {Output Contextual Embeddings};
 
     \draw[irArrowBase] (input) -- (attn);
     \draw[irArrowBase] (attn) -- (add1);

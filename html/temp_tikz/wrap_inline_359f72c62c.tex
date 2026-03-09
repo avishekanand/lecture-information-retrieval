@@ -1,0 +1,23 @@
+
+\documentclass[tikz,border=2pt]{standalone}
+\usepackage{amsmath,amssymb}
+\usepackage{amsfonts}
+\usepackage{xcolor}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes,decorations.pathreplacing}
+% Define some common colors used in IR lectures if any
+\definecolor{sparse}{rgb}{0.8,0.8,1}
+\definecolor{dense}{rgb}{1,0.8,0.8}
+\begin{document}
+\begin{tikzpicture}[scale=0.8, transform shape, node distance=1.1cm, every node/.style={font=\small\sffamily}]
+    \node[infra, text width=2.4cm, align=center] (q) {Original\\Query __MATH_INLINE_0__};
+    \node[dense, right=1.3cm of q] (llm) {GenQR\\(T5 / FLAN-T5)};
+    \node[irBoxBase, fill=irHybrid!10, draw=irHybrid, right=1.3cm of llm, text width=3.0cm, align=center] (qr) {Reformulated\\Query __MATH_INLINE_1__\\(paraphrases)};
+    \node[sparse, right=1.3cm of qr] (bm25) {BM25};
+    \node[rerank, right=1.3cm of bm25] (rerank) {Neural\\Re-ranker};
+
+    \draw[irArrowBase] (q) -- (llm);
+    \draw[irArrowBase] (llm) -- (qr);
+    \draw[irArrowBase] (qr) -- (bm25);
+    \draw[irArrowBase] (bm25) -- (rerank);
+\end{tikzpicture}
+\end{document}

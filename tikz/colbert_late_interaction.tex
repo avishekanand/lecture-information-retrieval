@@ -1,20 +1,20 @@
 \begin{tikzpicture}
     % Encoders
-    \node[dense] (bq) at (0, 1.5) {\textbf{BERT$_q$}};
-    \node[dense] (bd) at (6, 1.5) {\textbf{BERT$_d$}};
+    \node[dense] (bq) at (0, 0.8) {\textbf{BERT$_q$}};
+    \node[dense] (bd) at (6, 0.8) {\textbf{BERT$_d$}};
 
     % Inputs
     \node[font=\footnotesize, irInfra] at (0, 0.4) {``Query tokens''};
     \node[font=\footnotesize, irInfra] at (6, 0.4) {``Document tokens''};
 
     % Token Embeddings (Simplified)
-    \node[dense, minimum width=0.6cm, inner sep=2pt, font=\tiny] (e1) at (-0.6, 2.8) {$\vec{q}_1$};
-    \node[dense, minimum width=0.6cm, inner sep=2pt, font=\tiny, fill=white] (e2) at (0.2, 2.8) {$\vdots$};
-    \node[dense, minimum width=0.6cm, inner sep=2pt, font=\tiny] (e3) at (1, 2.8) {$\vec{q}_n$};
+    \node[dense, compact, minimum width=0.6cm] (e1) at (-0.6, 3.2) {$\vec{q}_1$};
+    \node[dense, compact, minimum width=0.6cm, fill=white] (e2) at (0.2, 3.2) {$\vdots$};
+    \node[dense, compact, minimum width=0.6cm] (e3) at (1, 3.2) {$\vec{q}_n$};
 
-    \node[dense, minimum width=0.6cm, inner sep=2pt, font=\tiny] (d1) at (4.5, 2.8) {$\vec{d}_1$};
-    \node[dense, minimum width=0.6cm, inner sep=2pt, font=\tiny, fill=white] (d2) at (6, 2.8) {$\ldots$};
-    \node[dense, minimum width=0.6cm, inner sep=2pt, font=\tiny] (d3) at (7.5, 2.8) {$\vec{d}_m$};
+    \node[dense, compact, minimum width=0.6cm] (d1) at (4.5, 3.2) {$\vec{d}_1$};
+    \node[dense, compact, minimum width=0.6cm, fill=white] (d2) at (6, 3.2) {$\ldots$};
+    \node[dense, compact, minimum width=0.6cm] (d3) at (7.5, 3.2) {$\vec{d}_m$};
 
     % Arrows to Embeddings
     \draw[irArrowBase] (bq) -- (e1);
@@ -23,7 +23,7 @@
     \draw[irArrowBase] (bd) -- (d3);
 
     % Late Interaction
-    \node[hybrid, minimum width=3.5cm] (maxsim) at (3, 4.5) {\textbf{MaxSim Interaction}\\$\sum_i \max_j \vec{q}_i \cdot \vec{d}_j$};
+    \node[hybrid, minimum width=3.5cm] (maxsim) at (3, 4.8) {\textbf{MaxSim Interaction}\\$\sum_i \max_j \vec{q}_i \cdot \vec{d}_j$};
 
     \draw[irArrowBase, dashed, irInfra!40] (e1) -- (maxsim);
     \draw[irArrowBase, dashed, irInfra!40] (e3) -- (maxsim);

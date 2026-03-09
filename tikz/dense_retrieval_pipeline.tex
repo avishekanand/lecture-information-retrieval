@@ -1,9 +1,9 @@
 \begin{tikzpicture}
     % Components
-    \node[infra] (query) at (0, 0) {User Query};
-    \node[dense, right=1.2cm of query] (encoder) {Query\\Encoder};
-    \node[ann, right=1.2cm of encoder] (ann) {ANN Index\\(FAISS / HNSW)};
-    \node[dense, right=1.2cm of ann] (results) {Top-$k$\\Candidates};
+    \node[infra, compact] (query) at (0, 0) {User Query};
+    \node[dense, compact, right=1.2cm of query] (encoder) {Query\\Encoder};
+    \node[ann, compact, right=1.2cm of encoder] (ann) {ANN Index\\(FAISS / HNSW)};
+    \node[dense, compact, right=1.2cm of ann] (results) {Top-$k$\\Candidates};
 
     % Arrows
     \draw[irArrowBase] (query) -- (encoder) node[midway, above, irLabel] {Text};
@@ -16,6 +16,8 @@
         Uses $q$ to find most similar document vectors $\{d_1..d_k\}$ in sub-ms time.
     };
 
-    \node[infra, dotted, draw, inner sep=10pt, fit=(ann) (ann_note)] (ann_box) {};
+    \begin{scope}[on background layer]
+        \node[infra, dotted, draw, inner sep=10pt, fit=(ann) (ann_note)] (ann_box) {};
+    \end{scope}
     \node[above=0.1cm of ann_box, irLabel] {Efficient Retrieval};
 \end{tikzpicture}

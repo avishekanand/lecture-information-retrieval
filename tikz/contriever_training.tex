@@ -1,7 +1,7 @@
 % Contriever: Document Views + MoCo Queue Visualization
 % Shows: document → random crop → two views → encoder → contrastive loss with queue
 \begin{tikzpicture}[
-    scale=0.72, transform shape,
+    scale=0.65, transform shape,
     box/.style={draw, rounded corners=3pt, minimum height=0.7cm, align=center, font=\small, drop shadow={opacity=0.1}},
     arr/.style={-{Stealth[length=2.5mm]}, thick},
     crop/.style={draw, dashed, rounded corners=2pt, minimum height=0.55cm, font=\tiny, align=center},
@@ -78,26 +78,23 @@
 \draw[arr, draw=irDense!70, dashed, -{Stealth[length=2mm]}] (z2.east) .. controls (4.5, -5.7) and (7.5, -4.5) .. (8.2, -3.5)
     node[pos=0.5, above, font=\tiny\sffamily, text=irDense!70, rotate=15] {enqueue};
 
-% ===== BOTTOM: Loss Function (Clear of overlaps) =====
-
-\node[box, fill=yellow!15, draw=yellow!60!black, minimum width=12cm, minimum height=1.2cm, font=\small] (loss) at (5, -8.5)
+% ===== BOTTOM: Loss Function (Centered) =====
+\node[box, fill=yellow!15, draw=yellow!60!black, minimum width=12cm, minimum height=1.2cm, font=\small] (loss) at (0, -8.5)
     {$\mathcal{L} = -\log \dfrac{\exp(\mathbf{z}_1^\top \mathbf{z}_2 / \tau)}{\exp(\mathbf{z}_1^\top \mathbf{z}_2 / \tau) + \displaystyle\sum_{j \in \text{Batch}} \exp(\mathbf{z}_1^\top \mathbf{z}_j / \tau) + \sum_{k \in \text{Queue}} \exp(\mathbf{z}_1^\top \mathbf{z}_k / \tau)}$};
 
-% Component labels (no arrows for negatives as requested)
-\pgfmathsetmacro{\lossTop}{-7.2}
+% Component labels
+\pgfmathsetmacro{\lossTop}{-7.9}
 
-% Positive contribution - keeping this as it defines the pair being trained on
-\draw[arr, draw=irHybrid!80!black, shorten >=10pt] (0, -5.6) -- (0, \lossTop);
-\node[font=\tiny\bfseries, text=irHybrid!80!black, anchor=west, inner sep=2pt] at (0.05, -6.4) {positives ($z_1, z_2$)};
+% Positive contribution
+\draw[arr, draw=irHybrid!80!black] (0, -5.6) -- (0, \lossTop);
+\node[font=\tiny\bfseries, text=irHybrid!80!black, anchor=west, inner sep=2pt] at (0.05, -6.8) {positives ($z_1, z_2$)};
 
-% Batch contribution label
-\node[font=\tiny\sffamily, text=irInfra, anchor=west, inner sep=2pt] at (9.55, -6.4) {batch negatives};
+% Negatives from columns
+\node[font=\tiny\sffamily, text=irInfra, anchor=west] at (8.5, -6.8) {batch negatives};
+\node[font=\tiny\sffamily, text=irRerank!70, anchor=west] at (8.5, -4.5) {queue negatives};
 
-% Queue contribution label
-\node[font=\tiny\sffamily, text=irRerank!70, anchor=west, inner sep=2pt] at (11.7, -4.8) {queue negatives};
-
-% Shared embeddings arrows - also keeping for z1, z2 flow
-\draw[arr, draw=irSparse!70, shorten >=10pt] (z1.south) -- (-1.1, \lossTop);
-\draw[arr, draw=irDense!70, shorten >=10pt] (z2.south) -- (1.1, \lossTop);
+% Shared embeddings arrows
+\draw[arr, draw=irSparse!70] (z1.south) -- (-1.2, \lossTop);
+\draw[arr, draw=irDense!70] (z2.south) -- (1.2, \lossTop);
 
 \end{tikzpicture}

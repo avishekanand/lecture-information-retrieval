@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Information Retrieval Slides</title>
+<link rel="stylesheet" href="node_modules/reveal.js/dist/reveal.css">
+<link rel="stylesheet" href="node_modules/reveal.js/dist/theme/serif.css">
+<link rel="stylesheet" href="common.css">
+<style>
+  .reveal h1 { font-size: 1.4em !important; }
+  .reveal h2 { font-size: 1.0em !important; color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 8px; }
+  .reveal h3 { font-size: 0.75em !important; }
+  
+  .nav-hint { 
+    position: fixed; bottom: 8px; left: 8px; z-index: 99; 
+    font-size: 8px; color: #aaa; font-family: sans-serif;
+    background: rgba(255,255,255,0.8); padding: 4px; border-radius: 4px;
+  }
+  .nav-hint a { color: #3498db; text-decoration: none; font-weight: bold; }
+</style>
+</head>
+<body>
+<div class="nav-hint">
+    <a href="index.html">⌂ Index</a> | 
+    Shift + ➔ Next | Shift + ⬅ Prev
+</div>
+<div class="reveal">
+  <div class="slides">
+    <section>
+  <section>
+    <h2>Recap: What We Know</h2>
+    <div class="content"><div class="block"><h3>Vector Space Model (Lecture 1)</h3><div class="block-content"><ul><li>Documents and queries as vectors in term space</li><li>Similarity measured by cosine distance</li><li>Foundation for understanding term-based retrieval</li></ul></div></div>
+
+<div class="block"><h3>Indexing (Lecture 2)</h3><div class="block-content"><ul><li>Inverted index: term $\to$ posting list (docID, tf, positions)</li><li>Accumulator-based scoring: only touch documents with term overlap</li><li>Dense indexing: IVF+PQ for semantic vectors</li></ul></div></div>
+
+<div class="alert-block"><h3>Today's Question</h3><div class="block-content">We can store and retrieve efficiently. But <strong>how do we score?</strong></div></div></div>
+  </section>
+  <section>
+    <h2>The Probability Ranking Principle (PRP)</h2>
+    <div class="content"><div class="block"><h3>Theorem (Robertson, 1977)</h3><div class="block-content">If documents are ranked by decreasing probability of relevance given the query, then the expected effectiveness of the system is maximized---under the assumption of independent relevance.</div></div>
+
+
+
+<strong>Formally:</strong> Rank by $P(\text{relevant} \mid q, d)$
+
+
+
+<strong>Implications:</strong>
+<ul><li>Gives a <strong>theoretical justification</strong> for probabilistic scoring</li><li>All scoring functions (TF-IDF, BM25, LM) are approximations of this ideal</li><li>Independence assumption is strong---violated in practice (documents are correlated)</li></ul>
+
+
+
+
+<div class="example-block"><h3>Key Insight</h3><div class="block-content">The PRP tells us  to optimize. BM25 and Language Models tell us .</div></div></div>
+  </section>
+  <section>
+    <h2>The Ranking Problem</h2>
+    <div class="content"><div class="block"><h3>Formal Definition</h3><div class="block-content"><strong>Given:</strong>
+<ul><li>Query $q$ (sequence of terms)</li><li>Document collection $D$</li><li>Inverted index (from Lecture 2)</li></ul>
+
+
+<strong>Return:</strong> Ranked list scored by relevance $P(\text{relevant}|q,d)$</div></div></div>
+  </section>
+  <section>
+    <h2>Term Weighting: TF-IDF</h2>
+    <div class="split-layout">
+      <div class="half"><h3></h3><strong>Term Frequency (TF)</strong>
+<ul><li>More occurrences $\rightarrow$ more important</li><li>$\text{tf}(t,d) = \text{count}(t,d)$</li></ul>
+
+
+
+<strong>Inverse Document Frequency (IDF)</strong>
+<ul><li>Rare terms $\rightarrow$ more discriminative</li><li>$\text{idf}(t) = \log\frac{N}{\text{df}_t}$</li></ul></div>
+      <div class="half"><h3></h3><div class="block"><h3>Combined Score</h3><div class="block-content">$$\text{TF-IDF}(t,d) = \text{tf}(t,d) \times \text{idf}(t)$$</div></div></div>
+    </div>
+  </section>
+  <section>
+    <h2>TF-IDF Example</h2>
+    <div class="content"><strong>Query:</strong> ``information retrieval''  ($N = 100{,}000$ documents)
+
+
+
+
+
+
+<table><tr><th><strong>Term</strong></th><th><strong>Doc 1</strong></th><th><strong>Doc 2</strong></th><th><strong>df</strong></th><th><strong>IDF</strong></th><th><strong>Weight</strong></th></tr><tr><td>information</td><td>3</td><td>1</td><td>5000</td><td>1.30</td><td>High TF</td></tr><tr><td>retrieval</td><td>2</td><td>0</td><td>500</td><td>2.30</td><td>High IDF</td></tr><tr><td>the</td><td>20</td><td>150</td><td>50000</td><td>0.30</td><td>Low IDF</td></tr></table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="alert-block"><h3>Problem</h3><div class="block-content">Linear TF growth unrealistic:
+<ul><li>100 occurrences $\neq$ 100$\times$ more relevant than 1</li><li>Need saturation</li></ul></div></div></div>
+  </section>
+</section>
+<section>
+  <section>
+    <h2>Motivation: TF Saturation</h2>
+    <div class="content"><strong>Observation:</strong>
+<ul><li>Relevance increases with TF</li><li>But saturates quickly</li></ul>
+
+
+
+<strong>Example:</strong>
+<ul><li>``algorithm'' 5$\times$ vs. 50$\times$</li><li>5$\rightarrow$10 is meaningful</li><li>45$\rightarrow$50 barely noticeable</li></ul>
+
+
+
+
+
+
+
+
+
+<div class="alert-block"><h3>Need</h3><div class="block-content">Non-linear TF component that saturates gracefully</div></div></div>
+  </section>
+  <section>
+    <h2>Motivation: TF Saturation (Figure)</h2>
+    <div class="content"><div class="h-center"><img class="tikz-img" src="assets/tf_saturation_comparison.png" alt="tf_saturation_comparison"></div></div>
+  </section>
+  <section>
+    <h2>BM25 Formula</h2>
+    <div class="content"><div class="block"><h3>Complete Formula</h3><div class="block-content">$$\text{BM25}(q,d) = \sum_{t \in q} \text{IDF}(t) \cdot \frac{f(t,d) \cdot (k_1+1)}{f(t,d) + k_1 \cdot \left(1-b+b \cdot \frac{|d|}{\text{avgdl}}\right)}$$</div></div>
+
+
+
+<strong>Three components:</strong>
+<ol><li><strong>IDF:</strong> Term importance (like TF-IDF)</li><li><strong>Saturating TF:</strong> Non-linear term frequency</li><li><strong>Length normalization:</strong> Penalize long documents</li></ol>
+
+
+
+
+<strong>Standard parameters: $k_1 = 1.2$, $b = 0.75$</strong></div>
+  </section>
+  <section>
+    <h2>BM25 Component 1: IDF</h2>
+    <div class="content"><div class="block"><h3>IDF Formula</h3><div class="block-content">$$\text{IDF}(t) = \log\frac{N - \text{df}_t + 0.5}{\text{df}_t + 0.5}$$</div></div>
+
+where:
+<ul><li>$N$ = total number of documents</li><li>$\text{df}_t$ = document frequency of term $t$</li></ul>
+
+
+
+<strong>Properties:</strong>
+<ul><li>Similar to TF-IDF but probabilistically motivated</li><li>Can be negative for very common terms ($\text{df} > N/2$)</li><li>Rare terms get high positive IDF</li><li>Common terms get low or negative IDF</li></ul></div>
+  </section>
+  <section>
+    <h2>BM25 Component 2: Saturating TF</h2>
+    <div class="content"><div class="block"><h3>Saturating TF Formula</h3><div class="block-content">$$\frac{f(t,d) \cdot (k_1+1)}{f(t,d) + k_1}$$</div></div>
+
+<strong>Parameter $k_1$ (typically 1.2--2.0):</strong>
+<ul><li>$k_1 \to 0$: Boolean matching (TF doesn't matter)</li><li>$k_1 \to \infty$: Linear TF (like TF-IDF)</li><li>$k_1 = 1.2$: Moderate saturation (standard)</li></ul>
+
+
+
+
+
+
+<table><tr><th><strong>TF</strong></th><th><strong>$k_1=1.2$</strong></th><th><strong>$k_1=2.0$</strong></th></tr><tr><td>1</td><td>0.55</td><td>0.67</td></tr><tr><td>5</td><td>1.53</td><td>1.67</td></tr><tr><td>10</td><td>1.79</td><td>1.83</td></tr><tr><td>50</td><td>1.98</td><td>1.96</td></tr></table></div>
+  </section>
+  <section>
+    <h2>BM25 Component 2: Saturating TF (Figure)</h2>
+    <div class="content"><div class="h-center"><img class="tikz-img" src="assets/bm25_k1_comparison.png" alt="bm25_k1_comparison"></div></div>
+  </section>
+  <section>
+    <h2>BM25 Component 3: Length Normalization</h2>
+    <div class="content"><div class="block"><h3>Length Normalization Term</h3><div class="block-content">$$1 - b + b \cdot \frac{|d|}{\text{avgdl}}$$</div></div>
+
+<strong>Parameter $b$ (typically 0.75):</strong>
+<ul><li>$b = 0$: No length normalization</li><li>$b = 1$: Full normalization (penalize long docs heavily)</li><li>$b = 0.75$: Partial normalization (standard)</li></ul>
+
+
+
+<strong>Why needed:</strong>
+<ul><li>Long documents have more terms just by chance</li><li>Should we penalize or not? Depends on collection</li><li>$b$ controls the trade-off</li></ul></div>
+  </section>
+  <section>
+    <h2>BM25 Example: Effect of Document Length</h2>
+    <div class="split-layout">
+      <div class="half"><h3></h3><strong>Short Document (500 words)</strong>
+
+ &= 1 - 0.75 + 0.75   
+&= 0.625 
+{TF component} &= {20  2.2}{20 + 1.2  0.625} 
+&=  = 2.12</div>
+      <div class="half"><h3></h3><strong>Long Document (2000 words)</strong>
+
+ &= 1 - 0.75 + 0.75   
+&= 1.75 
+{TF component} &= {20  2.2}{20 + 1.2  1.75} 
+&=  = 1.99</div>
+    </div>
+  </section>
+  <section>
+    <h2>BM25 Example: Rare vs. Common Terms</h2>
+    <div class="content"><strong>Collection:</strong> $N = 100{,}000$ documents
+
+
+
+
+
+<table><tr><th><strong>Term</strong></th><th><strong>df</strong></th><th><strong>IDF</strong></th><th><strong>Interpretation</strong></th></tr><tr><td>quantum</td><td>100</td><td>6.21</td><td>Very discriminative</td></tr><tr><td>algorithm</td><td>5{,}000</td><td>2.99</td><td>Moderately discriminative</td></tr><tr><td>system</td><td>50{,}000</td><td>$-0.41$</td><td>Not discriminative</td></tr><tr><td>the</td><td>99{,}000</td><td>$-6.21$</td><td>Actively harmful</td></tr></table>
+
+
+
+
+<div class="block"><h3>Key Insight</h3><div class="block-content">IDF difference drives discrimination: Rare terms dominate scoring (Matches on ``quantum'' worth $\sim$15$\times$ matches on ``system''). Common terms contribute little or negatively</div></div></div>
+  </section>
+</section>
+<section>
+  <section>
+    <h2>A Different Ranking Philosophy</h2>
+    <div class="split-layout">
+      <div class="half"><h3></h3><strong>BM25 Approach:</strong>
+<ul><li>``How well does document match query?''</li><li>Scoring based on term overlap</li><li>Weighted by importance (IDF, TF)</li></ul>
+
+
+
+<div class="block"><h3>Matching Score</h3><div class="block-content">$$\text{score}(q,d) = \sum_{t} w(t,q,d)$$</div></div></div>
+      <div class="half"><h3></h3><strong>Language Model Approach:</strong>
+<ul><li>``How likely would this document generate this query?''</li><li>Rank by $P(q|d)$</li><li>Probabilistic generative model</li></ul>
+
+
+
+<div class="block"><h3>Generative Probability</h3><div class="block-content">$$\text{score}(q,d) = P(q|d)$$</div></div></div>
+    </div>
+  </section>
+  <section>
+    <h2>A Different Ranking Philosophy</h2>
+    <div class="split-layout">
+      <div class="half"><h3></h3><strong>BM25 Approach:</strong>
+<ul><li>``How well does document match query?''</li><li>Scoring based on term overlap</li><li>Weighted by importance (IDF, TF)</li></ul></div>
+      <div class="half"><h3></h3><strong>Language Model Approach:</strong>
+<ul><li>``How likely would this document generate this query?''</li><li>Rank by $P(q|d)$</li><li>Probabilistic generative model</li></ul></div>
+    </div>
+  </section>
+  <section>
+    <h2>The Generative Story</h2>
+    <div class="content"><div class="example-block"><h3>Intuition</h3><div class="block-content">Imagine randomly sampling words from a document. The document that is <strong>most likely to produce your query terms</strong> is ranked highest.</div></div>
+
+
+
+<strong>How it works step by step:</strong>
+<ol><li>Pick a document $d$ from the collection</li><li>The document defines a <strong>language model</strong> --- a probability distribution $P(w|d)$ over words</li><li><strong>Sample</strong> query words from this distribution: $P(q|d) = \prod_{w \in q} P(w|d)$</li><li>Rank documents by $P(q|d)$ --- those more likely to ``emit'' the query rank higher</li></ol></div>
+  </section>
+  <section>
+    <h2>Visualizing Language Models</h2>
+    <div class="content"><div class="h-center"><img class="tikz-img" src="assets/lm_distribution_viz.png" alt="lm_distribution_viz"></div></div>
+  </section>
+  <section>
+    <h2>Query Likelihood Model: Philosophy</h2>
+    <div class="content"><div class="block"><h3>The Generative Story</h3><div class="block-content">Instead of matching keywords, we ask: <strong>``What is the probability that this document would produce this query?''</strong></div></div>
+
+
+
+<strong>Mathematical Formulation:</strong>
+<ul><li>Assume query terms $w \in q$ are sampled <strong>independently</strong> from the document $d$ (unigram assumption).</li><li>Rank documents by:
+    $$P(q|d) = \prod_{w \in q} P(w|d)$$</li><li>In practice, we use log-probabilities to avoid underflow:
+    $$\text{score}(q,d) = \sum_{w \in q} \log P(w|d)$$</li></ul></div>
+  </section>
+  <section>
+    <h2>Estimation</h2>
+    <div class="content"><div class="block"><h3>Maximum Likelihood Estimate (MLE)</h3><div class="block-content">How do we calculate $P(w|d)$? The simplest way is term frequency:
+$$P_{\text{ML}}(w|d) = \frac{\text{count}(w,d)}{|d|}$$</div></div>
+
+But what is the catch here?
+
+
+
+<div class="alert-block"><h3>The Catch</h3><div class="block-content">If a query term $w$ is <strong>not in the document</strong>, then $P_{\text{ML}}(w|d) = 0$.
+<ul><li>The product $P(q|d) = 0$ for the entire query!</li><li>One missing term kills the score, even for a 90% relevant document.</li></ul></div></div>
+
+
+
+<strong>Example:</strong> Query ``machine learning algorithms'' misses a document about ``machine learning'' because the word ``algorithms'' is absent.</div>
+  </section>
+  <section>
+    <h2>Zero Probability Example</h2>
+    <div class="content"><strong>Query:</strong> ``machine learning algorithms''
+
+<strong>Document:</strong> ``This paper presents a novel neural network approach to supervised machine learning.'' (15 words)
+
+
+
+
+
+<table><tr><th><strong>Term</strong></th><th><strong>count(w,d)</strong></th><th><strong>$P_{\text{ML}}(w|d)$</strong></th><th><strong>Result</strong></th></tr><tr><td>machine</td><td>1</td><td>$1/15 = 0.067$</td><td>✓</td></tr><tr><td>learning</td><td>1</td><td>$1/15 = 0.067$</td><td>✓</td></tr><tr><td>algorithms</td><td>0</td><td>$0/15 = 0$</td><td>ZERO!</td></tr><tr><td>$P(q|d)$</td></tr></table>
+
+
+
+
+<div class="alert-block"><h3>Problem</h3><div class="block-content">Document is clearly relevant, but one missing term kills the entire score!</div></div></div>
+  </section>
+  <section>
+    <h2>Smoothing: Core Idea</h2>
+    <div class="content"><div class="block"><h3>Principle</h3><div class="block-content">Mix document evidence with collection evidence:
+$$P(w|d) = f(\text{document evidence}, \text{collection evidence})$$</div></div>
+
+
+
+<strong>Collection Language Model:</strong>
+$$P(w|C) = \frac{\sum_{d' \in C} \text{count}(w,d')}{\sum_{d' \in C} |d'|}$$
+
+
+
+<div class="example-block"><h3>Effect</h3><div class="block-content">Even if $\text{count}(w,d) = 0$, we have $P(w|d) > 0$ from collection</div></div></div>
+  </section>
+  <section>
+    <h2>Jelinek-Mercer Smoothing</h2>
+    <div class="content"><div class="block"><h3>Formula</h3><div class="block-content">$$P(w|d) = (1-\lambda) \cdot P_{\text{ML}}(w|d) + \lambda \cdot P(w|C)$$</div></div>
+
+<strong>Parameter $\lambda$ (typically 0.1--0.3):</strong>
+<ul><li>$\lambda = 0$: Only use document (no smoothing)</li><li>$\lambda = 1$: Only use collection (ignore document)</li><li>$\lambda = 0.1$: Mostly trust document, small collection backup</li></ul>
+
+
+
+<strong>Properties:</strong>
+<ul><li>✓ Simple and interpretable</li><li>✓ Same $\lambda$ for all documents</li><li>Doesn't adapt to document length</li></ul></div>
+  </section>
+  <section>
+    <h2>Dirichlet Smoothing</h2>
+    <div class="content"><div class="block"><h3>Formula</h3><div class="block-content">$$P(w|d) = \frac{\text{count}(w,d) + \mu \cdot P(w|C)}{|d| + \mu}$$</div></div>
+
+<strong>Parameter $\mu$ (typically 1000--2500):</strong>
+<ul><li>Smoothing strength (number of ``pseudo-counts'' from collection)</li><li>Higher $\mu$: More smoothing. Lower $\mu$: Less smoothing.</li></ul>
+
+
+
+<strong>Key Difference: Length-Adaptive</strong>
+<ul><li><strong>Short documents:</strong> $\mu$ dominates denominator $\rightarrow$ rely more on collection</li><li><strong>Long documents:</strong> Actual counts dominate $\rightarrow$ rely on document</li><li>Automatically adapts smoothing to document length!</li></ul></div>
+  </section>
+  <section>
+    <h2>Dirichlet Smoothing: Length Adaptation Example</h2>
+    <div class="content"><strong>Term ``algorithm'' with $P(w|C) = 0.001$, $\mu = 2000$</strong>
+
+
+
+
+
+<table><tr><th><strong>Document</strong></th><th><strong>count(w,d)</strong></th><th><strong>$|d|$</strong></th><th><strong>$P(w|d)$</strong></th></tr><tr><td>Short doc</td><td>2</td><td>100</td><td>$\frac{2 + 2}{2100} = 0.0019$</td></tr><tr><td>Long doc</td><td>2</td><td>2000</td><td>$\frac{2 + 2}{4000} = 0.001$</td></tr></table>
+
+
+
+
+<div class="block"><h3>Observation</h3><div class="block-content"><ul><li>Same term count (2), but short doc $\to$ higher probability</li><li>Long doc $\to$ more smoothing, closer to collection probability</li><li>This is <strong>automatic</strong> based on $|d|$</li></ul></div></div></div>
+  </section>
+  <section>
+    <h2>Query Likelihood Scoring: Step by Step</h2>
+    <div class="content"><div class="example-block"><h3>The Recipe</h3><div class="block-content">Given query $q$ and document $d$, score = $\log P(q|d)$:</div></div>
+
+
+
+<ol><li><strong>Estimate</strong> via MLE: $\displaystyle P_{\text{ML}}(w|d) = \frac{\text{count}(w,d)}{|d|}$</li><li><strong>Smooth</strong> (JM): $\hat{P}(w|d) = (1-\lambda)\,P_{\text{ML}}(w|d) + \lambda\,P(w|C)$</li><li><strong>Score</strong>: $\displaystyle\text{score}(q,d) = \sum_{w \in q} \log \hat{P}(w|d)$</li><li><strong>Rank</strong> by score --- higher score = more relevant.</li></ol></div>
+  </section>
+</section>
+<section>
+  <section>
+    <h2>The Vocabulary Mismatch Problem</h2>
+    <div class="split-layout">
+      <div class="half"><h3></h3><strong>Medical Domain</strong>
+<ul><li>Query: ``heart attack''</li><li>Document: ``myocardial infarction''</li></ul>
+
+
+
+<strong>Technical Domain</strong>
+<ul><li>Query: ``ML''</li><li>Document: ``machine learning''</li></ul></div>
+      <div class="half"><h3></h3><strong>General Domain</strong>
+<ul><li>Query: ``elderly care''</li><li>Document: ``geriatric nursing''</li></ul>
+
+
+
+<strong>Result</strong>
+<ul><li>BM25 score = 0</li><li>Relevant doc not retrieved</li></ul></div>
+    </div>
+  </section>
+  <section>
+    <h2>Relevance Feedback Overview</h2>
+    <div class="content"><div class="block"><h3>Explicit Relevance Feedback</h3><div class="block-content">User marks documents as relevant/non-relevant
+
+<ul><li>Impractical: users won't give feedback</li><li>Chicken-and-egg: need good initial results</li></ul></div></div>
+
+
+
+<div class="block"><h3>Pseudo Relevance Feedback (PRF)</h3><div class="block-content"><strong>Assumption:</strong> Top-$k$ retrieved documents are relevant
+<ul><li>✓ No user interaction needed</li><li>✓ Automatic query expansion</li><li>Risk: If assumption fails $\rightarrow$ query drift</li></ul></div></div>
+
+
+
+<strong>Process:</strong>
+<ol><li>Retrieve initial results with original query</li><li>Extract terms from top-$k$ documents</li><li>Expand query with these terms</li><li>Re-retrieve with expanded query</li></ol></div>
+  </section>
+  <section>
+    <h2>RM3: Relevance Model 3</h2>
+    <div class="content">Provides a probabilistic way to perform query expansion by building a <strong>model of relevance</strong> ($R$) from the initial top-$k$ results.
+
+
+
+
+<strong>Phase 1: Estimating the Relevance Model $P(w|R)$</strong>
+We want to find terms $w$ that are likely to appear in relevant documents:
+$$P(w|R) \approx \sum_{d \in \text{top-}k} \underbrace{P(w|d)}_{\text{term presence}} \cdot \underbrace{P(d|q)}_{\text{doc relevance weight}}$$
+
+<ul><li>$P(w|d)$ is the smoothed language model of document $d$.</li><li>$P(d|q)$ is the score of the document from the first retrieval stage.</li><li>Terms common across many high-scoring documents get the highest $P(w|R)$.</li></ul></div>
+  </section>
+  <section>
+    <h2>RM3: Interpolation and Final Query</h2>
+    <div class="content"><strong>Phase 2: Combining with the Original Query</strong>
+To prevent the query from drifting too far, we interpolate the relevance model with the original query's word <div class="block"><h3>distribution:</h3><div class="block-content">$$P(w|q_{\text{new}}) = (1-\lambda) P(w|q_{\text{orig}}) + \lambda P(w|R)$$</div></div>
+
+<ul><li>$\lambda=1$: Full query expansion (total trust in top-$k$).</li><li>$\lambda=0$: No expansion (original query only).</li><li><strong>Common default:</strong> $\lambda \approx 0.5$.</li></ul>
+
+
+
+<div class="example-block"><h3>The Final Retrieval</h3><div class="block-content">The top <code>fb_terms</code> from $P(w|q_{\text{new}})$ are used to form a new weighted query for the second stage.</div></div></div>
+  </section>
+  <section>
+    <h2>RM3: Key Parameters</h2>
+    <div class="content"><div class="block"><h3>fb_docs (Feedback Documents): 3--10</h3><div class="block-content">How many top documents to use for expansion
+<ul><li>Too few: May miss relevant terms. Too many: Risk non-relevant docs.</li><li><strong>Standard:</strong> 10</li></ul></div></div>
+
+<div class="block"><h3>fb_terms (Feedback Terms): 10--20</h3><div class="block-content">How many expansion terms to add
+<ul><li>Too few: Limited benefit. Too many: Noise.</li><li><strong>Standard:</strong> 10</li></ul></div></div>
+
+<div class="block"><h3>$\lambda$ (Interpolation Weight): 0.5--0.8</h3><div class="block-content">Original vs. expansion weight
+<ul><li>Lower (0.5): Trust original query more</li><li>Higher (0.8): Trust expansion more</li></ul></div></div></div>
+  </section>
+  <section>
+    <h2>RM3 Example</h2>
+    <div class="content"><strong>Original Query:</strong> ``machine learning''
+
+
+
+<strong>Top-3 Retrieved Documents (fb_docs=3):</strong>
+<ol><li>``Neural networks and deep learning algorithms...''</li><li>``Supervised machine learning techniques...''</li><li>``Machine learning applications in AI...''</li></ol>
+
+
+
+<strong>Extracted Terms (fb_terms=5):</strong>
+<ul><li>neural (P=0.15), deep (P=0.12), supervised (P=0.10), algorithms (P=0.09), AI (P=0.08)</li></ul>
+
+
+
+<strong>Expanded Query ($\lambda=0.6$):</strong>
+
+``machine learning neural deep supervised algorithms AI''</div>
+  </section>
+</section>
+<section>
+  <section>
+    <h2>Beyond PRF: Modern Query Expansion Strategies</h2>
+    <div class="content"><div class="block"><h3>Key Insight</h3><div class="block-content">LLMs have <strong>parametric knowledge</strong> --- they can generate expansion terms without retrieving any documents first. No risk of PRF's ``bad top-$k$'' problem!</div></div></div>
+  </section>
+  <section>
+    <h2>Beyond PRF: Modern Query Expansion Strategies (Figure)</h2>
+    <div class="content"><div class="h-center"><img class="tikz-img" src="assets/query_expansion_timeline.png" alt="query_expansion_timeline"></div></div>
+  </section>
+  <section>
+    <h2>Strategy 1: LLM Synonym & Paraphrase Generation --- Intuition</h2>
+    <div class="content">Query: ``heart attack symptoms'' $\longrightarrow$ BM25 score = 0 for a document that says ``myocardial infarction''
+
+
+
+
+<div class="block"><h3>Core Idea</h3><div class="block-content">LLMs were trained on billions of words --- they  that doctors call a heart attack a ``myocardial infarction''. Ask the LLM to bridge the vocabulary gap <strong>before</strong> retrieval runs.</div></div>
+
+
+
+
+
+
+
+
+
+<div class="alert-block"><h3>Key Advantage over PRF</h3><div class="block-content">No documents needed first --- LLM's parametric knowledge bridges the gap from the start.</div></div></div>
+  </section>
+  <section>
+    <h2>Strategy 1: LLM Synonym & Paraphrase Generation --- Intuition (Figure)</h2>
+    <div class="content"><div class="h-center"><img class="tikz-img" src="assets/inline_b4aab81481.png" alt="Inline TikZ"></div></div>
+  </section>
+  <section>
+    <h2>Strategy 1: LLM Synonym & Paraphrase Generation --- Method</h2>
+    <div class="content"><strong>Prompt:</strong>
+<div class="block"><h3>Box</h3><div class="block-content">Given the search query: "heart attack symptoms"
+Generate 5 alternative phrasings and medical synonyms that a relevant document might use.
+Return only the terms, one per line.</div></div>
+
+
+
+<strong>LLM Output:</strong>
+<ul><li>myocardial infarction signs</li><li>cardiac arrest warning indicators</li><li>chest pain emergency symptoms</li><li>coronary event presentation</li><li>acute heart failure signs</li></ul>
+
+
+
+<strong>Expanded BM25 query:</strong> ``heart attack symptoms myocardial infarction cardiac coronary chest pain''
+
+<div class="example-block"><h3>Advantage</h3><div class="block-content">Bridges the exact vocabulary gap that BM25 cannot handle on its own</div></div></div>
+  </section>
+  <section>
+    <h2>Strategy 2: Hypothetical Document Generation (HyDE)</h2>
+    <div class="content"><div class="block"><h3>The Insight</h3><div class="block-content">BM25 needs {term overlap} between query and document. A 3-word query has very little overlap. A hypothetical <strong>relevant document</strong> would have much more overlap with real documents.</div></div>
+
+
+
+<div class="example-block"><h3>Core Idea (Gao et al., 2022)</h3><div class="block-content">``What if we generated the answer first, then searched for it?''</div></div></div>
+  </section>
+  <section>
+    <h2>Strategy 2: Hypothetical Document Generation (HyDE)</h2>
+    <div class="content"><div class="example-block"><h3>Core Idea (Gao et al., 2023)</h3><div class="block-content">``What if we generated the answer first, then searched for it?''</div></div></div>
+  </section>
+  <section>
+    <h2>Strategy 2: Hypothetical Document Generation (HyDE) (Figure)</h2>
+    <div class="content"><div class="h-center"><img class="tikz-img" src="assets/inline_b48e1cbe44.png" alt="Inline TikZ"></div></div>
+  </section>
+  <section>
+    <h2>Strategy 2: Hypothetical Document Generation (HyDE)</h2>
+    <div class="content"><strong>Prompt:</strong>
+<div class="block"><h3>Box</h3><div class="block-content">Write a short paragraph that would be a perfect answer to the question: "What causes ocean acidification?"</div></div>
+
+
+
+<strong>LLM Output:</strong>
+
+
+``Ocean acidification is primarily caused by the absorption of atmospheric CO$_2$ by seawater. When CO$_2$ dissolves, it forms carbonic acid, which lowers the pH of the ocean. This process threatens marine organisms with calcium carbonate shells, such as corals and mollusks...''
+
+
+
+
+<strong>Sparse path:</strong> Extract key terms $\to$ ``carbonic acid'', ``calcium carbonate'', ``pH'', ``seawater'', ``corals'' $\to$ BM25 query
+
+
+
+<strong>Dense path:</strong> Embed the hypothetical doc $\to$ use as ANN query vector (Lecture 5)</div>
+  </section>
+  <section>
+    <h2>Strategy 2: Hypothetical Document Generation (HyDE)</h2>
+    <div class="split-layout">
+      <div class="half"><h3></h3>✓ <strong>When it works well:</strong>
+<ul><div></div><li>Factual / informational queries</li><li>Domain-specific terminology</li></ul></div>
+      <div class="half"><h3></h3><strong>Risk:</strong>
+<ul><div></div><li>LLM hallucinations pollute terms</li><li>Adds LLM latency per query</li></ul></div>
+    </div>
+  </section>
+  <section>
+    <h2>Strategy 3: Chain-of-Thought Query Decomposition --- Intuition</h2>
+    <div class="content"><div class="example-block"><h3>The Problem</h3><div class="block-content">``How did the 2008 financial crisis affect European housing markets?'' 
+<strong>No single document covers all aspects.</strong> BM25 on the full query retrieves almost nothing.</div></div>
+
+
+
+<div class="block"><h3>Core Idea</h3><div class="block-content">Decompose complex queries into <strong>atomic sub-queries</strong>, retrieve evidence for each independently, then merge the results. More recall, less vocabulary mismatch.</div></div></div>
+  </section>
+  <section>
+    <h2>Strategy 3: Chain-of-Thought Query Decomposition --- Intuition</h2>
+    <div class="content"><div class="block"><h3>Core Idea</h3><div class="block-content">Decompose complex queries into <strong>atomic sub-queries</strong>, retrieve evidence for each independently, then merge the results. More recall, less vocabulary mismatch.</div></div></div>
+  </section>
+  <section>
+    <h2>Strategy 3: Chain-of-Thought Query Decomposition --- Intuition (Figure)</h2>
+    <div class="content"><div class="h-center"><img class="tikz-img" src="assets/inline_65d38551fa.png" alt="Inline TikZ"></div></div>
+  </section>
+  <section>
+    <h2>Strategy 3: Chain-of-Thought Query Decomposition --- Method</h2>
+    <div class="content"><strong>Prompt:</strong>
+<div class="block"><h3>Box</h3><div class="block-content">I need to answer: "How did the 2008 financial crisis affect European housing markets?"
+Break this into 3-4 simpler search queries that together would cover the full answer.</div></div>
+
+
+
+<strong>LLM Output:</strong>
+<ol><li>``2008 financial crisis causes subprime mortgage''</li><li>``European housing prices 2008 2009 decline''</li><li>``EU bank bailouts housing market impact''</li><li>``European mortgage lending regulations post-crisis''</li></ol>
+
+
+
+<div class="block"><h3>Pipeline</h3><div class="block-content"><code>BM25$_1$ $\parallel$ BM25$_2$ $\parallel$ BM25$_3$ $\parallel$ BM25$_4$</code> $\to$ merge (union / RRF) $\to$ better recall than single complex query</div></div>
+
+
+
+<div class="example-block"><h3>Best for</h3><div class="block-content">Multi-hop reasoning queries, complex informational needs. <strong>Not</strong> for simple keyword lookups.</div></div></div>
+  </section>
+  <section>
+    <h2>Strategy 4: GenQR (Generative Query Reformulation) --- Intuition</h2>
+    <div class="content"><div class="example-block"><h3>The Problem with ``term lists'' expansions</h3><div class="block-content">Synonyms/HyDE/Query2Doc can help, but often produce {bag-of-terms} or long pseudo-text.
+Sometimes you just want a <strong>better query</strong> that expresses the same intent.</div></div>
+
+
+
+<div class="block"><h3>Core Idea (Wang et al., 2022)</h3><div class="block-content">Use an LLM to <strong>rewrite the query itself</strong> into 3--5 high-quality paraphrases, then retrieve using the reformulated query (often appended/interpolated with the original).</div></div>
+
+
+
+
+
+
+
+
+<div class="alert-block"><h3>Key point vs PRF</h3><div class="block-content">No dependence on top-$k$ pseudo-relevant docs: GenQR is <strong>direct reformulation</strong> using only $q_0$.</div></div></div>
+  </section>
+  <section>
+    <h2>Strategy 4: GenQR (Generative Query Reformulation) --- Intuition (Figure)</h2>
+    <div class="content"><div class="h-center"><img class="tikz-img" src="assets/inline_359f72c62c.png" alt="Inline TikZ"></div></div>
+  </section>
+  <section>
+    <h2>Comparison: Classical vs. LLM Query Expansion</h2>
+    <div class="content"><table><tr><th><strong>Aspect</strong></th><th><strong>Classical (RM3)</strong></th><th><strong>LLM-Based</strong></th></tr><tr><td>Knowledge source</td><td>Top-$k$ retrieved docs</td><td>Parametric (training data)</td></tr><tr><td>Failure mode</td><td>Query drift (bad top-$k$)</td><td>Hallucination</td></tr><tr><td>Latency</td><td>Fast (stats only)</td><td>Slower (LLM inference)</td></tr><tr><td>Cost</td><td>Free</td><td>API cost / GPU</td></tr><tr><td>Domain knowledge</td><td>Needs in-domain corpus</td><td>Pre-trained, zero-shot</td></tr><tr><td>Cold-start</td><td>Fails (empty index)</td><td>Works (no index needed)</td></tr><tr><td>Interpretability</td><td>Terms from real docs</td><td>Generated terms</td></tr></table>
+
+
+
+
+<div class="example-block"><h3>Best Practice (2024+)</h3><div class="block-content"><strong>Combine both:</strong> Use LLM expansion to improve the initial retrieval, then apply RM3 on the (now better) top-$k$ results. The two methods are complementary.</div></div></div>
+  </section>
+  <section>
+    <h2>When Query Expansion Helps vs. Hurts</h2>
+    <div class="split-layout">
+      <div class="half"><h3></h3><div class="block"><h3>✓ Helps When:</h3><div class="block-content"><ul><li>Initial results mostly relevant</li><li>Vocabulary mismatch present</li><li>Broad informational queries</li><li>Query: ``climate change''</li><li>Expansion adds: ``warming'', ``CO2'', ``emissions''</li></ul></div></div></div>
+      <div class="half"><h3></h3><div class="alert-block"><h3>{55</h3><div class="block-content">Hurts When:}
+<ul><li>Initial results off-topic</li><li>Ambiguous queries</li><li>Very specific queries</li><li>Query: ``jaguar''</li><li>Expansion adds: ``car'', ``speed'' (wrong sense!)</li></ul></div></div></div>
+    </div>
+  </section>
+  <section>
+    <h2>Query Drift</h2>
+    <div class="content"><div class="example-block"><h3>Query Drift Example</h3><div class="block-content"><strong>Query:</strong> ``python programming'' 
+<strong>Top result:</strong> Article about Python snake species 
+<strong>RM3 expansion:</strong> ``reptile'', ``snake'', ``habitat'', ``venom'' 
+<strong>LLM expansion:</strong> ``programming language'', ``syntax'', ``libraries'' ✓ Correct!</div></div></div>
+  </section>
+</section>
+<section>
+  <section>
+    <h2>What We Covered Today</h2>
+    <div class="content"><div class="block"><h3>Sparse, Term-Based Ranking</h3><div class="block-content"><ul><li><strong>BM25:</strong> Probabilistic relevance, saturating TF, length normalization</li><li><strong>Language Models:</strong> Generative probabilities, smoothing essential</li><li><strong>Query Expansion:</strong> RM3 for vocabulary mismatch + LLM-based alternatives</li></ul></div></div>
+
+
+
+<div class="alert-block"><h3>Fundamental Limitations</h3><div class="block-content"><ul><li>Still bag-of-words (order doesn't matter)</li><li>Exact term matching only (even with expansion)</li><li>No semantic understanding</li><li>``car'' and ``automobile'' completely different</li><li>``bank'' (river) vs. ``bank'' (financial) treated identically</li></ul></div></div></div>
+  </section>
+  <section>
+    <h2>Appendix: Detailed BM25 Worked Example</h2>
+    <div class="split-layout">
+      <div class="half"><h3></h3><strong>Candidate Doc A:</strong>
+<ul><li>$|d| = 300$</li><li>tf(quantum) = 5</li><li>tf(algorithm) = 3</li></ul></div>
+      <div class="half"><h3></h3><strong>Candidate Doc B:</strong>
+<ul><li>$|d| = 800$</li><li>tf(quantum) = 8</li><li>tf(algorithm) = 1</li></ul></div>
+    </div>
+  </section>
+  <section>
+    <h2>Appendix: BM25 Worked Example (cont.)</h2>
+    <div class="content"><strong>2. Final Scores ($k_1=1.2, b=0.75$):</strong>
+
+
+
+
+
+
+<table><tr><th><strong>Step</strong></th><th><strong>Doc A ($|d|=300$)</strong></th><th><strong>Doc B ($|d|=800$)</strong></th></tr><tr><td>Length Norm</td><td>$1 - 0.75 + 0.75(\frac{300}{500}) = \mathbf{0.7}$</td><td>$1 - 0.75 + 0.75(\frac{800}{500}) = \mathbf{1.45}$</td></tr><tr><td>TF(q) term</td><td>$\frac{5 \times 2.2}{5 + 1.2 \times 0.7} = \mathbf{1.88}$</td><td>$\frac{8 \times 2.2}{8 + 1.2 \times 1.45} = \mathbf{1.81}$</td></tr><tr><td>TF(a) term</td><td>$\frac{3 \times 2.2}{3 + 1.2 \times 0.7} = \mathbf{1.72}$</td><td>$\frac{1 \times 2.2}{1 + 1.2 \times 1.45} = \mathbf{0.80}$</td></tr><tr><td><strong>Total Score</strong></td><td>$6.21(1.88) + 2.94(1.72) = \mathbf{16.73}$</td><td>$6.21(1.81) + 2.94(0.80) = \mathbf{13.59}$</td></tr></table>
+
+
+
+
+<div class="example-block"><h3>Insight</h3><div class="block-content">Doc A wins because it is concise and covers both query terms effectively. Doc B is penalized for its length and lack of the second term (algorithm).</div></div></div>
+  </section>
+</section>
+
+  </div>
+</div>
+<script src="node_modules/reveal.js/dist/reveal.js"></script>
+<script src="node_modules/reveal.js/plugin/math/math.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    plugins: [ RevealMath.KaTeX ]
+  });
+  
+  window.addEventListener('keydown', (e) => {
+      if (e.shiftKey && e.key === 'ArrowRight') {
+          const next = '04_embeddings_reranking.html';
+          if (next) window.location.href = next;
+      } else if (e.shiftKey && e.key === 'ArrowLeft') {
+          const prev = '02_indexing.html';
+          if (prev) window.location.href = prev;
+      } else if (e.key === 'Escape') {
+          window.location.href = 'index.html';
+      }
+  });
+</script>
+</body>
+</html>

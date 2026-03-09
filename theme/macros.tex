@@ -39,12 +39,21 @@
 % Default width chosen for lecture slides; override when needed.
 % \IRBox[width]{id}{at}{title}{subtitle}{variant}[extra options]
 \DeclareDocumentCommand{\IRBox}{O{3.5cm} m m m m m O{}}{%
-    \node[#6, text width=#1, #7] (#2) at #3 {%
-        \textbf{#4}%
-        \if\relax\detokenize{#5}\relax
-        \else\\[-1mm]\scriptsize #5%
-        \fi
-    };%
+    \if\relax\detokenize{#3}\relax
+        \node[#6, text width=#1, #7] (#2) {%
+            \textbf{#4}%
+            \if\relax\detokenize{#5}\relax
+            \else\\[-1mm]\scriptsize #5%
+            \fi
+        };%
+    \else
+        \node[#6, text width=#1, #7] (#2) at #3 {%
+            \textbf{#4}%
+            \if\relax\detokenize{#5}\relax
+            \else\\[-1mm]\scriptsize #5%
+            \fi
+        };%
+    \fi
 }
 
 % \IRWideBox{id}{at}{width}{title}{subtitle}{variant}
@@ -147,11 +156,10 @@
 % Layout Helpers
 % =========================================================
 % \IRPipelineTier{id}{at}{text}{label}{variant}
-\newcommand{\IRPipelineTier}[5]{%
-    \IRBox{#1}{#2}{#3}{}{#5}[]
-    \node[anchor=west, irLabel, xshift=0.5cm] at (#1.east) {#4};%
+\DeclareDocumentCommand{\IRPipelineTier}{O{3.5cm} m m m m m}{%
+    \IRBox[#1]{#2}{#3}{#4}{}{#6}[]
+    \node[anchor=west, irLabel, xshift=0.5cm] at (#2.east) {#5};%
 }
-
 % \IRTelescopeTier{id}{at}{width}{text}{variant}
 \newcommand{\IRTelescopeTier}[5]{%
     \node[

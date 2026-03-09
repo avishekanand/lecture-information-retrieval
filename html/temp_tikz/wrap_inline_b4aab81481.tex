@@ -1,0 +1,20 @@
+
+\documentclass[tikz,border=2pt]{standalone}
+\usepackage{amsmath,amssymb}
+\usepackage{amsfonts}
+\usepackage{xcolor}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes,decorations.pathreplacing}
+% Define some common colors used in IR lectures if any
+\definecolor{sparse}{rgb}{0.8,0.8,1}
+\definecolor{dense}{rgb}{1,0.8,0.8}
+\begin{document}
+\begin{tikzpicture}[node distance=1.2cm, every node/.style={font=\small\sffamily}]
+    \node[sparse] (q) {Query};
+    \node[dense, right=1.5cm of q] (llm) {LLM as Query Expander};
+    \node[irBoxBase, fill=irHybrid!10, draw=irHybrid, right=1.5cm of llm] (exp) {Expanded Terms};
+    \node[sparse, right=1.5cm of exp] (bm25) {BM25};
+    \draw[irArrowBase] (q) -- (llm);
+    \draw[irArrowBase] (llm) -- (exp);
+    \draw[irArrowBase] (exp) -- (bm25);
+\end{tikzpicture}
+\end{document}

@@ -1,22 +1,21 @@
-\begin{tikzpicture}
+\begin{tikzpicture}[scale=0.8, transform shape]
     % Input tokens (generic style)
-    \node[muted] (cls) at (0, 0) {[CLS]};
-    \node[rerank, fill=irRerank!10] (q1) at (1.2, 0) {car};
-    \node[rerank, fill=irRerank!10] (q2) at (2.4, 0) {problems};
-    \node[muted] (sep1) at (3.6, 0) {[SEP]};
-    \node[rerank, fill=irHybrid!10, draw=irHybrid] (d1) at (4.8, 0) {auto};
-    \node[rerank, fill=irHybrid!10, draw=irHybrid] (d2) at (5.8, 0) {\#\#mobile};
-    \node[rerank, fill=irHybrid!10, draw=irHybrid] (d3) at (7.0, 0) {issues};
-    \node[rerank, fill=irHybrid!10, draw=irHybrid] (d4) at (8.1, 0) {and};
-    \node[rerank, fill=irHybrid!10, draw=irHybrid] (d5) at (9.1, 0) {fixes};
-    \node[muted] (sep2) at (10.2, 0) {[SEP]};
+    \node[muted, compact] (cls) at (0, 0) {[CLS]};
+    \node[rerank, compact, fill=irRerank!10] (q1) at (1.1, 0) {car};
+    \node[rerank, compact, fill=irRerank!10] (q2) at (2.2, 0) {problems};
+    \node[muted, compact] (sep1) at (3.3, 0) {[SEP]};
+    \node[rerank, compact, fill=irHybrid!10, draw=irHybrid] (d1) at (4.4, 0) {auto};
+    \node[rerank, compact, fill=irHybrid!10, draw=irHybrid] (d2) at (5.5, 0) {\#\#mobile};
+    \node[rerank, compact, fill=irHybrid!10, draw=irHybrid] (d3) at (6.6, 0) {issues};
+    \node[rerank, compact, fill=irHybrid!10, draw=irHybrid] (d4) at (7.7, 0) {and};
+    \node[rerank, compact, fill=irHybrid!10, draw=irHybrid] (d5) at (8.8, 0) {fixes};
+    \node[muted, compact] (sep2) at (9.9, 0) {[SEP]};
 
     % BERT block
-    \node[rerank, minimum width=11cm, minimum height=1.5cm, fill=irRerank!20, thick] (bert) at (5, 1.8) {\textbf{BERT} (12 layers $\times$ 12 heads)\\Full cross-attention between \textcolor{irRerank}{query} and \textcolor{irHybrid}{document}};
-
+    \node[rerank, minimum width=9.9cm, minimum height=1.5cm, fill=irRerank!20, thick] (bert) at (4.95, 2.2) {\textbf{BERT} (12 layers $\times$ 12 heads)\\Full cross-attention between \textcolor{irRerank}{query} and \textcolor{irHybrid}{document}};
     % Output
-    \node[rerank, minimum width=1.5cm, fill=irRerank!30] (clsout) at (0, 3.5) {$h_{\text{[CLS]}}$};
-    \node[rerank, minimum width=2.5cm, fill=irRerank!40] (score) at (0, 4.5) {$P(\text{rel}) = \sigma(W \cdot h_{\text{[CLS]}})$};
+    \node[rerank, minimum width=1.5cm, fill=irRerank!30] (clsout) at (0, 4.5) {$h_{\text{[CLS]}}$};
+    \node[rerank, minimum width=2.5cm, fill=irRerank!40] (score) at (0, 6.2) {$P(\text{rel}) = \sigma(W \cdot h_{\text{[CLS]}})$};
 
     % Arrows
     \foreach \n in {cls, q1, q2, sep1, d1, d2, d3, d4, d5, sep2} {
@@ -26,6 +25,6 @@
     \draw[irArrowBase] (clsout) -- (score);
 
     % Labels
-    \node[left=0.2cm of cls, font=\tiny\bfseries\color{irRerank}] {Query};
-    \node[left=0.2cm of d1, font=\tiny\bfseries\color{irHybrid}] {Document};
+    \node[left=0.1cm of cls, font=\tiny\bfseries\color{irRerank}] {Query};
+    \node[left=0.1cm of d1, font=\tiny\bfseries\color{irHybrid}] {Document};
 \end{tikzpicture}

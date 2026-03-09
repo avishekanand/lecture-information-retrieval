@@ -51,37 +51,52 @@ Every lecture defines `\cpause` — use this instead of `\pause` so static build
 \newcommand{\cpause}{\ifanimated\pause\fi}
 ```
 
-### TikZ Figure Convention
-All TikZ figures **must** be extracted to `tikz/<descriptive_name>.tex` and included via `\input{tikz/...}`. Never inline complex figures in the lecture `.tex` files.
+## TikZ Figure Convention for IR Lecture Slides
 
-### Theme System (`theme/`)
-- `macros.tex` — imports `tikz-styles.tex` and defines all custom commands
-- `tikz-styles.tex` — color definitions and base TikZ styles
+This repository uses a consistent TikZ figure system. All non-trivial TikZ figures must be extracted into `tikz/<descriptive_name>.tex` and included via `\input{tikz/...}`.
 
-**Semantic colors** (consistent across all lectures):
-| Color name | Hex | Meaning |
-|---|---|---|
-| `irSparse` | `#3498DB` | Sparse/BM25 (blue) |
-| `irDense` | `#E67E22` | Dense/Embeddings (orange) |
-| `irRerank` | `#C0392B` | Re-ranker/Cross-encoder (red) |
-| `irHybrid` | `#2ECC71` | Hybrid/Fusion (green) |
-| `irANN` | `#9B59B6` | ANN/Infra (purple) |
-| `irInfra` | `#58595B` | General infrastructure (dark gray) |
+### 1. Core Principles
+- **Layout Safety First**: No text spilling, no arrows through boxes, no labels on top of shapes.
+- **Fixed Geometry**: All normal boxes use `text width`, `align=center`, and `minimum height` to prevent content-dependent explosions.
+- **Relatively Positioned**: Prefer `right=of` over raw coordinates whenever possible.
+- **Explicit Anchors**: Use `a.east` to `b.west` for horizontal flow, or `a.south` to `b.north` for vertical.
 
-**Key macros** (defined in `theme/macros.tex`):
-- `\IRBox{id}{at}{title}{subtitle}{variant}` — base box node
-- `\IRArrow{from}{to}{label}` — styled arrow between nodes
-- `\IRBadge{at}{text}` — small accent badge
-- `\IRGroup{fit nodes}{label}{variant}` — dashed group container
-- `\IRPipelineTier{id}{at}{text}{label}{variant}` — pipeline stage with side label
-- `\IRTelescopeTier{id}{at}{width}{text}{variant}` — trapezoid for funnel diagrams
-- `\irStage{name}` — corner badge overlay (top-right of slide)
-- `\mathhl[color]{content}` — colored math highlight box
+### 2. Semantic Color & Style System
+Use these variants for boxes (defined in `tikz-styles.tex`):
 
-**TikZ variants** (use as node styles): `sparse`, `dense`, `rerank`, `hybrid`, `ann`, `infra`, `muted`, `ghost`, `emph`
+| Node Variant | Meaning |
+|---|---|
+| `sparse` | Lexical / BM25 (#3498DB) |
+| `dense` | Embeddings / Transformers (#E67E22) |
+| `rerank` | Cross-encoder / Ranking (#C0392B) |
+| `hybrid` | Fusion / Combination (#2ECC71) |
+| `ann` | Vector indexing / ANN (#9B59B6) |
+| `infra` | General infrastructure (#58595B) |
+| `muted` | Background or inactive elements |
+| `ghost` | Very light, placeholder elements |
+| `emph` | Highlighted / Focus element |
 
-### Overflow Handling
-Frames with too much content use `[shrink=N]` on the `\begin{frame}` — always check beamer's shrink warnings after building. N% must cover actual overflow; increase if the warning shows a higher percentage required.
+### 3. Approved Macros (from `theme/macros.tex`)
+- `\IRBox[width]{id}{at}{title}{subtitle}{variant}`: Width-controlled node with emboldened title and scriptsize subtitle.
+- `\IRArrow{from}{to}{label}`: Safe horizontal flow (east to west).
+- `\IRArrowTB{from}{to}{label}`: Safe vertical flow (south to north).
+- `\IRArrowElbow{from anchor}{to anchor}{label}`: Orthogonal routing to bypass nodes.
+- `\IRGroup{fit nodes}{label}{variant}`: Dotted group container with safe inner-sep.
+- `\IRDocStack{id}{at}{label}`: Standard document stack icon.
+- `\IRDatabase{id}{at}{label}`: Standard database icon.
+- `\IRTelescopeTier{id}{at}{width}{text}{variant}`: Re-ranking funnel tier.
+- `\irStage{name}`: Slide-corner badge overlay.
+
+### 4. Authoring Workflow
+1. Place boxes using relative positioning.
+2. Verify text wrapping and subtitles.
+3. Add arrows using explicit anchors (`.east`, `.west`).
+4. Replace straight lines with `Elbow` routing if they cross nodes.
+5. Add labels (macros provide a white background fill for readability).
+6. Wrap related nodes in an `IRGroup` last.
+
+## Overflow Handling
+Frames with too much content use `[shrink=N]`. However, do not use shrink to hide poor figure design; fix text wrapping or split into overlays first.
 
 ## Content Reference
 

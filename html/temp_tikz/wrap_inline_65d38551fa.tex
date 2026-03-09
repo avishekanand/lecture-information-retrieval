@@ -1,0 +1,26 @@
+
+\documentclass[tikz,border=2pt]{standalone}
+\usepackage{amsmath,amssymb}
+\usepackage{amsfonts}
+\usepackage{xcolor}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes,decorations.pathreplacing}
+% Define some common colors used in IR lectures if any
+\definecolor{sparse}{rgb}{0.8,0.8,1}
+\definecolor{dense}{rgb}{1,0.8,0.8}
+\begin{document}
+\begin{tikzpicture}[node distance=0.9cm, every node/.style={font=\small\sffamily}]
+    \node[infra, text width=3.5cm, align=center] (cq) {Complex Query};
+    \node[dense, right=1.3cm of cq] (llm) {LLM};
+    \node[sparse, above right=0.5cm and 1.4cm of llm, minimum width=2cm] (sq1) {Sub-query 1};
+    \node[sparse, right=1.4cm of llm, minimum width=2cm] (sq2) {Sub-query 2};
+    \node[sparse, below right=0.5cm and 1.4cm of llm, minimum width=2cm] (sq3) {Sub-query 3};
+    \node[hybrid, right=1.4cm of sq2] (merge) {Merge};
+    \draw[irArrowBase] (cq) -- (llm);
+    \draw[irArrowBase] (llm) -- (sq1);
+    \draw[irArrowBase] (llm) -- (sq2);
+    \draw[irArrowBase] (llm) -- (sq3);
+    \draw[irArrowBase] (sq1) -- (merge);
+    \draw[irArrowBase] (sq2) -- (merge);
+    \draw[irArrowBase] (sq3) -- (merge);
+\end{tikzpicture}
+\end{document}

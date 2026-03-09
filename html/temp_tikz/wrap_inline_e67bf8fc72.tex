@@ -1,0 +1,18 @@
+
+\documentclass[tikz,border=2pt]{standalone}
+\usepackage{amsmath,amssymb}
+\usepackage{amsfonts}
+\usepackage{xcolor}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes,decorations.pathreplacing}
+% Define some common colors used in IR lectures if any
+\definecolor{sparse}{rgb}{0.8,0.8,1}
+\definecolor{dense}{rgb}{1,0.8,0.8}
+\begin{document}
+\begin{tikzpicture}[font=\small, scale=0.9, transform shape]
+\node[draw, fill=sparse!10, rounded corners, minimum width=9cm, minimum height=0.6cm, align=center] (doc) {
+    ``Wikipedia was founded by Jimmy Wales and Larry Sanger in January 2001''
+};
+\node[draw, fill=dense!15, rounded corners, minimum width=2cm, below=0.5cm of doc] (vec) {__MATH_INLINE_0__};
+\draw[-{Stealth}, thick] (doc) -- (vec) node[midway, right, xshift=0.3cm] {\textcolor{dense}{information bottleneck}};
+\end{tikzpicture}
+\end{document}

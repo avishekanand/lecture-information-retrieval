@@ -1,0 +1,22 @@
+
+\documentclass[tikz,border=2pt]{standalone}
+\usepackage{amsmath,amssymb}
+\usepackage{amsfonts}
+\usepackage{xcolor}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes,decorations.pathreplacing}
+% Define some common colors used in IR lectures if any
+\definecolor{sparse}{rgb}{0.8,0.8,1}
+\definecolor{dense}{rgb}{1,0.8,0.8}
+\begin{document}
+\begin{tikzpicture}[node distance=1.1cm, every node/.style={font=\small\sffamily}]
+    \node[sparse] (q) {Query};
+    \node[dense, right=1.4cm of q] (llm) {LLM};
+    \node[infra, right=1.4cm of llm, align=center, text width=2.2cm] (hyp) {Hypothetical\\[-0.2em]Document};
+    \node[sparse, above right=0.5cm and 1.2cm of hyp] (terms) {Extract Terms};
+    \node[rerank, below right=0.5cm and 1.2cm of hyp] (embed) {Embed (L5)};
+    \draw[irArrowBase] (q) -- (llm);
+    \draw[irArrowBase] (llm) -- (hyp);
+    \draw[irArrowBase] (hyp) -- (terms) node[midway, above, font=\tiny\itshape] {sparse};
+    \draw[irArrowBase] (hyp) -- (embed) node[midway, below, font=\tiny\itshape] {dense};
+\end{tikzpicture}
+\end{document}

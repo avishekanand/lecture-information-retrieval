@@ -15,7 +15,9 @@ DONE_LECTURES = $(wildcard $(DONE_DIR)/*.tex)
 DONE_PDFS_ANIMATED = $(addprefix $(BUILD_DIR)/, $(notdir $(DONE_LECTURES:.tex=_animated.pdf)))
 DONE_PDFS_STATIC = $(addprefix $(BUILD_DIR)/, $(notdir $(DONE_LECTURES:.tex=_static.pdf)))
 
-all: $(BUILD_DIR) $(PDFS_ANIMATED) $(PDFS_STATIC) $(DONE_PDFS_ANIMATED) $(DONE_PDFS_STATIC)
+GALLERY_PDF = $(BUILD_DIR)/full_gallery.pdf
+
+all: $(BUILD_DIR) $(PDFS_ANIMATED) $(PDFS_STATIC) $(DONE_PDFS_ANIMATED) $(DONE_PDFS_STATIC) $(GALLERY_PDF)
 
 animated: $(BUILD_DIR) $(PDFS_ANIMATED) $(DONE_PDFS_ANIMATED)
 
@@ -90,6 +92,11 @@ $(BUILD_DIR)/04_embeddings_reranking_static.pdf: $(DONE_DIR)/04_embeddings_reran
 $(BUILD_DIR)/05_dense_retrieval_static.pdf: $(DONE_DIR)/05_dense_retrieval.tex $(THEME_DEPS) | $(BUILD_DIR)
 	pdflatex -jobname=05_dense_retrieval_static -output-directory=$(BUILD_DIR) -interaction=nonstopmode "\PassOptionsToClass{handout}{beamer} \def\staticmode{1} \input{$<}"
 	pdflatex -jobname=05_dense_retrieval_static -output-directory=$(BUILD_DIR) -interaction=nonstopmode "\PassOptionsToClass{handout}{beamer} \def\staticmode{1} \input{$<}"
+	@find $(BUILD_DIR) -type f ! -name '*.pdf' -delete
+
+$(GALLERY_PDF): tikz/full_gallery.tex $(THEME_DEPS) | $(BUILD_DIR)
+	pdflatex -jobname=full_gallery -output-directory=$(BUILD_DIR) -interaction=nonstopmode $<
+	pdflatex -jobname=full_gallery -output-directory=$(BUILD_DIR) -interaction=nonstopmode $<
 	@find $(BUILD_DIR) -type f ! -name '*.pdf' -delete
 
 clean:
