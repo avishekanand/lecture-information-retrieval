@@ -47,50 +47,62 @@
 \institute{Information Retrieval}
 \date{\today}
 
+% Automatic Roadmap/Outline slide at the start of each section
+\AtBeginSection[]
+{
+  \begin{frame}{Roadmap}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
 \begin{document}
 
-% ====================================================================
-% TITLE SLIDE
-% ====================================================================
-\begin{frame}
+% =====================================================
+\begin{frame}[plain]
 \titlepage
 \end{frame}
+% =====================================================
 
-% ====================================================================
-% OUTLINE
-% ====================================================================
-\begin{frame}[shrink=45]{Outline (2 hours)}
-\small
-\begin{columns}[T]
-\begin{column}{0.48\textwidth}
-\begin{enumerate}
-  \item \textbf{Hook} (10 min): Why QA? What's hard?
-  \item \textbf{What is QA?} (15 min): taxonomy, metrics
-  \item \textbf{System Architectures} (15 min): retriever–reader, closed-book
-  \item \textbf{Hallucination Crisis} (15 min): when LLMs fail
-  \item \textbf{RAG 101} (10 min): the three-module system
-  \item \textbf{Original RAG model} (10 min): Lewis et al.\ 2020
-\end{enumerate}
-\end{column}
-\begin{column}{0.48\textwidth}
-\begin{enumerate}
-  \setcounter{enumi}{6}
-  \item \textbf{Retrieval Deep Dive} (15 min): chunking, late chunking, reformulation
-  \item \textbf{Beyond Single-Shot} (15 min): multi-step, DeRIVeR, dynamic search
-  \item \textbf{Engineering Reality} (10 min): LLM stacks
-  \item \textbf{Evaluation} (10 min): faithfulness, failure taxonomy
-  \item \textbf{Advanced Systems} (10 min): IR-CoT, Self-RAG
-  \item \textbf{System Design \& Wrapup} (10 min)
-\end{enumerate}
-\end{column}
-\end{columns}
-
-\vspace{0.4em}
-\begin{tcolorbox}[colback=gray!10,colframe=gray!40,title=Assumed known (not re-taught)]
-\footnotesize
-BM25/RM3/LMs, ANN (IVF+PQ/HNSW), cross-encoders, dense retrieval (DPR/ColBERT/ANCE), hybrid.
-\end{tcolorbox}
+\begin{frame}{Outline}
+\tableofcontents
 \end{frame}
+
+
+% % ====================================================================
+% % OUTLINE
+% % ====================================================================
+% \begin{frame}[shrink=45]{Outline (2 hours)}
+% \small
+% \begin{columns}[T]
+% \begin{column}{0.48\textwidth}
+% \begin{enumerate}
+%   \item \textbf{Hook} (10 min): Why QA? What's hard?
+%   \item \textbf{What is QA?} (15 min): taxonomy, metrics
+%   \item \textbf{System Architectures} (15 min): retriever–reader, closed-book
+%   \item \textbf{Hallucination Crisis} (15 min): when LLMs fail
+%   \item \textbf{RAG 101} (10 min): the three-module system
+%   \item \textbf{Original RAG model} (10 min): Lewis et al.\ 2020
+% \end{enumerate}
+% \end{column}
+% \begin{column}{0.48\textwidth}
+% \begin{enumerate}
+%   \setcounter{enumi}{6}
+%   \item \textbf{Retrieval Deep Dive} (15 min): chunking, late chunking, reformulation
+%   \item \textbf{Beyond Single-Shot} (15 min): multi-step, DeRIVeR, dynamic search
+%   \item \textbf{Engineering Reality} (10 min): LLM stacks
+%   \item \textbf{Evaluation} (10 min): faithfulness, failure taxonomy
+%   \item \textbf{Advanced Systems} (10 min): IR-CoT, Self-RAG
+%   \item \textbf{System Design \& Wrapup} (10 min)
+% \end{enumerate}
+% \end{column}
+% \end{columns}
+
+% \vspace{0.4em}
+% \begin{tcolorbox}[colback=gray!10,colframe=gray!40,title=Assumed known (not re-taught)]
+% \footnotesize
+% BM25/RM3/LMs, ANN (IVF+PQ/HNSW), cross-encoders, dense retrieval (DPR/ColBERT/ANCE), hybrid.
+% \end{tcolorbox}
+% \end{frame}
 
 % ====================================================================
 \section{Part 0 --- Hook: Getting Information}
@@ -116,12 +128,12 @@ BM25/RM3/LMs, ANN (IVF+PQ/HNSW), cross-encoders, dense retrieval (DPR/ColBERT/AN
 \end{itemize}
 \end{column}
 \begin{column}{0.42\textwidth}
-\begin{alertblock}{The Core Tension}
+\begin{block}{The Core Tension}
 \small
 Retrieval gives us \textbf{evidence} but cannot reason.\\[0.3em]
 Generation gives us \textbf{fluency} but can fabricate.\\[0.3em]
 \textbf{QA} needs both.
-\end{alertblock}
+\end{block}
 \end{column}
 \end{columns}
 \end{frame}
@@ -185,9 +197,9 @@ Generation gives us \textbf{fluency} but can fabricate.\\[0.3em]
 
 \vspace{0.7em}
 \cpause
-\begin{alertblock}{RAG = Parametric + Non-Parametric}
+\begin{block}{RAG = Parametric + Non-Parametric}
 Use retrieval to supply grounded evidence; use the LLM to reason over it.
-\end{alertblock}
+\end{block}
 \end{frame}
 
 % ====================================================================
@@ -253,12 +265,12 @@ RAG is the dominant approach for open-domain QA at scale.
 \end{itemize}
 \end{column}
 \begin{column}{0.42\textwidth}
-\begin{alertblock}{Key Insight}
+\begin{block}{Key Insight}
 \small
 The retrieval step is the bottleneck. \\[0.3em]
 If $e^\star \notin \mathcal{R}_k(q)$, then $P(\text{correct}) \approx 0$.\\[0.3em]
 \textbf{All QA quality is bounded by retrieval quality.}
-\end{alertblock}
+\end{block}
 \end{column}
 \end{columns}
 \end{frame}
@@ -283,13 +295,13 @@ Token-level overlap between prediction and gold:
 \end{block}
 \end{column}
 \begin{column}{0.46\textwidth}
-\begin{alertblock}{Limitation}
+\begin{block}{Limitation}
 \footnotesize
 EM/F1 are sensitive to valid paraphrases:\\[0.2em]
 ``automobile'' $\neq$ ``car'' by EM\\
 but semantically equivalent.\\[0.4em]
 Works well for span extraction; breaks for abstractive answers.
-\end{alertblock}
+\end{block}
 \end{column}
 \end{columns}
 \end{frame}
@@ -360,10 +372,10 @@ Catches correct-looking but fabricated answers.
 
 \vspace{0.7em}
 \cpause
-\begin{alertblock}{Both are required}
+\begin{block}{Both are required}
 A system can score high on EM by memorizing training answers while hallucinating on novel queries.
 We return to system-level evaluation in Part 9.
-\end{alertblock}
+\end{block}
 \end{frame}
 
 % ====================================================================
@@ -397,10 +409,10 @@ Reader maximizes span precision given top-$k$ passages.
 \end{block}
 \end{column}
 \begin{column}{0.42\textwidth}
-\begin{alertblock}{Why it matters}
+\begin{block}{Why it matters}
 \small
 DrQA established the ``Retrieve then Read'' paradigm that all subsequent systems---including RAG---build on.
-\end{alertblock}
+\end{block}
 \end{column}
 \end{columns}
 \end{frame}
@@ -441,11 +453,11 @@ DrQA established the ``Retrieve then Read'' paradigm that all subsequent systems
 \end{itemize}
 \end{column}
 \begin{column}{0.44\textwidth}
-\begin{alertblock}{The Scale Paradox}
+\begin{block}{The Scale Paradox}
 \small
 Larger models hallucinate \emph{more confidently}---not less.\\[0.4em]
 Scale alone does not solve factual grounding.
-\end{alertblock}
+\end{block}
 \end{column}
 \end{columns}
 
@@ -522,11 +534,11 @@ For knowledge-intensive tasks in production, closed-book QA is not deployable wi
 \end{enumerate}
 \end{column}
 \begin{column}{0.44\textwidth}
-\begin{alertblock}{The Core Problem}
+\begin{block}{The Core Problem}
 \small
 There is no ``ground truth'' signal during autoregressive generation.\\[0.3em]
 The model generates the \emph{most likely} continuation, not the \emph{most true} one.
-\end{alertblock}
+\end{block}
 \end{column}
 \end{columns}
 \end{frame}
@@ -556,9 +568,9 @@ Errors become \emph{retrieval errors} (detectable) rather than \emph{hallucinati
 
 \vspace{0.6em}
 \cpause
-\begin{alertblock}{Retrieval defines the reasoning substrate}
+\begin{block}{Retrieval defines the reasoning substrate}
 If evidence is not retrieved, it cannot be used. But if it \emph{is} retrieved, attribution is possible.
-\end{alertblock}
+\end{block}
 \end{frame}
 
 % ====================================================================
@@ -631,12 +643,12 @@ Retrieval: Recall@k \quad\textbar\quad Conditioning: token budget used \quad\tex
 \end{enumerate}
 \end{column}
 \begin{column}{0.42\textwidth}
-\begin{alertblock}{Practical default (2025)}
+\begin{block}{Practical default (2025)}
 \small
 Freeze the retriever (Contriever or e5-large).\\
 LoRA-fine-tune the generator on grounded QA pairs.\\[0.3em]
 Joint training is expensive and often unnecessary.
-\end{alertblock}
+\end{block}
 \end{column}
 \end{columns}
 \end{frame}
@@ -718,10 +730,10 @@ ColBERT      & High quality at scale (late interaction) & Storage, infra cost   
 
 \cpause
 \vspace{0.3em}
-\begin{alertblock}{The Ceiling}
+\begin{block}{The Ceiling}
 \textbf{Retrieval defines the reasoning substrate.}
 Most ``hallucinations'' in RAG are \emph{selection failures}: the evidence existed but was not retrieved.
-\end{alertblock}
+\end{block}
 \end{frame}
 
 \begin{frame}{The Evidence Ceiling}
@@ -747,10 +759,10 @@ Before blaming the LLM, verify that the correct evidence was actually in the pro
 \end{block}
 \end{column}
 \begin{column}{0.38\textwidth}
-\begin{alertblock}{Implication}
+\begin{block}{Implication}
 Improving the generator beyond a certain point yields zero gain if retrieval recall is the bottleneck.\\[0.4em]
 Always measure Recall@k \emph{before} tuning the generator.
-\end{alertblock}
+\end{block}
 \end{column}
 \end{columns}
 \end{frame}
@@ -926,12 +938,12 @@ $q_3$: ``Education of Sundar Pichai'' $\to$ \emph{IIT Kharagpur, Stanford}
 \end{block}
 \end{column}
 \begin{column}{0.41\textwidth}
-\begin{alertblock}{Cost Trade-off}
+\begin{block}{Cost Trade-off}
 \small
 Each planning step adds latency and token cost.\\[0.3em]
 Use the simplest approach that achieves sufficient retrieval recall.\\[0.3em]
 Measure before adding complexity.
-\end{alertblock}
+\end{block}
 \end{column}
 \end{columns}
 \end{frame}
@@ -1038,9 +1050,9 @@ High-stakes & Multi-step + verification & Cross-evidence consistency check \\
 
 \cpause
 \vspace{0.3em}
-\begin{alertblock}{Rule of Thumb}
+\begin{block}{Rule of Thumb}
 Measure single-shot Recall@k first. Only add complexity when a clear recall gap exists and the latency/cost budget permits.
-\end{alertblock}
+\end{block}
 \end{frame}
 
 % ====================================================================
@@ -1089,14 +1101,14 @@ Measure single-shot Recall@k first. Only add complexity when a clear recall gap 
 \end{block}
 \end{column}
 \begin{column}{0.48\textwidth}
-\begin{alertblock}{What you don't get}
+\begin{block}{What you don't get}
 \begin{itemize}
   \item Retrieval quality evaluation
   \item Production monitoring / drift detection
   \item Cost and latency SLO management
   \item Custom retrieval logic for your domain
 \end{itemize}
-\end{alertblock}
+\end{block}
 \end{column}
 \end{columns}
 
@@ -1138,13 +1150,13 @@ Result: a scalar score per query to drive regression testing.
 \end{block}
 \end{column}
 \begin{column}{0.44\textwidth}
-\begin{alertblock}{The RAG Score}
+\begin{block}{The RAG Score}
 \small
 \[ \text{Score} = w_1 F + w_2 A - w_3 U \]
 \tiny $F$: Faithful\quad $A$: Attributed\quad $U$: Unsupported\\[0.4em]
 \footnotesize
 Optimising for correctness without attribution leads to unreliable production systems.
-\end{alertblock}
+\end{block}
 \end{column}
 \end{columns}
 \end{frame}
@@ -1173,10 +1185,10 @@ Optimising for correctness without attribution leads to unreliable production sy
 \input{tikz/rag_failure_taxonomy.tex}
 }
 \end{center}
-\begin{alertblock}{}
+\begin{block}{}
 \footnotesize
 Instrument logs at every boundary. No logs = no debugging.
-\end{alertblock}
+\end{block}
 \end{column}
 \end{columns}
 \end{frame}
@@ -1292,28 +1304,28 @@ Self-RAG retrieves only when uncertainty is high---reducing cost and latency.
 \end{block}
 \end{column}
 \begin{column}{0.41\textwidth}
-\begin{alertblock}{p95 Management}
+\begin{block}{p95 Management}
 \small
 Optimise p95 with bounded reranking.\\[0.3em]
 You cannot easily optimise LLM generation speed without reducing output token budget.\\[0.3em]
 \emph{Measure end-to-end, not per component.}
-\end{alertblock}
+\end{block}
 \end{column}
 \end{columns}
 \end{frame}
 
 \begin{frame}{Production Architecture: The Real World}
-\irStage{INFRASTRUCTURE}
+% \irStage{INFRASTRUCTURE}
 \textbf{Scaling RAG requires decoupled services for retrieval and reasoning.}
 
-\vspace{0.3em}
+\vspace{0.1em}
 \begin{center}
-\resizebox{0.72\textwidth}{!}{
+\resizebox{0.55\textwidth}{!}{
 \input{tikz/rag_production_arch.tex}
 }
 \end{center}
 
-\vspace{-0.3em}
+\vspace{-0.5em}
 \cpause
 \begin{block}{Hard Truth}
 \scriptsize
@@ -1342,11 +1354,11 @@ Log the query, the top-$k$ chunks, the assembled prompt, and the generated answe
 \end{block}
 \end{column}
 \begin{column}{0.44\textwidth}
-\begin{alertblock}{Final Takeaway}
+\begin{block}{Final Takeaway}
 \small
 If you cannot trace a claim to a retrieved evidence block, you do not have a RAG system---you have a text generator.\\[0.5em]
 \textbf{Retrieval defines the reasoning substrate.}
-\end{alertblock}
+\end{block}
 \end{column}
 \end{columns}
 \end{frame}

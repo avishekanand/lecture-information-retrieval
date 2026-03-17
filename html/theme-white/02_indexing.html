@@ -8,9 +8,9 @@
 <link rel="stylesheet" href="node_modules/reveal.js/dist/theme/serif.css">
 <link rel="stylesheet" href="common.css">
 <style>
-  .reveal h1 { font-size: 1.4em !important; }
-  .reveal h2 { font-size: 1.0em !important; color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 8px; }
-  .reveal h3 { font-size: 0.75em !important; }
+  .reveal h1 { font-size: 1.2em !important; }
+  .reveal h2 { font-size: 0.8em !important; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+  .reveal h3 { font-size: 0.6em !important; }
   
   .nav-hint { 
     position: fixed; bottom: 8px; left: 8px; z-index: 99; 
@@ -37,7 +37,7 @@ Answer: <strong>Inverted indexes</strong></div></div>
 
 
 <strong>Why still relevant in the age of neural networks?</strong>
-<ol><li><strong>Exact matching:</strong> Find "iPhone 15 Pro Max" precisely</li><li><strong>Speed:</strong> 5-10ms queries on millions of documents</li><li><strong>Explainability:</strong> Can see which terms matched</li><li><strong>Hybrid search:</strong> Complements dense retrieval</li></ol></div>
+<ol><li>{<strong>Exact matching:</strong>} Find "iPhone 15 Pro Max" precisely</li><li>{<strong>Speed:</strong>} 5-10ms queries on millions of documents</li><li>{<strong>Explainability:</strong>} Can see which terms matched</li><li>{<strong>Hybrid search:</strong>} Complements dense retrieval</li></ol></div>
   </section>
   <section>
     <h2>Inverted Index: Core Structure</h2>
@@ -121,7 +121,7 @@ $\rightarrow$ <strong>1000$\times$ faster!</strong></div>
   </section>
   <section>
     <h2>Score Aggregation: Connecting Indexing and VSM</h2>
-    <div class="content"><div class="block"><h3>Vector Space Model Scoring</h3><div class="block-content">\[ (q, d) = _{t  q  d} (t, q)  (t, d) \]</div></div>
+    <div class="content"><div class="block"><h3>Vector Space Model Scoring</h3><div class="block-content">\[ {score}(q, d) = _{t  q  d} {weight}(t, q)  {weight}(t, d) \]</div></div>
 
 
 <strong>How it works in the engine:</strong>
@@ -131,7 +131,7 @@ $\rightarrow$ <strong>1000$\times$ faster!</strong></div>
     <h2>Text Preprocessing: Key Decisions</h2>
     <div class="split-layout">
       <div class="half"><h3></h3><strong>Stemming (Porter):</strong>
-<ul><li>running $\rightarrow$ run</li><li>university $\rightarrow$ univers</li><li>Fast, crude</li></ul></div>
+<ul><li>running $\rightarrow$ run</li><li>{university $\rightarrow$ univers}</li><li>Fast, crude</li></ul></div>
       <div class="half"><h3></h3><strong>Lemmatization:</strong>
 <ul><li>running $\rightarrow$ run</li><li>better $\rightarrow$ good</li><li>Accurate, slower</li></ul></div>
     </div>
@@ -141,7 +141,7 @@ $\rightarrow$ <strong>1000$\times$ faster!</strong></div>
     <div class="split-layout">
       <div class="half"><h3></h3><strong>Traditional View (pre-2010):</strong>
 <ul><li>Remove common words: 
-    the, a, an, is, are, of, in, ...</li><li>Smaller index</li><li>Less noise</li></ul>
+    the, a, an, is, are, of, in, ...</li><li>{ } Smaller index</li><li>{ } Less noise</li></ul>
 
 
 
@@ -384,9 +384,13 @@ Typical accuracy: 90-99% recall (good enough for IR!)</div></div></div>
   <section>
     <h2>The Standard ANN Approach: IVF + PQ</h2>
     <div class="content"><ol><li><strong>Clustering-Based (IVF)</strong>
-    <ul><li>Cluster vectors with k-means</li><li>Search only in nearest clusters</li><li>Fast, scalable</li><li>Lower accuracy without tuning</li></ul></li><li><strong>Product Quantization (PQ)</strong>
-    <ul><li>Compress vectors aggressively (32$\times$)</li><li>Approximate distances in compressed space</li><li>Very memory-efficient</li><li>Moderate accuracy loss</li></ul></li><li><strong>Combined (IVF + PQ)</strong>
-    <ul><li>Use clustering to narrow search area</li><li>Use compression to fit index in RAM and speed up distance calculation</li><li><strong>The industry standard for large-scale RAG</strong></li></ul></li></ol></div>
+    <ul><li>Cluster vectors with k-means</li><li>Search only in nearest clusters</li><li>{ } Fast, scalable</li><li>{ } Lower accuracy without tuning</li></ul></li><li>
+      
+      <strong>Product Quantization (PQ)</strong>
+    <ul><li>Compress vectors aggressively (32$\times$)</li><li>Approximate distances in compressed space</li><li>{ } Very memory-efficient</li><li>{ } Moderate accuracy loss</li></ul></li><li>
+      
+      <strong>Combined (IVF + PQ)</strong>
+    <ul><li>Use clustering to narrow search area</li><li>Use compression to fit index in RAM and speed up distance calculation</li><li>{ } <strong>The industry standard for large-scale RAG</strong></li></ul></li></ol></div>
   </section>
   <section>
     <h2>IVF: Inverted File Index (for Vectors!)</h2>

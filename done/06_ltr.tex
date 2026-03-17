@@ -1,0 +1,1049 @@
+\documentclass[aspectratio=169]{beamer}
+\usetheme{TUDelft}
+
+% ====================================================================
+% ANIMATION TOGGLE
+% ====================================================================
+\newif\ifanimated
+\animatedtrue
+\ifdefined\staticmode
+  \animatedfalse
+\fi
+\newcommand{\cpause}{\ifanimated\pause\fi}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{tikz}
+
+% Import theme macros (includes TikZ libraries and semantic colors)
+\input{theme/macros.tex}
+
+\title{Learning to Rank}
+\author{Avishek Anand}
+\institute{Information Retrieval}
+\date{\today}
+
+% Automatic Roadmap/Outline slide at the start of each section
+\AtBeginSection[]
+{
+  \begin{frame}{Roadmap}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+\begin{document}
+
+% =====================================================
+\begin{frame}[plain]
+\titlepage
+\end{frame}
+% =====================================================
+
+\begin{frame}{Outline}
+\tableofcontents
+\end{frame}
+
+% =====================================================
+% \section{The Ranking Problem}
+% =====================================================
+
+% \begin{frame}{The Ranking Pipeline}
+% \begin{center}
+% \begin{tikzpicture}[node distance=2cm]
+% \node (query) [draw, rounded corners] {Query $q$};
+% \node (retrieve) [draw, right of=query, rounded corners] {Retrieve Candidates};
+% \node (features) [draw, right of=retrieve, rounded corners] {Feature Extraction};
+% \node (rank) [draw, right of=features, rounded corners] {Ranking Model};
+% \node (output) [draw, right of=rank, rounded corners] {Ranked List};
+
+% \draw[->] (query) -- (retrieve);
+% \draw[->] (retrieve) -- (features);
+% \draw[->] (features) -- (rank);
+% \draw[->] (rank) -- (output);
+% \end{tikzpicture}
+% \end{center}
+% \end{frame}
+
+% =====================================================
+\section{Motivation: Relevance Is Not King}
+% =====================================================
+
+% -----------------------------------------------------
+\begin{frame}[shrink=10]{Scenario 1: Product Search (E-commerce)}
+\begin{center}
+\fbox{\includegraphics[width=0.92\linewidth,height=4.3cm,keepaspectratio]{figures/search_amazon.png}}
+\end{center}
+
+\vspace{0.6em}
+
+\begin{itemize}
+    \item \textbf{Objectives:} Relevance, Revenue / margin, Customer satisfaction, Sponsored constraints
+    \cpause
+    \item \textbf{Features:} Text match (BM25/embeddings), Price + discounts, Ratings / reviews, Shipping speed, stock, Seller quality
+    \item \textbf{Feedback:} Clicks, add-to-cart, Purchases/returns, Position bias, Promo effects
+\end{itemize}
+
+\vspace{0.3em}
+\centering
+% \alert{\large Relevance is not king.}
+\end{frame}
+
+% -----------------------------------------------------
+\begin{frame}[shrink=10]{Scenario 2: Academic Search (Scholar)}
+\begin{center}
+\fbox{\includegraphics[width=0.92\linewidth,height=4.3cm,keepaspectratio]{figures/scholar.pdf}}
+\end{center}
+
+\vspace{0.6em}
+
+\begin{itemize}
+    \item \textbf{Objectives:} Relevance, Authority / impact, Recency (sometimes), Diversity of viewpoints
+    \cpause
+    \item \textbf{Features:} Text similarity, Citations, PageRank-like, Venue / author signals, Year, topicality
+    \item \textbf{Feedback:} Clicks / saves, Citations (delayed), Popularity bias, Interface position bias
+\end{itemize}
+
+\vspace{0.3em}
+\centering
+% \alert{\large Relevance is not king.}
+\end{frame}
+
+% -----------------------------------------------------
+\begin{frame}[shrink=10]{Scenario 3: Streaming (Netflix / Spotify)}
+\begin{center}
+\fbox{\includegraphics[width=0.92\linewidth,height=4.3cm,keepaspectratio]{figures/netflix-2.pdf}}
+\end{center}
+
+\vspace{0.6em}
+
+\begin{itemize}
+    \item \textbf{Objectives:} Engagement (watch time), Retention (long-term), Novelty / diversity, Platform strategy
+    \cpause
+    \item \textbf{Features:} User/item embeddings, Recent interactions, Context (time/device), Similar-user patterns
+    \item \textbf{Feedback:} Plays, skips, Watch completion, Dwell time is noisy, Exposure bias
+\end{itemize}
+
+\vspace{0.3em}
+\centering
+% \alert{\large Relevance is not king.}
+\end{frame}
+
+% -----------------------------------------------------
+\begin{frame}[shrink=10]{Scenario 4: Online Advertising}
+\begin{center}
+\fbox{\includegraphics[width=0.92\linewidth,height=4.3cm,keepaspectratio]{figures/ads.pdf}}
+\end{center}
+
+\vspace{0.6em}
+
+\begin{itemize}
+    \item \textbf{Objectives:} Revenue, User experience, Advertiser value, Policy / fairness constraints
+    \item \textbf{Features:} Bid, predicted CTR, Ad quality score, Query-ad relevance, User/context signals
+    \item \textbf{Feedback:} Clicks, conversions, Attribution noise, Strategic bidding, Strong position bias
+\end{itemize}
+
+\vspace{0.3em}
+\centering
+% \alert{\large Relevance is not king.}
+\end{frame}
+
+% =====================================================
+% COMMONALITY SLIDE
+% =====================================================
+
+\begin{frame}{What Is Common Across All These Use Cases?}
+
+\centering
+\Large
+We keep seeing the same pattern.
+
+\bigskip
+\pause
+
+\begin{itemize}
+  \item \textbf{Large feature space}: 100s--1000s signals with strong interactions.
+  \item \textbf{Multi-objective}: Balancing relevance with business goals and long-term value.
+  \item \textbf{Noisy feedback}: Clicks are biased indicators; outcomes can be delayed.
+\end{itemize}
+
+\bigskip
+\pause
+\centering
+\alert{\Large So how do we learn a good ranking function?}
+\end{frame}
+
+% =====================================================
+% NEED FOR LTR
+% =====================================================
+
+% REMOVED: Relevance is Multi-faceted & The Scale of Industrial Ranking (Redundant)
+
+\begin{frame}{A Document as a Feature Vector}
+% \irStage{BACKGROUND}
+\textbf{Learning to Rank represents each query-document pair as a vector $\mathbf{x}$.}
+
+\input{tikz/feature_vector.tex}
+
+\end{frame}
+%%%%%
+
+\begin{frame}{Why Learning to Rank?}
+
+\textbf{Problem:} We need a scoring function that combines many signals:
+\[
+s(q,d) = f(x_{q,d})
+\]
+where $x_{q,d}$ can have hundreds of components.
+
+\bigskip
+
+\begin{itemize}
+  \item Hand-tuned rules do not scale (too many interactions).
+  \item Objectives conflict (relevance vs revenue vs engagement).
+  \item Supervision is weak and biased (implicit feedback).
+\end{itemize}
+
+\bigskip
+\centering
+% \alert{\Large Learning to Rank is the engineering solution.}
+\end{frame}
+
+% \begin{frame}[shrink=15]{Where LTR Fits: The Multi-Stage Pipeline}
+% % \irStage{SYSTEM ARCHITECTURE}
+% \textbf{LTR is usually the final "re-ranking" stage in a complete stack.}
+
+% \vspace{0.5em}
+% \begin{center}
+% \resizebox{0.85\textwidth}{!}{
+% \input{tikz/complete_retrieval_stack.tex}
+% }
+% \end{center}
+
+% \cpause
+% \vspace{0.5em}
+% \begin{exampleblock}{The Funnel}
+% Sparse/Dense retrieval retrieves thousands; LTR perfectly orders the top 100.
+% \end{exampleblock}
+% \end{frame}
+
+
+\begin{frame}{How LTR Models Learn}
+% \irStage{MODELS}
+\textbf{Training an LTR model is a closed-loop iterative process.}
+
+\vspace{0.8em}
+\begin{center}
+\resizebox{0.9\textwidth}{!}{
+\input{tikz/ltr_pipeline.tex}
+}
+\end{center}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Loss} ($\mathcal{L}$) measures the "badness" of the current ranked list.
+    \item \textbf{Gradient} ($\nabla_\theta \mathcal{L}$) tells us how to nudge $\theta$ to improve the metric.
+\end{itemize}
+\end{frame}
+
+% =====================================================
+\section{Evaluation Metrics --- What Are We Optimising?}
+% =====================================================
+
+\begin{frame}[plain]
+\sectionpage
+\end{frame}
+
+\begin{frame}{Recap: Binary Metrics}
+% \irStage{EVALUATION}
+\textbf{Traditional metrics focus on whether a document is "relevant" or not.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{P@$k$ / R@$k$}: Good for broad recall but position-blind within top-$k$.
+    \item \textbf{MRR}: Excellent for navigational/QA tasks (cares about first result).
+    \item \textbf{MAP}: Averages precision across all relevant docs; sensitive to rank.
+\end{itemize}\cpause
+
+\vspace{1em}
+% \cpause
+\begin{alertblock}{The Limitation}
+Binary metrics ignore the \textbf{intensity} of relevance. In modern search, we often have graded labels (e.g., Perfect, Good, Fair, Bad).
+\end{alertblock}
+\end{frame}
+
+\begin{frame}{NDCG: The Gold Standard for LTR}
+% \irStage{EVALUATION}
+\textbf{NDCG handles graded relevance and prioritizes top-heavy rankings.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Grades}: Cumulative Gain (CG) sums relevance scores: $\sum \text{rel}_i$.
+    \item \textbf{Discount}: DCG applies a logarithmic decay: $\sum \frac{\text{rel}_i}{\log_2(i+1)}$.
+    \item \textbf{Normalization}: NDCG scales DCG to $[0, 1]$ relative to the ideal sort.
+\end{itemize}\cpause
+
+\vspace{0.5em}
+% \cpause
+\begin{center}
+\mathhl{\text{NDCG@}k = \frac{\sum_{i=1}^{k} \frac{2^{\text{rel}_i}-1}{\log_2(i+1)}}{\text{IDCG@}k}}
+\end{center}
+\end{frame}
+
+\begin{frame}{Worked Example: Computing NDCG@5}
+% \irStage{EVALUATION}
+\textbf{Let's calculate the cost of a "miss" in the top positions.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Current}: Grades $[2, 3, 1, 0, 0] \to \text{DCG} \approx 4.39$.
+    \item \textbf{Ideal}: Grades $[3, 2, 1, 0, 0] \to \text{DCG} \approx 4.76$.
+    \item \textbf{Result}: $\text{NDCG} = 4.39 / 4.76 \approx \mathbf{0.92}$.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{exampleblock}{The Logarithmic Effect}
+Notice that moving the "3" from position 1 to 2 caused an 8\% drop in score. NDCG is extremely sensitive to errors at the very top.
+\end{exampleblock}
+\end{frame}
+
+% =====================================================
+
+\begin{frame}{How LTR Models Learn}
+% \irStage{MODELS}
+\textbf{Training an LTR model is a closed-loop iterative process.}
+
+\vspace{0.8em}
+\begin{center}
+\resizebox{0.9\textwidth}{!}{
+\input{tikz/ltr_pipeline.tex}
+}
+\end{center}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Loss} ($\mathcal{L}$) measures the "badness" of the current ranked list.
+    \item \textbf{Gradient} ($\nabla_\theta \mathcal{L}$) tells us how to nudge $\theta$ to improve the metric.
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{The Main Challenge for LTR}
+
+\textbf{The sorting function (or the rank of a document) is difficult to optimize directly.}
+
+\vspace{0.8em}
+Ranking metrics (NDCG, MAP, etc.) as functions of document scores are:
+\begin{itemize}
+    \item \textbf{Non-smooth}
+    \item \textbf{Mostly flat}
+    \item \textbf{Discontinuous}
+\end{itemize}
+
+\bigskip
+\begin{exampleblock}{The Derivative Problem}
+Small score changes $\Rightarrow$ no metric change.\\
+Tiny score swap $\Rightarrow$ big metric jump.
+\end{exampleblock}
+
+\vspace{0.5em}
+\textbf{Gradients of the true metric are unusable. Each family of LTR methods has its own approach to overcoming this problem.}
+\end{frame}
+
+\begin{frame}{Comparing LTR Paradigms}
+% \irStage{PARADIGMS}
+\textbf{The primary difference lies in the unit of training and the loss focus.}
+
+\vspace{1.5em}
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Paradigm} & \textbf{Training Instance} & \textbf{Model Learns} \\
+\midrule
+\textbf{Pointwise} & One query-doc pair & Absolute relevance score \\
+\textbf{Pairwise} & One ordered pair $(d_i, d_j)$ & Relative preference \\
+\textbf{Listwise} & Full query candidate set & Quality of full ranking \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{frame}
+
+% =====================================================
+
+% REMOVED: Categorizing LTR methods? (Pedagogically fuzzy)
+
+% =====================================================
+\section{Pointwise Approaches}
+% =====================================================
+
+\begin{frame}[plain]
+\sectionpage
+\end{frame}
+
+\begin{frame}{1. Where Do Labels Come From?}
+% \irStage{DATA}
+\textbf{To train a model, we need target labels $y$ for query-document pairs.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Explicit Ratings}: Human judges grade relevance (e.g., 0=Bad to 4=Perfect). Expensive but high quality.
+    \cpause
+    \item \textbf{Implicit Feedback}: User behavior parsed from logs.
+    \begin{itemize}
+        \item \textbf{Clicks}: Did the user click? (Binary)
+        \item \textbf{Dwell Time}: How long did they stay?
+        \item \textbf{Skips}: Did they scroll past it?
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[shrink=5]{2. The Training Table}
+% \irStage{DATA}
+\textbf{We flatten the data into a standard machine learning dataset.}
+
+\vspace{0.8em}
+Each row is an isolated instance: a Query $q$, a Document $d$, their extracted features $\mathbf{x}$, and the target label $y$.
+
+\vspace{1em}
+\begin{center}
+\small
+\begin{tabular}{cc | ccc | c}
+\toprule
+\textbf{Query ID} & \textbf{Doc ID} & \textbf{BM25 ($x_1$)} & \textbf{PageRank ($x_2$)} & \dots & \textbf{Label ($y$)} \\
+\midrule
+$q_1$ & $d_A$ & 12.4 & 0.85 & \dots & \textcolor{green!70!black}{\textbf{1 (Click)}} \\
+$q_1$ & $d_B$ & 8.1 & 0.92 & \dots & \textcolor{red}{\textbf{0 (Skip)}} \\
+$q_1$ & $d_C$ & 15.2 & 0.12 & \dots & \textcolor{green!70!black}{\textbf{1 (Click)}} \\
+\midrule
+$q_2$ & $d_X$ & 5.5 & 0.44 & \dots & \textcolor{red}{\textbf{0 (Skip)}} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\cpause
+\vspace{0.5em}
+\begin{exampleblock}{Key Insight}
+The model sees rows independently. It does not know that $d_A, d_B, d_C$ belong to the same query $q_1$ during the forward pass.
+\end{exampleblock}
+\end{frame}
+
+
+\begin{frame}{Which Model do we use?}
+% \irStage{MODELS}
+\textbf{Training an LTR model is a closed-loop iterative process.}
+
+\vspace{0.8em}
+\begin{center}
+\resizebox{0.9\textwidth}{!}{
+\input{tikz/ltr_pipeline.tex}
+}
+\end{center}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Loss} ($\mathcal{L}$) measures the "badness" of the current ranked list.
+    \item \textbf{Gradient} ($\nabla_\theta \mathcal{L}$) tells us how to nudge $\theta$ to improve the metric.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{3. Mapping Features to a Score}
+% \irStage{MODELS}
+\textbf{A Pointwise model $f(\mathbf{x})$ maps the feature vector to a predicted score $\hat{y}$.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Linear Model}: $\hat{y} = \mathbf{w}^\top \mathbf{x} + b$. (Fast, but assumes linear relationships).
+    \item \textbf{Neural Network}: $\hat{y} = \text{MLP}(\mathbf{x})$. (Captures complex feature interactions).
+    \item \textbf{Tree Ensemble}: $\hat{y} = \sum \text{Tree}(\mathbf{x})$. (Handles heterogeneous features well).
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Which Loss do we use?}
+% \irStage{MODELS}
+\textbf{Training an LTR model is a closed-loop iterative process.}
+
+\vspace{0.8em}
+\begin{center}
+\resizebox{0.9\textwidth}{!}{
+\input{tikz/ltr_pipeline.tex}
+}
+\end{center}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Loss} ($\mathcal{L}$) measures the "badness" of the current ranked list.
+    \item \textbf{Gradient} ($\nabla_\theta \mathcal{L}$) tells us how to nudge $\theta$ to improve the metric.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{4. The Pointwise Loss per Example}
+% \irStage{MODELS}
+\textbf{We train the model to minimize the error between prediction $\hat{y}$ and label $y$.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Regression} (e.g., MSE): $\mathcal{L} = (y - \hat{y})^2$
+    \cpause
+    \item \textbf{Classification} (e.g., BCE): $\mathcal{L} = -y \log(\hat{y}) - (1-y)\log(1-\hat{y})$
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{block}{What is it actually doing?}
+For $q_1, d_A$, the loss penalizes the model if $\hat{y}$ is far from $1$. It updates the weights $\theta$ to make $\hat{y}$ closer to $1$ \textbf{in isolation}.
+\end{block}
+\end{frame}
+
+% =====================================================
+
+\begin{frame}[shrink=5]{Limitation of Pointwise Methods}
+\textbf{Pointwise losses do not directly optimize ranking quality. A lower loss does not mean a better ranking!}
+
+\vspace{0.8em}
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\begin{block}{Model A}
+\centering
+\begin{tabular}{ccc}
+\toprule
+\textbf{Rel.} & \textbf{Score} & \textbf{Rank} \\
+\midrule
+1 & 0.6 & 1 \\
+0 & 0.5 & 2 \\
+0 & 0.5 & 3 \\
+0 & 0.5 & 4 \\
+0 & 0.5 & 5 \\
+\bottomrule
+\end{tabular}
+\end{block}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{alertblock}{Model B}
+\centering
+\begin{tabular}{ccc}
+\toprule
+\textbf{Rel.} & \textbf{Score} & \textbf{Rank} \\
+\midrule
+1 & 0.1 & 5 \\
+0 & 0.2 & 1 \\
+0 & 0.2 & 2 \\
+0 & 0.2 & 3 \\
+0 & 0.2 & 4 \\
+\bottomrule
+\end{tabular}
+\end{alertblock}
+\end{column}
+\end{columns}
+
+\cpause
+\vspace{1em}
+\textbf{Mismatch}: Ranking is fundamentally about the \textbf{relative order} of documents, not fitting a curve.
+\end{frame}
+
+\begin{frame}{Pointwise in Disguise: Standard Cross-Encoders}
+% \irStage{RE-RANKING}
+\textbf{Recall monoBERT from Lecture 4 is technically a pointwise ranker.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Input}: Joint query-document sequence \texttt{[CLS] Q [SEP] D}.
+    \item \textbf{Loss}: Binary Cross-Entropy on the \texttt{[CLS]} representation.
+    \item \textbf{Success}: Works well because BERT captures deep semantics, but \textbf{not} because the loss is optimal for ranking.
+\end{itemize}\cpause
+
+\vspace{1em}
+\begin{exampleblock}{The Capacity Paradox}
+With enough data and model capacity (like LLMs), simplistic pointwise losses often reach surprisingly high performance.
+\end{exampleblock}
+\end{frame}
+
+% =====================================================
+\section{Pairwise Approaches}
+% =====================================================
+
+\begin{frame}[plain]
+\sectionpage
+\end{frame}
+
+\begin{frame}{Pairwise: Relative Preferences}
+% \irStage{PARADIGMS}
+\textbf{Instead of absolute scores, we learn which document is "better" in a pair.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Intuition}: For each pair $(d_i, d_j)$, if $y_i > y_j$, the model should score $s_i > s_j$.
+    \item \textbf{Strength}: Transforms ranking into binary classification of pairs.
+    \item \textbf{Feedback}: Errors are symmetric --- push one up, the other down.
+\end{itemize}\cpause
+
+\vspace{0.5em}
+\begin{center}
+\input{tikz/pairwise_concept.tex}
+\end{center}
+\end{frame}
+
+\begin{frame}{RankNet: Learning from Pairs}
+% \irStage{MODELS}
+\textbf{Pairwise loss minimizes the average number of pair-inversions in rankings.}
+
+\vspace{0.8em}
+For all pairs where $y_i > y_j$:
+\[
+\mathcal{L}_{pair} = \sum_{y_i > y_j} \phi(s_i - s_j)
+\]
+
+\vspace{0.8em}
+\textbf{RankNet} is the most prominent pairwise method:
+\[
+\mathcal{L}_{RankNet} = \sum_{y_i > y_j} \log(1 + e^{-(s_i - s_j)})
+\]
+
+\vfill
+\footnotesize \textit{Burges, C. et al. Learning to rank using gradient descent. ICML 2005.}
+\end{frame}
+
+% =====================================================
+
+\begin{frame}{Limitation of Pairwise Methods}
+\textbf{We minimize incorrect inversions. However, not every pair is equally important.}
+
+\vspace{0.8em}
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\begin{block}{Ranking 1}
+\centering
+\begin{tabular}{ccc}
+\toprule
+\textbf{Rel.} & \textbf{Score} & \textbf{Rank}\\
+\midrule
+1 & 0.6 & 1\\
+0 & 0.2 & 4\\
+1 & 0.1 & 5\\
+0 & 0.4 & 3\\
+0 & 0.8 & 2\\
+\bottomrule
+\end{tabular}\\
+\vspace{0.3em}
+\textbf{Pairs correct: 9}
+\end{block}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{alertblock}{Ranking 2}
+\centering
+\begin{tabular}{ccc}
+\toprule
+\textbf{Rel.} & \textbf{Score} & \textbf{Rank}\\
+\midrule
+0 & 0.8 & 1\\
+0 & 0.6 & 2\\
+1 & 0.4 & 3\\
+0 & 0.2 & 4\\
+1 & 0.1 & 5\\
+\bottomrule
+\end{tabular}\\
+\vspace{0.3em}
+\textbf{Pairs correct: 10}
+\end{alertblock}
+\end{column}
+\end{columns}
+
+\cpause
+\vspace{1em}
+\textbf{Mismatch}: It's much more important to get the correct ordering of top documents than bottom ones. Pairwise treats all pairs equally.
+\end{frame}
+
+\begin{frame}[shrink=5]{Worked Example: RankNet Misstep}
+% \irStage{MODELS}
+\textbf{Suppose a Blog (rel=1) is scored at 2.5, while a Tier-1 list (rel=3) is at 2.1.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Conflict}: $P(\text{Tier-1} \succ \text{Blog}) \approx 0.40$ (Model is wrong).
+    \item \textbf{Gradient}: Pushes Tier-1 score up ($+0.60$) and Blog down ($-0.60$).
+    \item \textbf{Observation}: RankNet weights all swaps equally, regardless of position.
+\end{itemize}
+
+\vspace{1em}
+\cpause
+\begin{alertblock}{The Position Blindness}
+Swapping docs at positions 1--2 should be "more important" than positions 99--100. RankNet's loss doesn't know about positions.
+\end{alertblock}
+\end{frame}
+
+\begin{frame}{RankSVM: Margin-Based Ranking}
+% \irStage{MODELS}
+\textbf{Historical significance: First to use implicit feedback (clicks) for LTR.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Margin}: Force $\mathbf{w}^\top (\mathbf{x}_i - \mathbf{x}_j) \geq 1$ for correctly ordered pairs.
+    \item \textbf{Feed}: Users clicking result $i$ after skipping $j \implies d_i \succ d_j$.
+    \item \textbf{Legacy}: Solid theory (max-margin) but less scalable than boosting.
+\end{itemize}
+% \cpause
+
+\vspace{1em}
+\begin{exampleblock}{Key Contribution}
+Joachims (2002) showed that even noisy implicit signals (clicks) can train a competitive ranker when framed as a pairwise problem.
+\end{exampleblock}
+\end{frame}
+
+% =====================================================
+\section{Listwise Approaches}
+% =====================================================
+
+\begin{frame}[plain]
+\sectionpage
+\end{frame}
+
+\begin{frame}{Listwise: Learning from the Whole List}
+% \irStage{PARADIGMS}
+\textbf{Listwise models treat the entire set of documents for a query as a single training unit.}
+
+\vspace{0.8em}
+\begin{itemize}
+    \item \textbf{Philosophy}: Don't look at doc pairs in isolation; look at the \textit{permutation}.
+    \item \textbf{Unit}: The model forward pass and loss are computed over all candidates simultaneously.
+    \item \textbf{Structure}: Training data is explicitly grouped by query.
+\end{itemize}\cpause
+
+\vspace{0.5em}
+\begin{center}
+\input{tikz/listwise_visualization.tex}
+\end{center}
+\end{frame}
+
+\begin{frame}[shrink=5]{2. The Training Table}
+% \irStage{DATA}
+\textbf{We flatten the data into a standard machine learning dataset.}
+
+\vspace{0.8em}
+Each row is an isolated instance: a Query $q$, a Document $d$, their extracted features $\mathbf{x}$, and the target label $y$.
+
+\vspace{1em}
+\begin{center}
+\small
+\begin{tabular}{cc | ccc | c}
+\toprule
+\textbf{Query ID} & \textbf{Doc ID} & \textbf{BM25 ($x_1$)} & \textbf{PageRank ($x_2$)} & \dots & \textbf{Label ($y$)} \\
+\midrule
+$q_1$ & $d_A$ & 12.4 & 0.85 & \dots & \textcolor{green!70!black}{\textbf{1 (Click)}} \\
+$q_1$ & $d_B$ & 8.1 & 0.92 & \dots & \textcolor{red}{\textbf{0 (Skip)}} \\
+$q_1$ & $d_C$ & 15.2 & 0.12 & \dots & \textcolor{green!70!black}{\textbf{1 (Click)}} \\
+\midrule
+$q_2$ & $d_X$ & 5.5 & 0.44 & \dots & \textcolor{red}{\textbf{0 (Skip)}} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\vspace{0.5em}
+\begin{exampleblock}{Key Insight}
+The model sees rows independently. It does not know that $d_A, d_B, d_C$ belong to the same query $q_1$ during the forward pass.
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}{Training Data for Listwise Ranking}
+% \irStage{DATA}
+\textbf{Unlike pointwise rows, listwise data preserves the query-level grouping.}
+
+\vspace{1em}
+For one query $q$, we process the candidates as a set:
+\[
+\{ (d_1, \mathbf{x}_1, y_1), (d_2, \mathbf{x}_2, y_2), \dots, (d_n, \mathbf{x}_n, y_n) \}
+\]
+
+\vspace{0.8em}
+\begin{enumerate}
+    \item \textbf{Scoring}: Model computes scores $s_i = f_\theta(\mathbf{x}_i)$ for all $d_i$.
+    \item \textbf{Grouping}: Scores are gathered into a vector $\mathbf{s}_q$.
+    \item \textbf{Loss}: A single loss $\mathcal{L}(\mathbf{s}_q, \mathbf{y}_q)$ is calculated over the entire group.
+\end{enumerate}
+
+\vspace{0.8em}
+\alert{This allows the model to "see" the competition between documents.}
+\end{frame}
+
+% REMOVED: Knowledge Distillation as LTR (Side-quest)
+
+\begin{frame}{ListNet: Matching Probability Distributions}
+% \irStage{MODELS}
+\textbf{ListNet converts scores into a probability distribution and matches it to the target.}
+
+\vspace{0.8em}
+1. \textbf{Soft-max Distribution}: Convert scores $s_i$ and labels $y_i$ into probabilities:
+\[
+P_s(d_i) = \frac{e^{s_i}}{\sum_j e^{s_j}}, \qquad P_y(d_i) = \frac{e^{y_i}}{\sum_j e^{y_j}}
+\]
+
+2. \textbf{Cross-Entropy Loss}: Minimize the divergence between prediction and target:
+\[
+\mathcal{L} = -\sum_i P_y(d_i) \log P_s(d_i)
+\]
+
+\vspace{0.8em}
+\begin{itemize}
+    \item Focuses on matching the "Top-1" probability distribution.
+    \item Fully differentiable; easy to train with standard SGD/Adam.
+\end{itemize}
+\end{frame}
+
+% \begin{frame}{ListMLE: Plackett-Luce Likelihood}
+% % \irStage{MODELS}
+% \textbf{ListMLE maximizes the likelihood of observing the ground-truth permutation.}
+
+% \vspace{0.8em}
+% The probability of a permutation $\pi$ given scores $s$ is the product of sequential choices:
+% \[
+% P(\pi \mid s) = \prod_{k=1}^{n} \frac{e^{s_{\pi(k)}}}{\sum_{j=k}^{n} e^{s_{\pi(j)}}}
+% \]
+
+% \vspace{0.8em}
+% \begin{itemize}
+%     \item \textbf{Loss}: Negative log-likelihood $-\log P(\pi^* \mid s)$.
+%     \item \textbf{Intuition}: The model is trained so that the correct order is the most likely outcome of a sequential sampling process.
+%     \item The training object is the \textbf{entire ranking} simultaneously.
+% \end{itemize}
+% \end{frame}
+
+% % =====================================================
+
+% \begin{frame}{Limitation of Early Listwise Surrogates}
+% % \irStage{THEORY}
+% \textbf{ListNet and ListMLE optimize smooth proxies, not the actual ranking metrics.}
+
+% \vspace{0.8em}
+% \begin{alertblock}{The Metric GAP}
+% Likelihood maximization and cross-entropy are "surrogate" losses.
+% \end{alertblock}
+
+% \vspace{0.8em}
+% \begin{itemize}
+%     \item \textbf{Discordance}: Improving surrogate loss does not always improve NDCG or MAP.
+%     \item \textbf{Uniformity}: These losses often treat all positions as equally important in the probability space.
+% \end{itemize}
+
+% \vspace{0.8em}
+% \alert{To fix this, we need "metric-aware" listwise optimization.}
+% \end{frame}
+
+% % =====================================================
+% \section{Metric-Based Methods \& LambdaMART}
+% % =====================================================
+
+% \begin{frame}[plain]
+% \sectionpage
+% \end{frame}
+
+% \begin{frame}{Metric-Aware LTR (LambdaRank)}
+% % \irStage{MODELS}
+% \textbf{LambdaRank turns the pairwise problem into a listwise optimization.}
+
+% \vspace{0.8em}
+% \begin{itemize}
+%     \item \textbf{RankNet}: Treats all document inversions equally.
+%     \item \textbf{LambdaRank}: Scales each pair update by the NDCG gain ($|\Delta\text{NDCG}|$) from correcting it.
+% \end{itemize}
+
+% \vspace{0.8em}
+% \[
+% \mathcal{L}_{\text{LambdaRank}} = \sum_{y_i > y_j} \log(1 + e^{-(s_i - s_j)}) \cdot |\Delta \text{NDCG}|
+% \]
+
+% \vspace{0.8em}
+% \alert{Result: Errors at the top of the list get much larger gradients.}
+% \end{frame}
+
+% \begin{frame}{The Lambda Insight}
+% % \irStage{THEORY}
+% \textbf{LambdaRank defines gradients ($\lambda$) directly, even without a differentiable loss.}
+
+% \vspace{0.8em}
+% \begin{itemize}
+%     \item \textbf{Problem}: Sorting is discrete; NDCG is non-differentiable.
+%     \item \textbf{Solution}: Specify the virtual "force" acting on each document.
+%     \item \textbf{Analogy}: "Pull" relevant docs up, "push" irrelevant ones down based on their impact on the metric.
+% \end{itemize}\cpause
+
+% \vspace{1em}
+% \cpause
+% \begin{alertblock}{The Lambda Trick}
+% The lambda gradients provide a practical way to steer learning toward better rankings, even though the target metric itself cannot be directly differentiated.
+% \end{alertblock}
+% \end{frame}
+
+% \begin{frame}{Worked Example: Lambda Power}
+% % \irStage{THEORY}
+% \textbf{Correcting errors at the top yields much higher metric-aware force.}
+
+% \vspace{0.8em}
+% \begin{itemize}
+%     \item \textbf{Top Swap} (Pos 1--2): Resulting $|\Delta\text{NDCG}| = \mathbf{0.154}$.
+%     \item \textbf{Bottom Swap} (Pos 3--4): Resulting $|\Delta\text{NDCG}| = \mathbf{0.030}$.
+%     \item \textbf{Impact}: The top swap exerts **5$\times$ more** gradient force than the bottom swap.
+% \end{itemize}\cpause
+
+% \vspace{1em}
+% \cpause
+% \begin{exampleblock}{Convergence}
+% This weighting makes the model focus much more strongly on mistakes near the top of the ranking, where the impact on user experience is highest.
+% \end{exampleblock}
+% \end{frame}
+
+% \begin{frame}{LambdaMART: Why LambdaMART belongs here}
+% % \irStage{MODELS}
+% \textbf{LambdaMART looks pairwise locally, but behaves listwise globally.}
+
+% \vspace{0.8em}
+% \begin{itemize}
+%     \item \textbf{Mechanism}: Pairwise update between document nodes in a tree.
+%     \item \textbf{Weighting}: Pair importance is scaled by $|\Delta\text{NDCG}|$, which depends on the \textbf{entire query list}.
+%     \item \textbf{Trees}: Gradient Boosted Trees (MART) handle heterogeneous features perfectly.
+% \end{itemize}\cpause
+
+% \vspace{1.5em}
+% \alert{In industry, this is the most important practical metric-aware listwise method.}
+% \end{frame}
+
+% \begin{frame}{Neural Listwise Training}
+% % \irStage{MODELS}
+% \textbf{In neural architectures, updates flow through joint document scoring.}
+
+% \vspace{0.8em}
+% For each query:
+% \begin{enumerate}
+%     \item \textbf{Score}: Compute scores for all candidates in the group.
+%     \item \textbf{Loss}: Compute a listwise loss (e.g., ListNet/ListMLE) over the group.
+%     \item \textbf{Backprop}: Backpropagate the gradient through all documentation scores \textbf{jointly}.
+%     \item \textbf{Update}: Update parameters $\theta$ (Adam/SGD).
+% \end{enumerate}
+
+% \vspace{0.8em}
+% \alert{Contrast:} LambdaMART fits trees to pseudo-gradients; Neural models use backpropagation through differentiable surrogates.
+% \end{frame}
+
+% \begin{frame}{Comparison: ListNet vs ListMLE vs LambdaMART}
+% % \irStage{SUMMARY}
+% \begin{center}
+% \small
+% \begin{tabular}{llll}
+% \toprule
+% \textbf{Method} & \textbf{Core Idea} & \textbf{Optimization} & \textbf{Typical Model} \\
+% \midrule
+% ListNet & Match distributions & Differentiable Cross-Entropy & Neural / Linear \\
+% ListMLE & Prob. of Permutation & Differentiable Likelihood & Neural / Linear \\
+% LambdaMART & Weighted swaps & Metric-aware Gradients & Boosted Trees \\
+% \bottomrule
+% \end{tabular}
+% \end{center}
+
+% \vspace{1.5em}
+% \alert{Choice depends on whether you are learning representations (Neural) or using hand-crafted signals (Trees).}
+% \end{frame}
+
+% \begin{frame}{LTR Features: What the Model "Sees"}
+% % \irStage{DATA}
+% \textbf{Traditional LTR models use a large bank of query-document features.}
+
+% \vspace{0.8em}
+% \begin{itemize}
+%     \item \textbf{Lexical}: BM25, TF-IDF, Language Model scores.
+%     \item \textbf{Structural}: In-link count (PageRank), URL length, title matches.
+%     \item \textbf{Modern}: Dense similarity (L5), Cross-encoder scores (L4).
+% \end{itemize}\cpause
+
+% \vspace{1em}
+% \cpause
+% \begin{alertblock}{The Ensemble Effect}
+% LambdaMART doesn't replace BM25; it uses BM25 as \textbf{one of many inputs}. It learns the optimal "mixture" of classical and semantic signals.
+% \end{alertblock}
+% \end{frame}
+
+% % =====================================================
+
+% % REMOVED: Rank Metric Approximation (Too advanced)
+
+% % REMOVED: Modern Retrieve-Then-Rerank Stack (Redundant)
+
+% \begin{frame}[fragile]{Practical LTR: LightGBM \& PyTerrier}
+% % \irStage{HANDS-ON}
+% \textbf{Standardized libraries make it easy to train metric-aware rankers.}
+
+% \vspace{0.8em}
+% \begin{itemize}
+%     \item \textbf{LightGBM}: The primary engine for LambdaMART in industrial search.
+%     \item \textbf{PyTerrier}: Orchestrates the pipeline from indexing to ensemble training.
+%     \item \textbf{Objective}: Simply set \texttt{"objective": "lambdarank"} to start.
+% \end{itemize}\cpause
+
+% \vspace{0.5em}
+% \cpause
+% \begin{exampleblock}{Feature BANK}
+% The power of LambdaMART comes from its ability to use \textbf{50+ features}: BM25, PageRank, BERT scores, and URL statistics.
+% \end{exampleblock}
+% \end{frame}
+
+% % =====================================================
+% \section{Stochastic Methods}
+% % =====================================================
+
+% % REMOVED: Stochastic LTR Methods (Too advanced)
+
+% % =====================================================
+
+% % =====================================================
+
+% \begin{frame}{Big Picture Comparison}
+% \begin{tabular}{l l}
+% \toprule
+% Method & What It Optimizes \\
+% \midrule
+% Pointwise & Regression/classification loss \\
+% Pairwise & Pair inversions \\
+% Listwise & Ranking likelihood \\
+% Metric-based & Metric-informed gradients \\
+% Stochastic & Expected metric \\
+% \bottomrule
+% \end{tabular}
+% \end{frame}
+
+% ====================================================================
+% REMOVED: Beyond Standard LTR Section (Moved to separate lecture)
+% ====================================================================
+\section{Summary: Choosing Your Paradigm}
+% ====================================================================
+
+\begin{frame}[plain]
+\sectionpage
+\end{frame}
+
+\begin{frame}{Summary: Choosing Your Paradigm}
+% \irStage{SUMMARY}
+\textbf{Choose the paradigm that matches your data and model architecture.}
+
+\vspace{0.8em}
+\begin{itemize}
+  \item \textbf{Pointwise}: Simplest training, scalable, but weak ranking alignment.
+  \item \textbf{Pairwise}: Models relative preferences; better for order than pointwise.
+  \item \textbf{Listwise}: Aligns training with query-level ranking behavior.
+  \item \textbf{LambdaMART}: Most important practical metric-aware method in industry.
+  \item \textbf{Neural Listwise}: Best when learning representations jointly from text.
+\end{itemize}\cpause
+
+\vspace{1em}
+\cpause
+\begin{alertblock}{The Recall Ceiling}
+Remember: A perfect re-ranker cannot fix what the first stage missed. LTR is most effective when the retrieval stage has high recall.
+\end{alertblock}
+\end{frame}
+
+
+% =====================================================
+
+\appendix
+\end{document}

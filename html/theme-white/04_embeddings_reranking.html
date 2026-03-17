@@ -8,9 +8,9 @@
 <link rel="stylesheet" href="node_modules/reveal.js/dist/theme/serif.css">
 <link rel="stylesheet" href="common.css">
 <style>
-  .reveal h1 { font-size: 1.4em !important; }
-  .reveal h2 { font-size: 1.0em !important; color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 8px; }
-  .reveal h3 { font-size: 0.75em !important; }
+  .reveal h1 { font-size: 1.2em !important; }
+  .reveal h2 { font-size: 0.8em !important; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+  .reveal h3 { font-size: 0.6em !important; }
   
   .nav-hint { 
     position: fixed; bottom: 8px; left: 8px; z-index: 99; 
@@ -142,8 +142,6 @@
     <h2>Why Transformers?</h2>
     <div class="content"><strong>Attention mechanisms enable models to process entire sequences in parallel with global context.</strong>
 
-
-
 They came after Recurrent Neural Networks (RNNs) and LSTMs that solved the sequence problem but were limited
 
 <ul><li><strong>Parallelism</strong>: Processes all tokens simultaneously (unlike sequential RNNs).</li><li><strong>Recency</strong>: Overcomes "forgetting" in long documents.</li><li><strong>Scale</strong>: Efficiently trained on massive web-scale corpora.</li></ul>
@@ -190,13 +188,13 @@ They came after Recurrent Neural Networks (RNNs) and LSTMs that solved the seque
 
 
 <div class="block"><h3>The Attention Formula</h3><div class="block-content">\[
-(Q, K, V) = ({<span class="highlight">QK^T</span>}) V
+{Attention}(Q, K, V) = {softmax}({<span class="highlight">QK^T</span>}{{d_k}}) V
 \]</div></div></div>
   </section>
   <section>
     <h2>Breaking Down the Formula</h2>
     <div class="content">\[
- = ({<span class="highlight">QK^T</span>}{}) V
+{Attention} = {softmax}({<span class="highlight">QK^T</span>}{{d_k}}) V
 \]
 <ul><li><strong>Dot Product</strong> ($QK^T$): Measures raw similarity between tokens.</li><li><strong>Scaling</strong> ($\sqrt{d_k}$): Stabilizes gradients for deep training.</li><li><strong>Processing</strong>: Softmax converts scores to weighting factors (sum to 1).</li></ul></div>
   </section>
@@ -232,7 +230,7 @@ They came after Recurrent Neural Networks (RNNs) and LSTMs that solved the seque
 
 
 <div class="block"><h3>Combined Input Representation</h3><div class="block-content">\[
-_i = _ + _i
+{x}_i = {e}_{{word}_i} + {p}_i
 \]</div></div></div>
   </section>
   <section>
@@ -426,7 +424,7 @@ The cross-encoder correctly identifies the semantic match.</div></div></div>
 
 
 
-<table><tr><th><strong>Candidates</strong></th><th><strong>Total Time</strong></th><th><strong>Feasible?</strong></th></tr><tr><td>1,000,000 (Full corpus)</td><td>~80 hours</td><td>No</td></tr><tr><td><strong>100 (Top-rank)</strong></td><td><strong>~500 ms Scale</strong></td><td><strong>{irHybrid</strong>{✓} Yes}</td></tr></table></div>
+<table><tr><th><strong>Candidates</strong></th><th><strong>Total Time</strong></th><th><strong>Feasible?</strong></th></tr><tr><td>1,000,000 (Full corpus)</td><td>~80 hours</td><td>No</td></tr><tr><td><strong>100 (Top-rank)</strong></td><td><strong>~500 ms Scale</strong></td><td><strong> Yes}</td></tr></table></div>
   </section>
 </section>
 <section>

@@ -1,6 +1,3 @@
-# Slides
-
-This repository contains slides for my presentations. The corresponding links can be found [here](https://mrjleo.github.io/publications/).
 
 ## Local Development
 
