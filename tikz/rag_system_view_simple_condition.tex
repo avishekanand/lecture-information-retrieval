@@ -1,0 +1,22 @@
+\begin{tikzpicture}[
+  scale=0.75, transform shape,
+  node distance=1.1cm and 1.2cm,
+  box/.style={draw, rounded corners, thick, align=center, minimum height=0.9cm, minimum width=2.6cm, font=\small},
+  box_faded/.style={draw, rounded corners, thick, align=center, minimum height=0.9cm, minimum width=2.6cm, font=\small, opacity=0.2, text opacity=0.2},
+  arr/.style={-{Stealth[length=2.5mm]}, thick},
+  arr_faded/.style={-{Stealth[length=2.5mm]}, thick, opacity=0.2}
+]
+\node[box_faded, fill=gray!12] (user) {User query};
+\node[box_faded, fill=irSparse!15, right=2.0cm of user] (retr) {Retrieve\\(sparse/dense/hybrid)};
+\node[box, fill=irHybrid!15, right=2.0cm of retr] (cond) {Condition\\(prompt/context)};
+\node[box_faded, fill=irRerank!15, right=2.0cm of cond] (gen) {Generate\\(LLM reasoning)};
+
+\draw[arr_faded] (user) -- (retr);
+\draw[arr_faded] (retr) -- node[above, font=\scriptsize, opacity=0.2, text opacity=0.2] {top-$k$ chunks} (cond);
+\draw[arr_faded] (cond) -- node[above, font=\scriptsize, opacity=0.2, text opacity=0.2] {budgeted context} (gen);
+\draw[arr_faded] (gen) -- ++(2.5,0) node[right, font=\small, opacity=0.2, text opacity=0.2] {Final answer};
+
+\node[font=\scriptsize, text=gray, opacity=0.2, text opacity=0.2] at ($(retr)+(0,-0.75)$) {Index refresh, drift, caching};
+\node[font=\scriptsize, text=gray] at ($(cond)+(0,-0.75)$) {formatting, dedup, compression};
+\node[font=\scriptsize, text=gray, opacity=0.2, text opacity=0.2] at ($(gen)+(0,-0.75)$) {tool calls, stop criteria};
+\end{tikzpicture}
