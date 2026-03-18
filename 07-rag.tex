@@ -963,6 +963,33 @@ Same storage footprint as standard chunking; significantly better embedding cohe
 \end{center}
 \end{frame}
 
+\begin{frame}{What are the conditioning decisions that need to be made?}
+% \irStage{SYSTEM ARCHITECTURE}
+\begin{center}
+\resizebox{1.0\textwidth}{!}{
+\input{tikz/rag_system_view_simple_condition.tex}
+}
+\end{center}
+\end{frame}
+
+\begin{frame}{What are the generation decisions that need to be made?}
+% \irStage{SYSTEM ARCHITECTURE}
+\begin{center}
+\resizebox{1.0\textwidth}{!}{
+\input{tikz/rag_system_view_simple_generate.tex}
+}
+\end{center}
+\end{frame}
+
+\begin{frame}{RAG Decisions: A Holistic View}
+% \irStage{SYSTEM ARCHITECTURE}
+\begin{center}
+\resizebox{0.9\textwidth}{!}{
+\input{tikz/rag_system_view.tex}
+}
+\end{center}
+\end{frame}
+
 \begin{frame}[shrink=10]{Query Reformulation: Aligning Intent}
 % \irStage{RETRIEVAL}
 \textbf{Bridging the lexical gap between user questions and document structure.}
@@ -1127,27 +1154,9 @@ $q_3$: ``Education of Sundar Pichai'' $\to$ \emph{IIT Kharagpur, Stanford}
 
 \vspace{0.8em}
 \begin{center}
-\begin{tikzpicture}[node distance=1.2cm, every node/.style={font=\small\sffamily}]
-    \node[infra] (q) {Query $q$};
-    \node[dense, right=1.5cm of q, text width=2.5cm, align=center] (router) {Complexity Classifier (Small SLM/LLM)};
-    
-    \node[sparse, above right=0.3cm and 1.5cm of router] (simple) {Simple};
-    \node[sparse, right=1.5cm of router] (moderate) {Moderate};
-    \node[sparse, below right=0.3cm and 1.5cm of router] (complex) {Complex};
-    
-    \node[hybrid, right=1.2cm of simple] (llm) {Direct LLM};
-    \node[hybrid, right=1.2cm of moderate] (singleshot) {One-Shot RAG};
-    \node[hybrid, right=1.2cm of complex] (multistep) {Multi-Step RAG};
-    
-    \draw[irArrowBase] (q) -- (router);
-    \draw[irArrowBase] (router.north east) -- (simple.west);
-    \draw[irArrowBase] (router.east) -- (moderate.west);
-    \draw[irArrowBase] (router.south east) -- (complex.west);
-    
-    \draw[irArrowBase] (simple) -- (llm);
-    \draw[irArrowBase] (moderate) -- (singleshot);
-    \draw[irArrowBase] (complex) -- (multistep);
-\end{tikzpicture}
+\resizebox{0.8\textwidth}{!}{
+\input{tikz/adaptive_rag.tex}
+}
 \end{center}
 
 \cpause
