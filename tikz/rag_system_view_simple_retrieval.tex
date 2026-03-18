@@ -6,12 +6,14 @@
   arr/.style={-{Stealth[length=2.5mm]}, thick},
   arr_faded/.style={-{Stealth[length=2.5mm]}, thick, opacity=0.2}
 ]
-\node[box_faded, fill=gray!12] (user) {User query};
-\node[box, fill=irSparse!15, right=2.0cm of user] (retr) {Retrieve\\(sparse/dense/hybrid)};
-\node[box_faded, fill=irHybrid!15, right=2.0cm of retr] (cond) {Condition\\(prompt/context)};
-\node[box_faded, fill=irRerank!15, right=2.0cm of cond] (gen) {Generate\\(LLM reasoning)};
+\node[box_faded, fill=gray!12] (query_mod) {Query Modelling\\(reformulation/planning)};
+\node[box_faded, fill=gray!12, above=0.8cm of query_mod] (user) {User query};
+\node[box, fill=irSparse!15, right=1.8cm of query_mod] (retr) {Retrieve\\(sparse/dense/hybrid)};
+\node[box_faded, fill=irHybrid!15, right=1.8cm of retr] (cond) {Condition\\(prompt/context)};
+\node[box_faded, fill=irRerank!15, right=1.8cm of cond] (gen) {Generate\\(LLM reasoning)};
 
-\draw[arr_faded] (user) -- (retr);
+\draw[arr_faded] (user) -- (query_mod);
+\draw[arr_faded] (query_mod) -- (retr);
 \draw[arr_faded] (retr) -- node[above, font=\scriptsize, opacity=0.2, text opacity=0.2] {top-$k$ chunks} (cond);
 \draw[arr_faded] (cond) -- node[above, font=\scriptsize, opacity=0.2, text opacity=0.2] {budgeted context} (gen);
 \draw[arr_faded] (gen) -- ++(2.5,0) node[right, font=\small, opacity=0.2, text opacity=0.2] {Final answer};
