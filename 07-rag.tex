@@ -1110,14 +1110,8 @@ Fraction of queries where retrieved context contains
 
 
 % ====================================================================
-\section{Part 4 --- Complex Queries}
-% ====================================================================
-
-\begin{frame}[plain]
-\sectionpage
-\end{frame}
-
 \section{Part 4 --- Complex QA and advanced RAG}
+% ====================================================================
 
 \begin{frame}[plain]
 \sectionpage
@@ -1336,26 +1330,6 @@ Complex QA needs \textbf{planning}, \textbf{iterative retrieval}, or \textbf{ada
 \end{frame}
 
 
-% \begin{frame}[shrink=10]{Query Reformulation: Aligning Questions with Evidence}
-% \textbf{Before decomposing, we may need to rewrite the query itself.}
-
-% \vspace{0.8em}
-% \begin{block}{Reformulation strategies}
-% \begin{itemize}
-%   \item \textbf{HyDE}: generate a hypothetical answer document, embed it
-%   \item \textbf{Multi-query}: generate paraphrases, retrieve for each, fuse
-%   \item \textbf{Step-back}: rewrite to a more general conceptual question
-%   \item \textbf{Decomposition}: split a complex query into smaller sub-queries
-% \end{itemize}
-% \end{block}
-
-% \cpause
-% \begin{block}{Risk: intent drift}
-% Reformulation may move away from the user's true information need.
-% Always compare results from the original and rewritten query.
-% \end{block}
-% \end{frame}
-
 \begin{frame}{Query Decomposition for Complex QA}
 \begin{block}{Core Idea}
 Break a complex query into \textbf{atomic sub-queries}, retrieve evidence for each, then combine the results.
@@ -1435,82 +1409,6 @@ Spend compute only where it improves answer quality.
 \end{block}
 \end{frame}
 
-
-% \begin{frame}{Chain-of-Thought Query Decomposition}
-% % \irStage{QUERY PLANNING}
-% \begin{block}{Core Idea}
-% Decompose complex queries into \textbf{atomic sub-queries}, retrieve evidence for each independently, then merge the results. More recall, less vocabulary mismatch.
-% \end{block}
-
-% \vspace{0.8em}
-% \begin{center}
-% \resizebox{0.6\textwidth}{!}{
-% \begin{tikzpicture}[node distance=0.9cm, every node/.style={font=\small\sffamily}]
-%     \node[infra, text width=3.5cm, align=center] (cq) {Complex Query};
-%     \node[dense, right=1.3cm of cq] (llm) {LLM};
-%     \node[sparse, above right=0.5cm and 1.4cm of llm, minimum width=2cm] (sq1) {Sub-query 1};
-%     \node[sparse, right=1.4cm of llm, minimum width=2cm] (sq2) {Sub-query 2};
-%     \node[sparse, below right=0.5cm and 1.4cm of llm, minimum width=2cm] (sq3) {Sub-query 3};
-%     \node[hybrid, right=1.4cm of sq2] (merge) {Merge};
-%     \draw[irArrowBase] (cq) -- (llm);
-%     \draw[irArrowBase] (llm) -- (sq1);
-%     \draw[irArrowBase] (llm) -- (sq2);
-%     \draw[irArrowBase] (llm) -- (sq3);
-%     \draw[irArrowBase] (sq1) -- (merge);
-%     \draw[irArrowBase] (sq2) -- (merge);
-%     \draw[irArrowBase] (sq3) -- (merge);
-% \end{tikzpicture}
-% }
-% \end{center}
-% \end{frame}
-
-% \begin{frame}[shrink=10]{Query Planning and Decomposition}
-% % \irStage{QUERY PLANNING}
-% \textbf{Complex questions require a structured retrieval plan before any search begins.}
-
-% \vspace{0.7em}
-% \begin{block}{Example: sequential decomposition}
-% \textbf{Q}: ``Who is the CEO of the company that acquired DeepMind, and where did they study?''\\[0.3em]
-% $q_1$: ``Company that acquired DeepMind'' $\to$ \emph{Google}\\
-% $q_2$: ``CEO of Google'' $\to$ \emph{Sundar Pichai}\\
-% $q_3$: ``Education of Sundar Pichai'' $\to$ \emph{IIT Kharagpur, Stanford}
-% \end{block}
-
-% \cpause
-% \vspace{0.5em}
-% \begin{block}{Planning strategies}
-% \begin{itemize}
-%   \item \textbf{Sequential}: $q_i$ uses result of $q_{i-1}$
-%   \item \textbf{Parallel}: independent sub-queries; fuse results
-%   \item \textbf{Conditional}: branch based on intermediate evidence
-% \end{itemize}
-% \end{block}
-% \end{frame}
-
-% \begin{frame}[shrink=10]{IR-CoT: Interleaving Retrieval and Chain-of-Thought}
-% % \irStage{ADVANCED}
-% \textbf{Trivedi et al.\ (2022): generate one CoT step, then retrieve based on it, repeat.}
-
-% \vspace{0.7em}
-% \begin{block}{Algorithm}
-% \begin{enumerate}
-%   \item Generate one chain-of-thought sentence
-%   \item Use that sentence as the retrieval query
-%   \item Retrieve passage(s)
-%   \item Continue generation with accumulated evidence
-%   \item Terminate when the model outputs the answer
-% \end{enumerate}
-% \end{block}
-
-% \cpause
-% \vspace{0.5em}
-% \begin{exampleblock}{Example (HotpotQA)}
-% \textbf{Q}: ``Which mountain range contains Piz Bernina?'' \\
-% \textbf{CoT step 1}: ``Piz Bernina is a peak...'' \\
-% \textbf{Retrieve}: $\to$ passage: ``The Alps contain Piz Bernina...'' \\
-% \textbf{CoT step 2}: ``Therefore the Alps.'' $\to$ \textbf{Answer: The Alps}
-% \end{exampleblock}
-% \end{frame}
 
 \begin{frame}[shrink=10]{Adaptive RAG: Routing by Complexity}
 % \irStage{ADVANCED}
