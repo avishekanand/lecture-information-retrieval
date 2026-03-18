@@ -4,13 +4,15 @@
   box/.style={draw, rounded corners, thick, align=center, minimum height=0.9cm, minimum width=2.6cm, font=\small},
   arr/.style={-{Stealth[length=2.5mm]}, thick}
 ]
-\node[box, fill=gray!12] (user) {User query};
-\node[box, fill=irSparse!15, right=2.0cm of user] (retr) {Retrieve\\(sparse/dense/hybrid)};
-\node[box, fill=irHybrid!15, right=2.0cm of retr] (cond) {Condition\\(prompt/context)};
-\node[box, fill=irRerank!15, right=2.0cm of cond] (gen) {Generate\\(LLM reasoning)};
+\node[box, fill=gray!12] (query_mod) {Query Modelling\\(reformulation/planning)};
+\node[box, fill=gray!12, above=0.8cm of query_mod] (user) {User query};
+\node[box, fill=irSparse!15, right=1.8cm of query_mod] (retr) {Retrieve\\(sparse/dense/hybrid)};
+\node[box, fill=irHybrid!15, right=1.8cm of retr] (cond) {Condition\\(prompt/context)};
+\node[box, fill=irRerank!15, right=1.8cm of cond] (gen) {Generate\\(LLM reasoning)};
 \node[box, fill=irInfra!15, below=1.2cm of cond] (fb) {Feedback \& Ops\\(eval/monitor/cost)};
 
-\draw[arr] (user) -- (retr);
+\draw[arr] (user) -- (query_mod);
+\draw[arr] (query_mod) -- (retr);
 \draw[arr] (retr) -- node[above, font=\scriptsize] {top-$k$ chunks} (cond);
 \draw[arr] (cond) -- node[above, font=\scriptsize] {budgeted context} (gen);
 \draw[arr] (gen) -- ++(2.5,0) node[right, font=\small] {Answer + citations};
