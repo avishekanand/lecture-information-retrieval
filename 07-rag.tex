@@ -549,18 +549,18 @@ $F_{\text{BERT}} = 2 \frac{P_{\text{BERT}} \cdot R_{\text{BERT}}}{P_{\text{BERT}
 \end{frame}
 
 
-\begin{frame}[shrink=10]{Evaluation: BERTScore Details}
-\irStage{EVALUATION}
-\textbf{How BERTScore works (Zhang et al., 2020).}
+% \begin{frame}[shrink=10]{Evaluation: BERTScore Details}
+% \irStage{EVALUATION}
+% \textbf{How BERTScore works (Zhang et al., 2020).}
 
-\vspace{0.7em}
-\begin{itemize}
-  \item \textbf{Embeddings}: Represent reference $x$ and candidate $\hat{x}$ tokens with contextual embeddings (BERT, RoBERTa, etc.)
-  \item \textbf{Matching}: Greedily match each token in $x$ to the most similar token in $\hat{x}$ using cosine similarity
-  \item \textbf{Weighting}: Optional IDF weighting can emphasize more informative tokens
-  \item \textbf{Robustness}: Handles paraphrases and synonyms where string-based metrics fail
-\end{itemize}
-\end{frame}
+% \vspace{0.7em}
+% \begin{itemize}
+%   \item \textbf{Embeddings}: Represent reference $x$ and candidate $\hat{x}$ tokens with contextual embeddings (BERT, RoBERTa, etc.)
+%   \item \textbf{Matching}: Greedily match each token in $x$ to the most similar token in $\hat{x}$ using cosine similarity
+%   \item \textbf{Weighting}: Optional IDF weighting can emphasize more informative tokens
+%   \item \textbf{Robustness}: Handles paraphrases and synonyms where string-based metrics fail
+% \end{itemize}
+% \end{frame}
 
 
 \begin{frame}[shrink=10]{Evaluation: When BERTScore Makes Sense}
@@ -772,7 +772,7 @@ Use retrieval to supply grounded evidence; use the LLM to reason over it.
 \textbf{The paper that named and formalised RAG as a learning framework.}
 
 \vspace{0.7em}
-\begin{block}{Two variants}
+\begin{block}{Two variants: }
 \begin{itemize}
   \item \textbf{RAG-Sequence}: retrieve once for the full answer
     \[ p(y \mid x) \approx \sum_{z} p(z \mid x)\, p(y \mid x, z) \]
@@ -792,7 +792,7 @@ Use retrieval to supply grounded evidence; use the LLM to reason over it.
 \textbf{Key Innovation}
 \begin{itemize}
   \item Retrieval is treated as a \emph{latent variable}.
-  \item Marginalising over top-$k$ retrieved documents makes retrieval differentiable in expectation.
+  % \item Marginalising over top-$k$ retrieved documents makes retrieval differentiable in expectation.
 \end{itemize}
 \end{frame}
 
@@ -863,10 +863,11 @@ LoRA-fine-tune the generator on grounded QA pairs.
 \end{center}
 \end{frame}
 
-\begin{frame}{Retrieval Choices in RAG (2025 View)}
+\begin{frame}{Which retriever to use?}
 % \irStage{RETRIEVAL}
 \textbf{Choosing the right retriever involves precision/recall and OOD robustness trade-offs.}
 
+\cpause
 \vspace{0.7em}
 \begin{table}
 \centering
@@ -886,13 +887,13 @@ ColBERT      & High quality at scale (late interaction) & Storage, infra cost   
 
 \cpause
 \vspace{0.3em}
-\begin{block}{The Ceiling}
+\begin{block}{Bounded Recall}
 \textbf{Retrieval defines the reasoning substrate.}
 Most ``hallucinations'' in RAG are \emph{selection failures}: the evidence existed but was not retrieved.
 \end{block}
 \end{frame}
 
-\begin{frame}{The Evidence Ceiling}
+\begin{frame}{The Evidence Ceiling -- Bounded Recall}
 % \irStage{THEORY}
 \textbf{A grounded answer is a function of the query and the retrieved evidence.}
 
@@ -923,9 +924,10 @@ Before blaming the LLM, verify that the correct evidence was actually in the pro
 \end{block}
 \end{frame}
 
-\begin{frame}[shrink=10]{Chunking: A Modeling Decision}
+\begin{frame}[shrink=10]{How do you Chunk documents ? }
 % \irStage{DATA}
 \textbf{The retrieval unit $u$ determines recall, precision, and context efficiency.}
+\cpause
 
 \vspace{0.7em}
 \begin{columns}[T]
@@ -974,6 +976,328 @@ Same storage footprint as standard chunking; significantly better embedding cohe
 \end{block}
 \end{frame}
 
+\begin{frame}[shrink=10]{Retrieval Evaluation in RAG: Do We Need nDCG?}
+  \cpause
+\textbf{Classical IR assumes users read ranked lists top-to-bottom.}
+
+\vspace{0.7em}
+\begin{block}{Traditional assumption (Search)}
+\begin{itemize}
+  \item User scans results sequentially
+  \item Higher ranks matter more
+  \item Metrics like \textbf{nDCG} model user attention
+\end{itemize}
+\end{block}
+
+\cpause
+\begin{block}{But RAG is different}
+\begin{itemize}
+  \item The \textbf{LLM reads all retrieved passages}
+  \item No notion of "user scanning rank 1, 2, 3"
+  \item The question is binary:
+  \begin{center}
+  \large \textbf{Was the right evidence retrieved or not?}
+  \end{center}
+\end{itemize}
+\end{block}
+
+\vspace{0.5em}
+% \textbf{Implication:} Ranking quality matters less than \textbf{coverage of relevant evidence}.
+\end{frame}
+
+\begin{frame}[shrink=10]{Retrieval Metrics for RAG: What Actually Matters}
+\textbf{Focus on whether the generator gets the evidence it needs.}
+
+\vspace{0.7em}
+\begin{block}{Core metrics}
+\begin{itemize}
+  \item \textbf{Recall@k} (\textbf{most important}) \\
+  Does at least one relevant passage appear in top-$k$?
+
+  \item \textbf{MRR} (secondary) \\
+  How early does the first relevant passage appear?
+
+\end{itemize}
+\end{block}
+
+\cpause
+\begin{block}{Why not nDCG?}
+\begin{itemize}
+  % \item Assumes graded relevance and rank sensitivity
+  \item Designed for \textbf{human browsing}, not LLM consumption
+  \item In RAG, once evidence is present, rank often matters less
+\end{itemize}
+\end{block}
+
+\vspace{0.5em}
+\textbf{Rule of thumb:}
+\[
+\text{Recall@k} \gg \text{MRR} \gg \text{nDCG}
+\]
+\end{frame}
+
+\begin{frame}[shrink=10]{RAG-Specific Metric: Context Sufficiency}
+\textbf{Retrieval must enable correct generation.}
+
+\vspace{0.7em}
+\begin{block}{Context Hit Rate}
+Fraction of queries where retrieved context contains
+\textbf{sufficient evidence} to answer correctly.
+
+\vspace{0.4em}
+\[
+\text{CHR} =
+\frac{\# \text{queries with answerable context}}
+{\# \text{total queries}}
+\]
+\end{block}
+
+\cpause
+\begin{block}{Important distinction}
+\begin{itemize}
+  \item Recall@k: \textit{Is relevant passage present?}
+  \item Context Hit Rate: \textit{Is it sufficient to answer?}
+\end{itemize}
+\end{block}
+
+\vspace{0.5em}
+\textbf{Example failure:}
+\begin{itemize}
+  \item Passage retrieved mentions entity
+  \item But lacks key fact $\Rightarrow$ generator hallucinates
+\end{itemize}
+\end{frame}
+
+\begin{frame}[shrink=10]{Measurement Order: The RAG Debugging Playbook}
+\textbf{Always diagnose retrieval before generation.}
+
+\vspace{0.7em}
+\begin{block}{Step 1: Check Recall@k}
+\begin{itemize}
+  \item If Recall@k $< 0.7$:
+  \begin{itemize}
+    \item Improve retriever (index, embeddings, query reformulation)
+    \item Do \textbf{not} touch the generator yet
+  \end{itemize}
+\end{itemize}
+\end{block}
+
+\cpause
+\begin{block}{Step 2: Check Context Hit Rate}
+\begin{itemize}
+  \item If recall is high but answers are wrong:
+  \begin{itemize}
+    \item Context is insufficient or noisy
+    \item Fix chunking, filtering, or reranking
+  \end{itemize}
+\end{itemize}
+\end{block}
+
+\cpause
+\begin{block}{Step 3: Tune generator}
+\begin{itemize}
+  \item Prompting, grounding, attribution
+\end{itemize}
+\end{block}
+
+\vspace{0.5em}
+\textbf{Most common mistake:}
+\begin{center}
+\large Tuning the LLM when retrieval is broken.
+\end{center}
+\end{frame}
+
+
+
+% ====================================================================
+\section{Part 4 --- Complex Queries}
+% ====================================================================
+
+\begin{frame}[plain]
+\sectionpage
+\end{frame}
+
+\section{Part 4 --- Complex QA and advanced RAG}
+
+\begin{frame}[plain]
+\sectionpage
+\end{frame}
+
+\begin{frame}[shrink=10]{What Makes a QA Query Complex?}
+\textbf{Not all difficult questions are difficult for the same reason.}
+
+\vspace{0.8em}
+\begin{block}{Four common dimensions of complexity}
+\begin{enumerate}
+  \item \textbf{Multi-hop reasoning} \\
+  Answer requires multiple inference steps
+  \item \textbf{Ambiguity} \\
+  Query is underspecified or has multiple plausible interpretations
+  \item \textbf{Evidence scattered across multiple documents} \\
+  No single passage is sufficient
+  \item \textbf{Evidence spread across modalities} \\
+  Need to combine text, tables, figures, etc.
+\end{enumerate}
+\end{block}
+
+\cpause
+\vspace{0.4em}
+\textbf{Key point:} Complex QA is often hard because retrieval itself becomes structured.
+\end{frame}
+
+\begin{frame}[shrink=10]{Dimension 1: Multi-Hop Queries}
+\textbf{The answer is not in one isolated fact.}
+
+\vspace{0.7em}
+\begin{block}{Definition}
+A multi-hop question requires \textbf{multiple linked retrieval or reasoning steps}.
+The answer to one step becomes input to the next.
+\end{block}
+
+\cpause
+\begin{block}{Examples}
+\begin{itemize}
+  \item ``Who is the CEO of the company that acquired DeepMind?''
+  \item ``Which mountain range contains Piz Bernina?''
+  \item ``Which university did the author of \emph{The Hobbit} attend?''
+\end{itemize}
+\end{block}
+
+\cpause
+\begin{block}{Why single-shot retrieval fails}
+The original query often does not lexically match the final evidence passage.
+You may need to retrieve an \emph{intermediate entity} first.
+\end{block}
+\end{frame}
+
+\begin{frame}[shrink=10]{Dimension 2: Ambiguous Queries}
+\textbf{The system must resolve what the user actually means.}
+
+\vspace{0.7em}
+\begin{block}{Definition}
+An ambiguous query has \textbf{multiple plausible interpretations}:
+entity ambiguity, referential ambiguity, or intent ambiguity.
+\end{block}
+
+\cpause
+\begin{block}{Examples}
+\begin{itemize}
+  \item ``Jaguar top speed'' \hfill (car or animal?)
+  \item ``When was Jordan champion?'' \hfill (Michael Jordan? Jordan country?)
+  \item ``capital of Georgia'' \hfill (country or US state?)
+\end{itemize}
+\end{block}
+
+\cpause
+\begin{block}{Why this is hard}
+Good retrieval depends on choosing the right interpretation first.
+Ambiguity resolution often has to happen \textbf{before retrieval or jointly with retrieval}.
+\end{block}
+\end{frame}
+
+\begin{frame}[shrink=10]{Dimension 3: Evidence Across Multiple Documents}
+\textbf{No single document contains the full answer.}
+
+\vspace{0.7em}
+\begin{block}{Definition}
+The system must retrieve and combine evidence from \textbf{multiple passages or documents}.
+\end{block}
+
+\cpause
+\begin{block}{Examples}
+\begin{itemize}
+  \item ``Which actor in \emph{Oppenheimer} also starred in \emph{Peaky Blinders}?'' 
+  \item ``What is the difference in population between the capitals of France and Spain?''
+  \item ``Which team does the 2015 Diamond Head Classic MVP play for?'' 
+\end{itemize}
+\end{block}
+
+\cpause
+\begin{block}{Retrieval implication}
+Recall of one relevant passage is not enough.
+You need \textbf{set recall}: retrieve \emph{all critical pieces} of evidence.
+\end{block}
+\end{frame}
+
+\begin{frame}[shrink=10]{Dimension 4: Multimodal Evidence}
+\textbf{Information is not always in text.}
+
+\vspace{0.7em}
+\begin{block}{Definition}
+Evidence may be distributed across \textbf{text, tables, images, code snippets, or other modalities}.
+\end{block}
+
+\cpause
+\begin{block}{Examples}
+\begin{itemize}
+  \item ``What was the revenue of Apple in 2023?'' \hfill (requires table/figure)
+  \item ``Which city hosted the 2016 Olympics?'' \hfill (text + image context)
+  \item ``What is the chemical formula for this compound?'' \hfill (image input)
+\end{itemize}
+\end{block}
+
+\cpause
+\begin{block}{Retrieval implication}
+Standard text-only retrieval fails.
+You need \textbf{multimodal retrieval}: encode and retrieve across modalities.
+\end{block}
+\end{frame}
+
+
+\begin{frame}[shrink=10]{Dimension 4: Evidence Across Modalities}
+\textbf{The answer requires combining text with structured or visual evidence.}
+
+\vspace{0.7em}
+\begin{block}{Definition}
+Evidence may be split across \textbf{text, tables, charts, figures, or images}.
+\end{block}
+
+\cpause
+\begin{block}{Examples}
+\begin{itemize}
+  \item ``How much of the 2018 revenue did not come from devices?'' \\
+  \footnotesize Requires reading a table and performing subtraction
+  \item ``Which year has the lowest revenue?'' \\
+  \footnotesize Table lookup
+  \item ``What trend shown in the figure supports the claim in the text?'' \\
+  \footnotesize Text + chart
+\end{itemize}
+\end{block}
+
+\cpause
+\begin{block}{Retrieval implication}
+The system must retrieve the \textbf{right modality} and align evidence across representations.
+\end{block}
+\end{frame}
+
+\begin{frame}[shrink=10]{Why Single-Shot RAG Breaks on Complex Queries}
+\textbf{One retrieval call is often not enough.}
+
+\vspace{0.7em}
+\begin{block}{Single-shot assumption}
+\[
+q \rightarrow \mathcal{R}_k(q) \rightarrow a
+\]
+This assumes that one query retrieves all evidence needed for answering.
+\end{block}
+
+\cpause
+\begin{block}{Why this fails}
+\begin{itemize}
+  \item \textbf{Multi-hop}: intermediate entities are missing from the original query
+  \item \textbf{Ambiguity}: wrong interpretation leads to wrong retrieval
+  \item \textbf{Multi-document}: one passage is insufficient
+  \item \textbf{Multi-modal}: answer spans text, tables, or figures
+\end{itemize}
+\end{block}
+
+\cpause
+\begin{block}{Consequence}
+Complex QA needs \textbf{planning}, \textbf{iterative retrieval}, or \textbf{adaptive retrieval control}.
+\end{block}
+\end{frame}
+
+
 
 \begin{frame}{What are the query modelling decisions that need to be made?}
 % \irStage{SYSTEM ARCHITECTURE}
@@ -985,32 +1309,6 @@ Same storage footprint as standard chunking; significantly better embedding cohe
 \end{center}
 \end{frame}
 
-\begin{frame}{What are the conditioning decisions that need to be made?}
-% \irStage{SYSTEM ARCHITECTURE}
-\begin{center}
-\resizebox{1.0\textwidth}{!}{
-\input{tikz/rag_system_view_simple_condition.tex}
-}
-\end{center}
-\end{frame}
-
-\begin{frame}{What are the generation decisions that need to be made?}
-% \irStage{SYSTEM ARCHITECTURE}
-\begin{center}
-\resizebox{1.0\textwidth}{!}{
-\input{tikz/rag_system_view_simple_generate.tex}
-}
-\end{center}
-\end{frame}
-
-\begin{frame}{RAG Decisions: A Holistic View}
-% \irStage{SYSTEM ARCHITECTURE}
-\begin{center}
-\resizebox{0.9\textwidth}{!}{
-\input{tikz/rag_system_view.tex}
-}
-\end{center}
-\end{frame}
 
 \begin{frame}[shrink=10]{Query Reformulation: Aligning Intent}
 % \irStage{RETRIEVAL}
@@ -1037,67 +1335,31 @@ Same storage footprint as standard chunking; significantly better embedding cohe
 \end{itemize}
 \end{frame}
 
-\begin{frame}[shrink=22]{Retrieval Quality: What to Measure in RAG}
-% \irStage{EVALUATION}
-\textbf{Standard IR metrics apply---but the grounding question adds a new dimension.}
 
-\vspace{0.7em}
-\begin{block}{Standard metrics}
-\begin{itemize}
-  \item \textbf{Recall@k}: does the gold evidence appear in top-$k$?
-  \item \textbf{MRR}: mean reciprocal rank of first relevant passage
-  \item \textbf{nDCG@k}: graded relevance; handles multi-answer queries
-\end{itemize}
-\end{block}
-\cpause
-\begin{block}{RAG-specific metric}
-\textbf{Context Hit Rate}: fraction of queries where the retrieved context contains sufficient information to answer correctly---measured against ground truth answer presence.
-\end{block}
+% \begin{frame}[shrink=10]{Query Reformulation: Aligning Questions with Evidence}
+% \textbf{Before decomposing, we may need to rewrite the query itself.}
 
-\cpause
-\vspace{0.3em}
-\textbf{Measurement order matters}
-\begin{itemize}
-  \item Measure Recall@k first. If $< 0.7$, fix the retriever.
-  \item Only then tune the generator.
-  \item Skipping this is the most common RAG engineering mistake.
-\end{itemize}
-\end{frame}
+% \vspace{0.8em}
+% \begin{block}{Reformulation strategies}
+% \begin{itemize}
+%   \item \textbf{HyDE}: generate a hypothetical answer document, embed it
+%   \item \textbf{Multi-query}: generate paraphrases, retrieve for each, fuse
+%   \item \textbf{Step-back}: rewrite to a more general conceptual question
+%   \item \textbf{Decomposition}: split a complex query into smaller sub-queries
+% \end{itemize}
+% \end{block}
 
-% ====================================================================
-\section{Part 4 --- Beyond Single-Shot: Multi-Step Retrieval}
-% ====================================================================
+% \cpause
+% \begin{block}{Risk: intent drift}
+% Reformulation may move away from the user's true information need.
+% Always compare results from the original and rewritten query.
+% \end{block}
+% \end{frame}
 
-\begin{frame}[plain]
-\sectionpage
-\end{frame}
-
-\begin{frame}[shrink=10]{Decouple Retrieval and Reasoning}
-% \irStage{PARADIGM}
-\textbf{Single-shot RAG fails on complex queries that require iterative refinement.}
-
-\vspace{0.7em}
-\begin{block}{Single-shot limitation}
-$q \to \mathcal{R}_k(q) \to a$\\[0.3em]
-One retrieval round captures only the \emph{surface} question. Multi-hop or ambiguous queries require intermediate reasoning steps.
-\end{block}
-
-\cpause
-\vspace{0.5em}
-\begin{block}{DeRIVeR paradigm}
-Decouple into three independent roles:
-\begin{enumerate}
-  \item \textbf{Query Planner}: decompose $q$ into sub-queries
-  \item \textbf{Retrieval Module}: execute each sub-query
-  \item \textbf{Reasoning Module}: synthesise over accumulated evidence
-\end{enumerate}
-\end{block}
-\end{frame}
-
-\begin{frame}{Chain-of-Thought Query Decomposition}
-% \irStage{QUERY PLANNING}
+\begin{frame}{Query Decomposition for Complex QA}
 \begin{block}{Core Idea}
-Decompose complex queries into \textbf{atomic sub-queries}, retrieve evidence for each independently, then merge the results. More recall, less vocabulary mismatch.
+Break a complex query into \textbf{atomic sub-queries}, retrieve evidence for each, then combine the results.
+This improves recall and reduces lexical mismatch.
 \end{block}
 
 \vspace{0.8em}
@@ -1105,11 +1367,11 @@ Decompose complex queries into \textbf{atomic sub-queries}, retrieve evidence fo
 \resizebox{0.6\textwidth}{!}{
 \begin{tikzpicture}[node distance=0.9cm, every node/.style={font=\small\sffamily}]
     \node[infra, text width=3.5cm, align=center] (cq) {Complex Query};
-    \node[dense, right=1.3cm of cq] (llm) {LLM};
+    \node[dense, right=1.3cm of cq] (llm) {Planner / LLM};
     \node[sparse, above right=0.5cm and 1.4cm of llm, minimum width=2cm] (sq1) {Sub-query 1};
     \node[sparse, right=1.4cm of llm, minimum width=2cm] (sq2) {Sub-query 2};
     \node[sparse, below right=0.5cm and 1.4cm of llm, minimum width=2cm] (sq3) {Sub-query 3};
-    \node[hybrid, right=1.4cm of sq2] (merge) {Merge};
+    \node[hybrid, right=1.4cm of sq2] (merge) {Evidence Merge};
     \draw[irArrowBase] (cq) -- (llm);
     \draw[irArrowBase] (llm) -- (sq1);
     \draw[irArrowBase] (llm) -- (sq2);
@@ -1122,53 +1384,133 @@ Decompose complex queries into \textbf{atomic sub-queries}, retrieve evidence fo
 \end{center}
 \end{frame}
 
-\begin{frame}[shrink=10]{Query Planning and Decomposition}
-% \irStage{QUERY PLANNING}
-\textbf{Complex questions require a structured retrieval plan before any search begins.}
+\begin{frame}[shrink=10]{Adaptive RAG: Retrieval as a Control Decision}
+\textbf{Not every query needs the same retrieval policy.}
 
-\vspace{0.7em}
-\begin{block}{Example: sequential decomposition}
-\textbf{Q}: ``Who is the CEO of the company that acquired DeepMind, and where did they study?''\\[0.3em]
-$q_1$: ``Company that acquired DeepMind'' $\to$ \emph{Google}\\
-$q_2$: ``CEO of Google'' $\to$ \emph{Sundar Pichai}\\
-$q_3$: ``Education of Sundar Pichai'' $\to$ \emph{IIT Kharagpur, Stanford}
-\end{block}
+\vspace{0.8em}
+\begin{center}
+\resizebox{0.8\textwidth}{!}{
+\input{tikz/adaptive_rag.tex}
+}
+\end{center}
 
 \cpause
-\vspace{0.5em}
-\begin{block}{Planning strategies}
+\begin{block}{Core idea}
+Adaptive RAG decides, per query:
 \begin{itemize}
-  \item \textbf{Sequential}: $q_i$ uses result of $q_{i-1}$
-  \item \textbf{Parallel}: independent sub-queries; fuse results
-  \item \textbf{Conditional}: branch based on intermediate evidence
+  \item \textbf{whether} to retrieve at all,
+  \item \textbf{how much} to retrieve,
+  \item \textbf{which retrieval strategy} to use,
+  \item and sometimes \textbf{whether another retrieval round is needed}.
 \end{itemize}
 \end{block}
+
+\cpause
+\begin{block}{Why this matters}
+Simple queries may need one cheap retrieval step.
+Complex queries may need decomposition, reranking, or iterative retrieval.
+\end{block}
 \end{frame}
 
-\begin{frame}[shrink=10]{IR-CoT: Interleaving Retrieval and Chain-of-Thought}
-% \irStage{ADVANCED}
-\textbf{Trivedi et al.\ (2022): generate one CoT step, then retrieve based on it, repeat.}
+\begin{frame}[shrink=10]{Adaptive RAG: Example Routing Decisions}
+\textbf{Adaptivity is about matching effort to query difficulty.}
 
 \vspace{0.7em}
-\begin{block}{Algorithm}
-\begin{enumerate}
-  \item Generate one chain-of-thought sentence
-  \item Use that sentence as the retrieval query
-  \item Retrieve passage(s)
-  \item Continue generation with accumulated evidence
-  \item Terminate when the model outputs the answer
-\end{enumerate}
+\begin{block}{Example policies}
+\begin{itemize}
+  \item \textbf{Simple factoid query} \\
+  one retrieval round, small $k$, direct answer generation
+  \item \textbf{Ambiguous query} \\
+  reformulate or clarify before retrieval
+  \item \textbf{Multi-hop query} \\
+  decompose into sub-queries, retrieve iteratively
+  \item \textbf{Table + text query} \\
+  route to hybrid retriever or table-aware QA module
+\end{itemize}
 \end{block}
 
 \cpause
-\vspace{0.5em}
-\begin{exampleblock}{Example (HotpotQA)}
-\textbf{Q}: ``Which mountain range contains Piz Bernina?'' \\
-\textbf{CoT step 1}: ``Piz Bernina is a peak...'' \\
-\textbf{Retrieve}: $\to$ passage: ``The Alps contain Piz Bernina...'' \\
-\textbf{CoT step 2}: ``Therefore the Alps.'' $\to$ \textbf{Answer: The Alps}
-\end{exampleblock}
+\begin{block}{Engineering goal}
+Spend compute only where it improves answer quality.
+\end{block}
 \end{frame}
+
+
+% \begin{frame}{Chain-of-Thought Query Decomposition}
+% % \irStage{QUERY PLANNING}
+% \begin{block}{Core Idea}
+% Decompose complex queries into \textbf{atomic sub-queries}, retrieve evidence for each independently, then merge the results. More recall, less vocabulary mismatch.
+% \end{block}
+
+% \vspace{0.8em}
+% \begin{center}
+% \resizebox{0.6\textwidth}{!}{
+% \begin{tikzpicture}[node distance=0.9cm, every node/.style={font=\small\sffamily}]
+%     \node[infra, text width=3.5cm, align=center] (cq) {Complex Query};
+%     \node[dense, right=1.3cm of cq] (llm) {LLM};
+%     \node[sparse, above right=0.5cm and 1.4cm of llm, minimum width=2cm] (sq1) {Sub-query 1};
+%     \node[sparse, right=1.4cm of llm, minimum width=2cm] (sq2) {Sub-query 2};
+%     \node[sparse, below right=0.5cm and 1.4cm of llm, minimum width=2cm] (sq3) {Sub-query 3};
+%     \node[hybrid, right=1.4cm of sq2] (merge) {Merge};
+%     \draw[irArrowBase] (cq) -- (llm);
+%     \draw[irArrowBase] (llm) -- (sq1);
+%     \draw[irArrowBase] (llm) -- (sq2);
+%     \draw[irArrowBase] (llm) -- (sq3);
+%     \draw[irArrowBase] (sq1) -- (merge);
+%     \draw[irArrowBase] (sq2) -- (merge);
+%     \draw[irArrowBase] (sq3) -- (merge);
+% \end{tikzpicture}
+% }
+% \end{center}
+% \end{frame}
+
+% \begin{frame}[shrink=10]{Query Planning and Decomposition}
+% % \irStage{QUERY PLANNING}
+% \textbf{Complex questions require a structured retrieval plan before any search begins.}
+
+% \vspace{0.7em}
+% \begin{block}{Example: sequential decomposition}
+% \textbf{Q}: ``Who is the CEO of the company that acquired DeepMind, and where did they study?''\\[0.3em]
+% $q_1$: ``Company that acquired DeepMind'' $\to$ \emph{Google}\\
+% $q_2$: ``CEO of Google'' $\to$ \emph{Sundar Pichai}\\
+% $q_3$: ``Education of Sundar Pichai'' $\to$ \emph{IIT Kharagpur, Stanford}
+% \end{block}
+
+% \cpause
+% \vspace{0.5em}
+% \begin{block}{Planning strategies}
+% \begin{itemize}
+%   \item \textbf{Sequential}: $q_i$ uses result of $q_{i-1}$
+%   \item \textbf{Parallel}: independent sub-queries; fuse results
+%   \item \textbf{Conditional}: branch based on intermediate evidence
+% \end{itemize}
+% \end{block}
+% \end{frame}
+
+% \begin{frame}[shrink=10]{IR-CoT: Interleaving Retrieval and Chain-of-Thought}
+% % \irStage{ADVANCED}
+% \textbf{Trivedi et al.\ (2022): generate one CoT step, then retrieve based on it, repeat.}
+
+% \vspace{0.7em}
+% \begin{block}{Algorithm}
+% \begin{enumerate}
+%   \item Generate one chain-of-thought sentence
+%   \item Use that sentence as the retrieval query
+%   \item Retrieve passage(s)
+%   \item Continue generation with accumulated evidence
+%   \item Terminate when the model outputs the answer
+% \end{enumerate}
+% \end{block}
+
+% \cpause
+% \vspace{0.5em}
+% \begin{exampleblock}{Example (HotpotQA)}
+% \textbf{Q}: ``Which mountain range contains Piz Bernina?'' \\
+% \textbf{CoT step 1}: ``Piz Bernina is a peak...'' \\
+% \textbf{Retrieve}: $\to$ passage: ``The Alps contain Piz Bernina...'' \\
+% \textbf{CoT step 2}: ``Therefore the Alps.'' $\to$ \textbf{Answer: The Alps}
+% \end{exampleblock}
+% \end{frame}
 
 \begin{frame}[shrink=10]{Adaptive RAG: Routing by Complexity}
 % \irStage{ADVANCED}
@@ -1219,6 +1561,31 @@ Self-RAG retrieves only when uncertainty is high---reducing cost and latency.
 }
 \end{center}
 \end{frame}
+
+
+\begin{frame}[shrink=10]{Decouple Retrieval and Reasoning}
+% \irStage{PARADIGM}
+\textbf{Single-shot RAG fails on complex queries that require iterative refinement.}
+
+\vspace{0.7em}
+\begin{block}{Single-shot limitation}
+$q \to \mathcal{R}_k(q) \to a$\\[0.3em]
+One retrieval round captures only the \emph{surface} question. Multi-hop or ambiguous queries require intermediate reasoning steps.
+\end{block}
+
+\cpause
+\vspace{0.5em}
+\begin{block}{DeRIVeR paradigm}
+Decouple into three independent roles:
+\begin{enumerate}
+  \item \textbf{Query Planner}: decompose $q$ into sub-queries
+  \item \textbf{Retrieval Module}: execute each sub-query
+  \item \textbf{Reasoning Module}: synthesise over accumulated evidence
+\end{enumerate}
+\end{block}
+\end{frame}
+
+
 
 % ====================================================================
 \section{Part 5 --- Engineering Reality: The LLM Stack}
