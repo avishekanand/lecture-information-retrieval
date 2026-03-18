@@ -175,37 +175,19 @@ Retrieval gives us \textbf{evidence} but cannot reason. Generation gives us \tex
 \end{center}
 \end{frame}
 
-\begin{frame}[shrink=20]{Why Closed-Book QA Falls Short}
+\begin{frame}{Why Closed-Book QA Falls Short}
 % \irStage{LIMITATIONS}
 \textbf{LLMs can answer many questions without retrieval---but fail in predictable ways.}
 
 \cpause
 
-\vspace{0.7em}
-\begin{columns}[T]
-\begin{column}{0.52\textwidth}
+\vspace{1.0em}
 \begin{itemize}
   \item \textbf{Knowledge cutoff}: no access to post-training facts
   \item \textbf{Long-tail failure}: rare entities poorly represented in weights
   \item \textbf{No evidence}: cannot cite sources; auditing is impossible
   \item \textbf{Hallucination}: confident generation of plausible but false content
 \end{itemize}
-\end{column}
-\cpause
-\begin{column}{0.44\textwidth}
-\begin{block}{The Scale Paradox}
-\small
-Larger models hallucinate \emph{more confidently}---not less.\\[0.4em]
-Scale alone does not solve factual grounding.
-\end{block}
-\end{column}
-\end{columns}
-
-\vspace{0.5em}
-\cpause
-\begin{block}{Consequence}
-For knowledge-intensive tasks in production, closed-book QA is not deployable without a grounding mechanism.
-\end{block}
 \end{frame}
 
 \begin{frame}[shrink=18]{What Is Hallucination?}
@@ -258,24 +240,20 @@ For knowledge-intensive tasks in production, closed-book QA is not deployable wi
 % \irStage{ROOT CAUSE}
 \textbf{Multiple independent failure modes compound at inference time.}
 
-\vspace{0.7em}
-\begin{columns}[T]
-\begin{column}{0.52\textwidth}
+\vspace{1.0em}
 \begin{enumerate}
   \item \textbf{Training data noise}: web text contains errors, contradictions
   \item \textbf{Distributional gaps}: rare or unseen entity combinations
   \item \textbf{Autoregressive bias}: each token conditions on previous tokens only; no global fact check
   \item \textbf{RLHF side-effects}: helpfulness reward may override accuracy
 \end{enumerate}
-\end{column}
-\begin{column}{0.44\textwidth}
+
+\vspace{1.0em}
+\cpause
 \begin{block}{The Core Problem}
-\small
-There is no ``ground truth'' signal during autoregressive generation.\\[0.3em]
+There is no ``ground truth'' signal during autoregressive generation.
 The model generates the \emph{most likely} continuation, not the \emph{most true} one.
 \end{block}
-\end{column}
-\end{columns}
 \end{frame}
 
 \begin{frame}[shrink=10]{RAG as the Answer to Hallucination}
@@ -319,8 +297,37 @@ Extractive      & Question + passage  & Span in passage       & SQuAD, NewsQA \\
 }
 \end{table}
 
+% \vspace{0.4em}
+% \cpause
+% \begin{block}{This lecture's focus}
+% \textbf{Open-domain QA}: no passage given---the system must retrieve it.
+% RAG is the dominant approach for open-domain QA at scale.
+% \end{block}
+\end{frame}
+
+\begin{frame}[shrink=5]{QA as a Task Family}
+% \irStage{TAXONOMY}
+\textbf{``QA'' is an umbrella for many different tasks with different assumptions.}
+
+\vspace{0.5em}
+\begin{table}
+\centering
+\resizebox{0.95\textwidth}{!}{
+\begin{tabular}{l l l l}
+\toprule
+\textbf{Type} & \textbf{Input} & \textbf{Output} & \textbf{Benchmark} \\
+\midrule
+Extractive      & Question + passage  & Span in passage       & SQuAD, NewsQA \\
+Abstractive     & Question + passage  & Generated string      & NarrativeQA, CoQA \\
+Open-Domain     & Question only       & Answer (from corpus)  & Natural Questions, TriviaQA \\
+Knowledge-Base  & Question + KG       & Entity/relation       & WebQuestions, LC-QuAD \\
+Conversational  & Multi-turn history  & Answer in context     & QuAC, DoQA \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
 \vspace{0.4em}
-\cpause
 \begin{block}{This lecture's focus}
 \textbf{Open-domain QA}: no passage given---the system must retrieve it.
 RAG is the dominant approach for open-domain QA at scale.
@@ -502,7 +509,7 @@ F1 is useful when you care about \textbf{partial lexical overlap}.
 
 \vspace{0.7em}
 \begin{block}{Failure case for EM/F1}
-Question: \emph{What is another word for automobile?}
+Question: \emph{What is the most common form of transport on roads in Germany?}
 
 \vspace{0.3em}
 Gold answer: \texttt{car} \\
@@ -709,92 +716,52 @@ Use retrieval to supply grounded evidence; use the LLM to reason over it.
 \end{frame}
 
 
-% \begin{frame}{What RAG Actually Is (and Is Not)}
-% % \irStage{DEFINITION}
-% \textbf{RAG is a compound AI system, not a single model trick or simple recipe.}
-
-% \vspace{0.8em}
-% \begin{itemize}
-%   \item \textbf{Not}: just ``BM25 + GPT'' or simple hallucination reduction
-%   \item \textbf{Is}: a pipeline of Retrieval + Conditioning + Generation
-%   \item \textbf{Core Axes}: retrieval quality, strategy, reasoning, feedback, cost
-% \end{itemize}
-
-% \vspace{0.5em}
-% \cpause
-% \begin{block}{Design Principle}
-% \textbf{Modularity} allows isolated debugging.\\
-% If generation fails, we must know if it was due to poor retrieval or poor conditioning.
-% \end{block}
-
-% \vspace{0.5em}
-% \cpause
-% \textbf{Key Thesis}
-% \begin{itemize}
-%   \item \textbf{Retrieval defines the reasoning substrate.}
-%   \item If the evidence is not retrieved, it cannot be used by the model.
-% \end{itemize}
-% \end{frame}
-
-
-% \begin{frame}{A System View: RAG as a Pipeline of Decisions}
-% % \irStage{SYSTEM ARCHITECTURE}
-% \textbf{Basic Pipeline: Retrieval, Conditioning, and Generation.}
-
-% \vspace{0.5em}
-% \begin{center}
-% \resizebox{1.0\textwidth}{!}{
-% \input{tikz/rag_system_view.tex}
-% }
-% \end{center}
-% \end{frame}
-
-
-% % ====================================================================
-% \section{Part 5 --- The Original RAG Model (Lewis et al.\ 2020)}
-% % ====================================================================
-
-% \begin{frame}[plain]
-% \sectionpage
-% \end{frame}
-
 
 \begin{frame}{Original RAG Architecture (Lewis et al.\ 2020)}
 % \irStage{ARCHITECTURE}
 \begin{center}
-\fbox{\includegraphics[width=1.0\textwidth]{figures/rag-original.pdf}}
+\fbox{\includegraphics[width=0.8\textwidth]{figures/rag-original.pdf}}
 \end{center}
-\end{frame}
 
-
-\begin{frame}[shrink=20]{Lewis et al.\ 2020: The RAG Paper}
-% \irStage{FOUNDATIONAL WORK}
-\textbf{The paper that named and formalised RAG as a learning framework.}
-
-\vspace{0.7em}
-\begin{block}{Two variants: }
+\begin{block}{Main Idea}
 \begin{itemize}
   \item \textbf{RAG-Sequence}: retrieve once for the full answer
     \[ p(y \mid x) \approx \sum_{z} p(z \mid x)\, p(y \mid x, z) \]
   \item \textbf{RAG-Token}: retrieve per generated token (more flexible, costlier)
 \end{itemize}
 \end{block}
-\cpause
-\begin{block}{Components}
-\begin{itemize}
-  \item \textbf{Non-parametric memory}: Wikipedia DPR FAISS index
-  \item \textbf{Parametric memory}: BART-large generator
-  \item \textbf{Training}: end-to-end with MIPS-based approximate gradient
-\end{itemize}
-\end{block}
 
-\cpause
-\textbf{Key Innovation}
-\begin{itemize}
-  \item Retrieval is treated as a \emph{latent variable}.
-  % \item Marginalising over top-$k$ retrieved documents makes retrieval differentiable in expectation.
-\end{itemize}
 \end{frame}
+
+
+% \begin{frame}[shrink=20]{Lewis et al.\ 2020: The RAG Paper}
+% % \irStage{FOUNDATIONAL WORK}
+% \textbf{The paper that named and formalised RAG as a learning framework.}
+
+% \vspace{0.7em}
+% \begin{block}{Two variants: }
+% \begin{itemize}
+%   \item \textbf{RAG-Sequence}: retrieve once for the full answer
+%     \[ p(y \mid x) \approx \sum_{z} p(z \mid x)\, p(y \mid x, z) \]
+%   \item \textbf{RAG-Token}: retrieve per generated token (more flexible, costlier)
+% \end{itemize}
+% \end{block}
+% \cpause
+% \begin{block}{Components}
+% \begin{itemize}
+%   \item \textbf{Non-parametric memory}: Wikipedia DPR FAISS index
+%   \item \textbf{Parametric memory}: BART-large generator
+%   \item \textbf{Training}: end-to-end with MIPS-based approximate gradient
+% \end{itemize}
+% \end{block}
+
+% \cpause
+% \textbf{Key Innovation}
+% \begin{itemize}
+%   \item Retrieval is treated as a \emph{latent variable}.
+%   % \item Marginalising over top-$k$ retrieved documents makes retrieval differentiable in expectation.
+% \end{itemize}
+% \end{frame}
 
 
 \begin{frame}{Sequential Training in RAG}
