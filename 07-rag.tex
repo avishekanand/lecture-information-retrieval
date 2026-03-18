@@ -736,30 +736,18 @@ Use retrieval to supply grounded evidence; use the LLM to reason over it.
 % \end{itemize}
 % \end{frame}
 
-\begin{frame}{A System View: RAG as a Pipeline of Decisions}
-% \irStage{SYSTEM ARCHITECTURE}
-\textbf{Basic Pipeline: Retrieval, Conditioning, and Generation.}
 
-\vspace{0.5em}
-\begin{center}
-\resizebox{1.0\textwidth}{!}{
-\input{tikz/rag_system_view_simple.tex}
-}
-\end{center}
-\end{frame}
+% \begin{frame}{A System View: RAG as a Pipeline of Decisions}
+% % \irStage{SYSTEM ARCHITECTURE}
+% \textbf{Basic Pipeline: Retrieval, Conditioning, and Generation.}
 
-
-\begin{frame}{A System View: RAG as a Pipeline of Decisions}
-% \irStage{SYSTEM ARCHITECTURE}
-\textbf{Basic Pipeline: Retrieval, Conditioning, and Generation.}
-
-\vspace{0.5em}
-\begin{center}
-\resizebox{1.0\textwidth}{!}{
-\input{tikz/rag_system_view.tex}
-}
-\end{center}
-\end{frame}
+% \vspace{0.5em}
+% \begin{center}
+% \resizebox{1.0\textwidth}{!}{
+% \input{tikz/rag_system_view.tex}
+% }
+% \end{center}
+% \end{frame}
 
 
 % % ====================================================================
@@ -833,6 +821,28 @@ Use retrieval to supply grounded evidence; use the LLM to reason over it.
 Freeze the retriever (Contriever or e5-large).\\[0.5em]
 LoRA-fine-tune the generator on grounded QA pairs.
 \end{block}
+
+\cpause
+\vspace{0.5em}
+\begin{center}
+\resizebox{1.0\textwidth}{!}{
+\input{tikz/rag_system_view_simple.tex}
+}
+\end{center}
+
+\end{frame}
+
+
+\begin{frame}{A System View: RAG as a Pipeline of Decisions}
+% \irStage{SYSTEM ARCHITECTURE}
+\textbf{Basic Pipeline: Retrieval, Conditioning, and Generation.}
+
+\vspace{0.5em}
+\begin{center}
+\resizebox{1.0\textwidth}{!}{
+\input{tikz/rag_system_view_simple.tex}
+}
+\end{center}
 \end{frame}
 
 % ====================================================================

@@ -8,9 +8,9 @@
 ]
 \node[box_faded, fill=gray!12] (query_mod) {Query Modelling\\(reformulation/planning)};
 \node[box_faded, fill=gray!12, above=0.8cm of query_mod] (user) {User query};
-\node[box_faded, fill=irSparse!15, right=1.8cm of query_mod] (retr) {Retrieve\\(sparse/dense/hybrid)};
-\node[box, fill=irHybrid!15, right=1.8cm of retr] (cond) {Condition\\(prompt/context)};
-\node[box_faded, fill=irRerank!15, right=1.8cm of cond] (gen) {Generate\\(LLM reasoning)};
+\node[box_faded, fill=irSparse!15, right=1.6cm of query_mod] (retr) {Retrieve\\(sparse/dense/hybrid)};
+\node[box, fill=irHybrid!15, right=2.0cm of retr] (cond) {Condition\\(prompt/context)};
+\node[box_faded, fill=irRerank!15, right=2.2cm of cond] (gen) {Generate\\(LLM reasoning)};
 
 \draw[arr_faded] (user) -- (query_mod);
 \draw[arr_faded] (query_mod) -- (retr);
